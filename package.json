@@ -27,6 +27,7 @@
     "@types/node": "^16.7.8"
   },
   "scripts": {
+    "prepublish": "prisma generate",
     "test": "mocha -r ts-node/register --exclude 'tests/testlib/**' 'tests/**/*.ts'"
   },
   "keywords": [
