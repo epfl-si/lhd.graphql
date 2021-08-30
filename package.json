@@ -32,7 +32,11 @@
     "@types/node": "^16.7.8"
   },
   "scripts": {
-    "prepublish": "prisma generate",
+    "prepublish": "yarn prisma:generate && yarn nexus:reflect",
+    "prisma:generate": "prisma generate",
+    "nexus:reflect": "env DO_TYPEGEN=1 ts-node --transpile-only nexus/schema",
+    "clean": "yarn nexus:clean",
+    "nexus:clean": "rm -rf node_modules/@types/typegen-nexus*",
     "start": "sh -c 'node \"$@\" -r ts-node/register index.ts' -- ",
     "test": "mocha -r ts-node/register --exclude 'tests/testlib/**' 'tests/**/*.ts'"
   },
