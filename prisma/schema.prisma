@@ -1,11 +1,847 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+generator client {
+  provider = "prisma-client-js"
+}
 
 datasource db {
   provider = "mysql"
   url      = env("LHD_DB_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
+model aa {
+  id_aa                      Int      @id @default(autoincrement())
+  id_lab                     Int
+  din                        String   @db.VarChar(10)
+  vol                        Float?
+  description                String?  @db.VarChar(100)
+  id_unit                    Int
+  id_cosec                   Int
+  id_head                    Int
+  updated                    String   @db.VarChar(100)
+  who_when                   String?  @db.VarChar(100)
+  flag                       Boolean?
+  person_aa_id_cosecToperson person   @relation("aa_id_cosecToperson", fields: [id_cosec], references: [id_person])
+  person_aa_id_headToperson  person   @relation("aa_id_headToperson", fields: [id_head], references: [id_person])
+  lab                        lab      @relation(fields: [id_lab], references: [id_lab])
+  unit                       unit     @relation(fields: [id_unit], references: [id_unit])
+
+  @@index([id_cosec], name: "id_cosec")
+  @@index([id_head], name: "id_head")
+  @@index([id_lab], name: "id_lab")
+  @@index([id_unit], name: "id_unit")
+}
+
+model audits {
+  id_audit   Int      @id @default(autoincrement())
+  id_unit    Int      @unique
+  date_audit DateTime @db.Date
+
+  @@unique([id_unit, date_audit], name: "unique_audit")
+}
+
+model auth_chem {
+  id_auth_chem   Int             @id @default(autoincrement())
+  cas_auth_chem  String          @unique @db.VarChar(100)
+  auth_chem_en   String          @unique @db.VarChar(500)
+  auth_chem_fr   String?         @db.VarChar(500)
+  flag_auth_chem Boolean
+  auth_chem_log  auth_chem_log[]
+  auth_rchem     auth_rchem[]
+}
+
+model auth_chem_log {
+  id_auth_chem_log Int       @id @default(autoincrement())
+  id_auth_chem     Int
+  sciper_author    Int
+  author           String    @db.VarChar(100)
+  action           String    @db.VarChar(10)
+  date             DateTime  @db.DateTime(0)
+  auth_chem        auth_chem @relation(fields: [id_auth_chem], references: [id_auth_chem])
+
+  @@index([id_auth_chem], name: "auth_chem_log_ibfk_1")
+}
+
+model auth_chem_old {
+  id_auth_chem  Int     @id @default(autoincrement())
+  cas_auth_chem String? @unique @db.VarChar(100)
+  auth_chem_en  String? @unique @db.VarChar(100)
+  auth_chem_fr  String? @db.VarChar(100)
+}
+
+model auth_dsps {
+  id_auth_dsps      Int                 @id @default(autoincrement())
+  auth_dsps         String              @unique @db.VarChar(10)
+  log_in            Int?
+  log_in_time       DateTime?           @db.DateTime(0)
+  auth_dsps_version auth_dsps_version[]
+
+  @@unique([auth_dsps, id_auth_dsps], name: "auth_dsps_id_auth_dsps")
+  @@unique([log_in, id_auth_dsps], name: "log_in_auth_dsps")
+  @@unique([log_in_time, id_auth_dsps], name: "log_in_time_auth_dsps")
+}
+
+model auth_dsps_holder {
+  id_auth_dsps_holder  Int               @id @default(autoincrement())
+  id_auth_dsps_version Int
+  id_person            Int
+  auth_dsps_version    auth_dsps_version @relation(fields: [id_auth_dsps_version], references: [id_auth_dsps_version])
+  person               person            @relation(fields: [id_person], references: [id_person])
+
+  @@unique([id_person, id_auth_dsps_version], name: "authholder")
+  @@index([id_auth_dsps_version], name: "id_auth_dsps_version")
+}
+
+model auth_dsps_lab {
+  id_auth_dsps_lab     Int               @id @default(autoincrement())
+  id_auth_dsps_version Int
+  id_lab               Int
+  auth_dsps_version    auth_dsps_version @relation(fields: [id_auth_dsps_version], references: [id_auth_dsps_version])
+  lab                  lab               @relation(fields: [id_lab], references: [id_lab])
+
+  @@unique([id_lab, id_auth_dsps_version], name: "authlab")
+  @@index([id_auth_dsps_version], name: "id_auth_dsps_version")
+}
+
+model auth_dsps_version {
+  id_auth_dsps_version Int                @id @default(autoincrement())
+  id_auth_dsps         Int
+  author               String             @db.VarChar(50)
+  sciper_author        Int
+  subject              String             @db.VarChar(50)
+  requires             String?            @db.VarChar(2000)
+  comment              String?            @db.VarChar(2000)
+  status               String             @db.VarChar(10)
+  date_start           DateTime           @db.Date
+  date_end             DateTime           @db.Date
+  date                 DateTime           @db.DateTime(0)
+  version              String             @db.Char(5)
+  notifier             String?            @db.VarChar(50)
+  notification_date    DateTime?          @db.DateTime(0)
+  auth_dsps            auth_dsps          @relation(fields: [id_auth_dsps], references: [id_auth_dsps])
+  auth_dsps_holder     auth_dsps_holder[]
+  auth_dsps_lab        auth_dsps_lab[]
+
+  @@index([id_auth_dsps], name: "id_auth_dsps")
+}
+
+model auth_holder {
+  id_auth_holder Int      @id @default(autoincrement())
+  id_auth_sst    Int
+  sciper         Int
+  holder_name    String   @db.VarChar(100)
+  auth_sst       auth_sst @relation(fields: [id_auth_sst], references: [id_auth_sst])
+
+  @@unique([id_auth_sst, sciper, holder_name], name: "id_auth_sst_sciper_holder")
+}
+
+model auth_lab {
+  id_auth_lab Int      @id @default(autoincrement())
+  id_auth_req Int
+  id_lab      Int?
+  id_storage  Int?
+  auth_req    auth_req @relation(fields: [id_auth_req], references: [id_auth_req])
+  lab         lab?     @relation(fields: [id_lab], references: [id_lab])
+  storage     storage? @relation(fields: [id_storage], references: [id_storage])
+
+  @@index([id_auth_req], name: "id_auth_req")
+  @@index([id_lab], name: "id_lab")
+  @@index([id_storage], name: "id_storage")
+}
+
+model auth_rchem {
+  id_auth_rchem Int        @id @default(autoincrement())
+  id_auth_req   Int?
+  id_auth_chem  Int?
+  auth_chem     auth_chem? @relation(fields: [id_auth_chem], references: [id_auth_chem])
+  auth_req      auth_req?  @relation(fields: [id_auth_req], references: [id_auth_req])
+
+  @@index([id_auth_chem], name: "id_auth_chem")
+  @@index([id_auth_req], name: "id_auth_req")
+}
+
+model auth_req {
+  id_auth_req   Int          @id @default(autoincrement())
+  auth_req      String?      @unique @db.VarChar(16)
+  date_auth_req DateTime?    @db.Date
+  auth_lab      auth_lab[]
+  auth_rchem    auth_rchem[]
+  auth_sst      auth_sst[]
+}
+
+model auth_sst {
+  id_auth_sst      Int           @id @default(autoincrement())
+  id_auth_req      Int
+  auth_sst         String?       @unique @db.VarChar(50)
+  id_unit_auth_sst Int?
+  date_auth_sst    DateTime?     @db.Date
+  qstock_auth_sst  String?       @db.VarChar(80)
+  quse_auth_sst    String?       @db.VarChar(80)
+  form_auth_sst    String?       @db.VarChar(80)
+  status_auth_sst  String?       @db.VarChar(30)
+  com_auth_sst     String?       @db.VarChar(500)
+  created_at       DateTime?     @db.Date
+  auth_req         auth_req      @relation(fields: [id_auth_req], references: [id_auth_req])
+  auth_holder      auth_holder[]
+
+  @@index([id_auth_req], name: "id_auth_req")
+}
+
+model bio {
+  id_bio      Int           @id @default(autoincrement())
+  id_lab      Int           @unique
+  bio_level   Int
+  comment     String?       @db.VarChar(2000)
+  lab         lab           @relation(fields: [id_lab], references: [id_lab])
+  bio_org_lab bio_org_lab[]
+
+  @@index([id_lab], name: "id_lab")
+}
+
+model bio_org {
+  id_bio_org  Int           @id @default(autoincrement())
+  organism    String        @db.VarChar(100)
+  risk_group  Int
+  bio_org_lab bio_org_lab[]
+
+  @@unique([organism, risk_group], name: "org_risk")
+}
+
+model bio_org_lab {
+  id_bio_org_lab Int      @id @default(autoincrement())
+  id_bio         Int
+  id_bio_org     Int?
+  bio            bio      @relation(fields: [id_bio], references: [id_bio])
+  bio_org        bio_org? @relation(fields: [id_bio_org], references: [id_bio_org])
+
+  @@unique([id_bio, id_bio_org], name: "org_lab")
+  @@index([id_bio_org], name: "id_bio_org")
+}
+
+model cad_corr {
+  id_cad_sto Int      @id @default(autoincrement())
+  id_lab     Int?
+  id_storage Int?
+  id_haz     Int?
+  score      Int?
+  lab        lab?     @relation(fields: [id_lab], references: [id_lab])
+  storage    storage? @relation(fields: [id_storage], references: [id_storage])
+
+  @@index([id_haz], name: "id_haz")
+  @@index([id_lab], name: "id_lab")
+  @@index([id_storage], name: "id_storage")
+}
+
+model cad_lab {
+  id_cad Int  @id @default(autoincrement())
+  id_lab Int?
+  id_haz Int?
+  score  Int?
+  haz    haz? @relation(fields: [id_haz], references: [id_haz])
+  lab    lab? @relation(fields: [id_lab], references: [id_lab])
+
+  @@index([id_haz], name: "id_haz")
+  @@index([id_lab], name: "id_lab")
+}
+
+model cryo {
+  id_cryo  Int     @id @default(autoincrement())
+  id_dewar Int
+  liquid   String? @db.VarChar(3)
+  liters   Float?
+  dewar    dewar   @relation(fields: [id_dewar], references: [id_dewar])
+
+  @@index([id_dewar], name: "id_dewar")
+}
+
+model cut {
+  id_cut       Int     @id @default(autoincrement())
+  id_lab       Int?
+  cut          String? @db.VarChar(50)
+  cut_time     Int?
+  cut_hazard   String? @db.VarChar(500)
+  cut_measure  String? @db.VarChar(500)
+  cut_priority Int?
+  lab          lab?    @relation(fields: [id_lab], references: [id_lab])
+
+  @@index([id_lab], name: "id_lab")
+}
+
+model cuts {
+  id_cut     Int     @id @default(autoincrement())
+  building   String? @db.VarChar(10)
+  sector     String? @db.VarChar(10)
+  floor      Int?
+  lab_number String? @db.VarChar(10)
+  type       String? @db.VarChar(200)
+  unit       String? @db.VarChar(50)
+  prof       String? @db.VarChar(100)
+  cosec      String? @db.VarChar(100)
+  cut        String? @db.VarChar(50)
+  time       String? @db.VarChar(20)
+  hazard     String? @db.VarChar(500)
+  measure    String? @db.VarChar(500)
+  priority   Int?
+}
+
+model dewar {
+  id_dewar Int     @id @default(autoincrement())
+  id_lab   Int?
+  comment  String? @db.VarChar(500)
+  lab      lab?    @relation(fields: [id_lab], references: [id_lab])
+  cryo     cryo[]
+
+  @@index([id_lab], name: "id_lab")
+}
+
+model elec {
+  id_elec   Int     @id @default(autoincrement())
+  id_lab    Int?
+  capacitor String? @db.Char(1)
+  v_ac      Float?
+  v_dc      Float?
+  i         Float?
+  i_battery Float?
+  state     Int?
+  access    Int?
+  lab       lab?    @relation(fields: [id_lab], references: [id_lab])
+
+  @@index([id_lab], name: "id_lab")
+}
+
+model faculty {
+  id_faculty   Int        @id @default(autoincrement())
+  name_faculty String?    @unique @db.VarChar(20)
+  institut     institut[]
+}
+
+model gas {
+  id_gas    Int         @id @default(autoincrement())
+  gas       String?     @db.VarChar(50)
+  state     String?     @db.VarChar(4)
+  gashazard gashazard[]
+  gnb       gnb[]
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
+model gasbottle {
+  bottle   Int?
+  building String? @db.VarChar(5)
+  type     String? @db.VarChar(2)
+  cupboard String? @db.Char(1)
+
+  @@ignore
+}
+
+model gaschem {
+  id_gaschem Int      @id @default(autoincrement())
+  id_lab     Int?
+  id_storage Int?
+  id_haz     Int
+  score      Int?
+  haz        haz      @relation(fields: [id_haz], references: [id_haz])
+  lab        lab?     @relation(fields: [id_lab], references: [id_lab])
+  storage    storage? @relation(fields: [id_storage], references: [id_storage])
+
+  @@unique([id_lab, id_haz], name: "labhaz")
+  @@unique([id_storage, id_haz], name: "stohaz")
+  @@index([id_haz], name: "id_haz")
+}
+
+model gashazard {
+  id_gashazard Int     @id @default(autoincrement())
+  id_gas       Int?
+  id_hazard    String? @db.VarChar(2)
+  gas          gas?    @relation(fields: [id_gas], references: [id_gas])
+
+  @@index([id_gas], name: "id_gas")
+}
+
+model gnb {
+  id_gnb     Int          @id @default(autoincrement())
+  id_gas     Int?
+  gnb_q      Float?
+  gnb_p      Int?
+  gas        gas?         @relation(fields: [id_gas], references: [id_gas])
+  gnb_labsto gnb_labsto[]
+
+  @@index([id_gas], name: "id_gas")
+}
+
+model gnb_labsto {
+  id_gnbls   Int      @id @default(autoincrement())
+  id_gnb     Int?
+  id_storage Int?
+  id_lab     Int?
+  gnb        gnb?     @relation(fields: [id_gnb], references: [id_gnb])
+  lab        lab?     @relation(fields: [id_lab], references: [id_lab])
+  storage    storage? @relation(fields: [id_storage], references: [id_storage])
+
+  @@index([id_gnb], name: "id_gnb")
+  @@index([id_lab], name: "id_lab")
+  @@index([id_storage], name: "id_storage")
+}
+
+model haz {
+  id_haz          Int        @id @default(autoincrement())
+  haz_category    String?    @db.VarChar(60)
+  haz_en          String?    @db.VarChar(80)
+  haz_fr          String?    @db.VarChar(80)
+  id_haz_category Int
+  cad_lab         cad_lab[]
+  gaschem         gaschem[]
+  haz_date        haz_date[]
+}
+
+model haz_category {
+  id_haz_category Int        @id @default(autoincrement())
+  haz_category    String     @unique @db.VarChar(60)
+  haz_date        haz_date[]
+}
+
+model haz_date {
+  id_haz_date     Int          @id @default(autoincrement())
+  id_lab          Int
+  id_haz_category Int
+  id_haz          Int?
+  date            DateTime     @db.DateTime(0)
+  editor          String       @db.VarChar(50)
+  log_in          Int?
+  log_in_time     DateTime?    @db.DateTime(0)
+  haz             haz?         @relation(fields: [id_haz], references: [id_haz])
+  haz_category    haz_category @relation(fields: [id_haz_category], references: [id_haz_category])
+  lab             lab          @relation(fields: [id_lab], references: [id_lab])
+
+  @@index([id_haz], name: "id_haz")
+  @@index([id_haz_category], name: "id_haz_category")
+  @@index([id_lab], name: "id_lab")
+}
+
+model institut {
+  id_institut   Int     @id @default(autoincrement())
+  name_institut String? @db.VarChar(60)
+  id_faculty    Int
+  faculty       faculty @relation(fields: [id_faculty], references: [id_faculty])
+  unit          unit[]
+
+  @@unique([name_institut, id_faculty], name: "unique_institut")
+  @@index([id_faculty], name: "id_faculty")
+}
+
+model irad {
+  id_irad                   Int       @id @default(autoincrement())
+  id_lab                    Int?
+  irad_facility             String?   @db.VarChar(50)
+  irad_source               String?   @db.VarChar(20)
+  irad_radioisotope         String?   @db.VarChar(10)
+  irad_activity             Float?
+  irad_voltage              Float?
+  irad_current              Float?
+  irad_power                Float?
+  irad_protection           String?   @db.VarChar(20)
+  irad_name_instrument      String?   @db.VarChar(50)
+  irad_authority            String?   @db.VarChar(10)
+  id_person                 Int?
+  irad_n_authorisation      String?   @db.VarChar(20)
+  irad_state_authorisation  String?   @db.VarChar(20)
+  irad_exdate_authorisation DateTime? @db.Date
+  irad_comment              String?   @db.VarChar(200)
+  lab                       lab?      @relation(fields: [id_lab], references: [id_lab])
+  person                    person?   @relation(fields: [id_person], references: [id_person])
+
+  @@index([id_lab], name: "id_lab")
+  @@index([id_person], name: "id_person")
+}
+
+model irad_resp {
+  id_irad_resp             Int     @id @default(autoincrement())
+  id_person                Int?
+  irad_resp_training       String? @db.VarChar(30)
+  irad_resp_training_place String? @db.VarChar(10)
+  irad_resp_training_year  Int?    @db.Year
+  person                   person? @relation(fields: [id_person], references: [id_person])
+
+  @@index([id_person], name: "id_person")
+}
+
+model lab {
+  id_lab        Int             @id @default(autoincrement())
+  sciper_lab    Int?            @unique
+  building      String          @db.VarChar(5)
+  sector        String?         @db.VarChar(5)
+  floor         String?         @db.VarChar(5)
+  lab           String          @db.VarChar(10)
+  id_labType    Int?
+  description   String?         @db.VarChar(200)
+  location      String?         @db.VarChar(10)
+  vol           Float?
+  vent          String?         @db.Char(1)
+  lab_display   String?         @db.VarChar(20)
+  labType       labType?        @relation(fields: [id_labType], references: [id_labType])
+  aa            aa[]
+  auth_dsps_lab auth_dsps_lab[]
+  auth_lab      auth_lab[]
+  bio           bio?
+  cad_corr      cad_corr[]
+  cad_lab       cad_lab[]
+  cut           cut[]
+  dewar         dewar[]
+  elec          elec[]
+  gaschem       gaschem[]
+  gnb_labsto    gnb_labsto[]
+  haz_date      haz_date[]
+  irad          irad[]
+  labunpe       labunpe[]
+  laser         laser[]
+  mag           mag[]
+  mag_f         mag_f[]
+  nano          nano[]
+  naudits       naudits[]
+  nirad         nirad[]
+  noise         noise?
+  stolabunpe    stolabunpe[]
+  tdegree       tdegree[]
+
+  @@unique([building, sector, floor, lab], name: "unique_lab")
+  @@unique([sciper_lab, building, sector, floor, lab], name: "unique_labo")
+  @@index([id_labType], name: "id_labType")
+}
+
+model labType {
+  id_labType Int     @id @default(autoincrement())
+  labType    String? @db.VarChar(100)
+  lab        lab[]
+}
+
+model labunpe {
+  id_labunpe Int     @id @default(autoincrement())
+  id_lab     Int?
+  id_unit    Int?
+  id_person  Int?
+  lab        lab?    @relation(fields: [id_lab], references: [id_lab])
+  person     person? @relation(fields: [id_person], references: [id_person])
+  unit       unit?   @relation(fields: [id_unit], references: [id_unit])
+
+  @@unique([id_lab, id_unit, id_person], name: "unique_labunpe")
+  @@index([id_lab], name: "id_lab")
+  @@index([id_person], name: "id_person")
+  @@index([id_unit], name: "id_unit")
+}
+
+model laser {
+  id_laser        Int     @id @default(autoincrement())
+  id_lab          Int?
+  laser_class     String? @db.Char(2)
+  laser_mode      String? @db.VarChar(20)
+  laser_wave      Float?
+  laser_power     Float?
+  laser_energy    Float?
+  laser_pulse     Float?
+  laser_frequency Float?
+  comment         String? @db.VarChar(300)
+  lab             lab?    @relation(fields: [id_lab], references: [id_lab])
+
+  @@index([id_lab], name: "id_lab")
+}
+
+model log_manif {
+  id_log_manif Int      @id @default(autoincrement())
+  id_nature    Int
+  id_author    Int
+  id_editor    Int
+  id_shared    Int?
+  title        String   @db.VarChar(100)
+  place        String   @db.VarChar(100)
+  description  String   @db.VarChar(1000)
+  date_event   DateTime @db.DateTime(0)
+  date_created DateTime @db.DateTime(0)
+  date_edited  DateTime @db.DateTime(0)
+
+  @@index([id_author], name: "id_author")
+  @@index([id_editor], name: "id_editor")
+  @@index([id_nature], name: "id_nature")
+  @@index([id_shared], name: "id_shared")
+}
+
+model log_manif_entity {
+  id_entity   Int     @id @default(autoincrement())
+  entity      String  @db.VarChar(20)
+  file_entity String? @db.VarChar(50)
+
+  @@unique([entity, file_entity], name: "unique_entity")
+}
+
+model log_manif_nature {
+  id_nature   Int     @id @default(autoincrement())
+  nature      String  @unique @db.VarChar(20)
+  file_nature String? @db.VarChar(50)
+}
+
+model log_manif_user {
+  id_user    Int     @id @default(autoincrement())
+  name_user  String  @unique @db.VarChar(100)
+  user_role  String  @db.VarChar(10)
+  id_entity  Int
+  ip_address String? @db.VarChar(16)
+
+  @@unique([name_user, user_role, id_entity], name: "unique_user_role_entity")
+  @@index([id_entity], name: "id_entity")
+}
+
+model mag {
+  id_mag      Int     @id @default(autoincrement())
+  id_lab      Int?
+  id_person   Int?
+  bmax        Float?
+  mag_comment String? @db.VarChar(500)
+  lab         lab?    @relation(fields: [id_lab], references: [id_lab])
+  person      person? @relation(fields: [id_person], references: [id_person])
+  mag_f       mag_f[]
+
+  @@index([id_lab], name: "id_lab")
+  @@index([id_person], name: "id_person")
+}
+
+model mag_f {
+  id_magf    Int     @id @default(autoincrement())
+  id_mag     Int
+  id_lab     Int
+  line       Float
+  line_place String? @db.Char(1)
+  lab        lab     @relation(fields: [id_lab], references: [id_lab])
+  mag        mag     @relation(fields: [id_mag], references: [id_mag])
+
+  @@unique([id_mag, id_lab, line], name: "magf_unique")
+  @@index([id_lab], name: "id_lab")
+  @@index([id_mag], name: "id_mag")
+}
+
+model migrations {
+  id         Int      @id @default(autoincrement())
+  name       String   @db.VarChar(96)
+  created_at DateTime @default(now()) @db.Timestamp(0)
+}
+
+model nano {
+  id_nano       Int     @id @default(autoincrement())
+  id_lab        Int?
+  nano_class    String? @db.VarChar(2)
+  nano_type     String? @db.VarChar(100)
+  nano_state    String? @db.VarChar(20)
+  nano_quantity Float?
+  nano_activity String? @db.VarChar(500)
+  lab           lab?    @relation(fields: [id_lab], references: [id_lab])
+
+  @@index([id_lab], name: "id_lab")
+}
+
+model naudits {
+  id_naudits Int    @id @default(autoincrement())
+  id_lab     Int?
+  score1     Float?
+  score2     Float?
+  score3     Float?
+  score4     Float?
+  score5     Float?
+  score6     Float?
+  score7     Float?
+  score8     Float?
+  naudits    Float?
+  lab        lab?   @relation(fields: [id_lab], references: [id_lab])
+
+  @@index([id_lab], name: "id_lab")
+}
+
+model nirad {
+  id_nirad   Int     @id @default(autoincrement())
+  id_lab     Int?
+  nirad_type String? @db.Char(2)
+  source     String? @db.Char(1)
+  freq       Float?
+  e_field    Float?
+  h_field    Float?
+  b_field    Float?
+  power      Float?
+  lab        lab?    @relation(fields: [id_lab], references: [id_lab])
+
+  @@index([id_lab], name: "id_lab")
+}
+
+model noise {
+  id_noise Int    @id @default(autoincrement())
+  id_lab   Int?   @unique
+  lex      Float?
+  lpeak    Float?
+  lab      lab?   @relation(fields: [id_lab], references: [id_lab])
+
+  @@index([id_lab], name: "id_lab")
+}
+
+model person {
+  id_person              Int                @id @default(autoincrement())
+  sciper                 Int?               @unique
+  name_person            String?            @db.VarChar(60)
+  surname_person         String?            @db.VarChar(60)
+  email_person           String?            @db.VarChar(60)
+  aa_aa_id_cosecToperson aa[]               @relation("aa_id_cosecToperson")
+  aa_aa_id_headToperson  aa[]               @relation("aa_id_headToperson")
+  auth_dsps_holder       auth_dsps_holder[]
+  irad                   irad[]
+  irad_resp              irad_resp[]
+  labunpe                labunpe[]
+  mag                    mag[]
+  stolabunpe             stolabunpe[]
+  subunpro               subunpro[]
+
+  @@unique([name_person, surname_person, email_person], name: "unique_per")
+  @@unique([sciper, name_person, surname_person, email_person], name: "unique_person")
+}
+
+model personType {
+  id_personType Int     @id @default(autoincrement())
+  personType    String? @db.VarChar(50)
+}
+
+model stoPlace {
+  id_place Int       @id @default(autoincrement())
+  place    String?   @db.VarChar(30)
+  storage  storage[]
+}
+
+model stoPlace_catalyse {
+  id_stoPlace Int    @id @default(autoincrement())
+  stoPlace    String @db.VarChar(30)
+}
+
+model stoProperty {
+  id_stoProperty Int       @id @default(autoincrement())
+  stoProperty    String?   @db.VarChar(50)
+  storage        storage[]
+}
+
+model stoProperty_catalyse {
+  id_stoProperty Int    @id @default(autoincrement())
+  stoProperty    String @db.VarChar(50)
+}
+
+model stoType {
+  id_stoType Int       @id @default(autoincrement())
+  stoType    String?   @db.VarChar(20)
+  storage    storage[]
+}
+
+model stoType_catalyse {
+  id_stoType Int    @id @default(autoincrement())
+  stoType    String @db.VarChar(20)
+}
+
+model stolabunpe {
+  id_stolabunpe Int      @id @default(autoincrement())
+  id_storage    Int?
+  id_lab        Int?
+  id_unit       Int?
+  id_person     Int?
+  lab           lab?     @relation(fields: [id_lab], references: [id_lab])
+  person        person?  @relation(fields: [id_person], references: [id_person])
+  storage       storage? @relation(fields: [id_storage], references: [id_storage])
+  unit          unit?    @relation(fields: [id_unit], references: [id_unit])
+
+  @@unique([id_storage, id_lab, id_unit, id_person], name: "unique_stolabunpe")
+  @@index([id_lab], name: "id_lab")
+  @@index([id_person], name: "id_person")
+  @@index([id_storage], name: "id_storage")
+  @@index([id_unit], name: "id_unit")
+}
+
+model storage {
+  id_storage     Int          @id @default(autoincrement())
+  id_stoType     Int?
+  id_stoProperty Int?
+  barcode        String?      @db.VarChar(80)
+  id_place       Int?
+  content        String?      @db.Char(2)
+  stoPlace       stoPlace?    @relation(fields: [id_place], references: [id_place])
+  stoProperty    stoProperty? @relation(fields: [id_stoProperty], references: [id_stoProperty])
+  stoType        stoType?     @relation(fields: [id_stoType], references: [id_stoType])
+  auth_lab       auth_lab[]
+  cad_corr       cad_corr[]
+  gaschem        gaschem[]
+  gnb_labsto     gnb_labsto[]
+  stolabunpe     stolabunpe[]
+
+  @@index([id_place], name: "id_place")
+  @@index([id_stoProperty], name: "id_stoProperty")
+  @@index([id_stoType], name: "id_stoType")
+}
+
+model storage_catalyse {
+  id_storage     Int      @id @default(autoincrement())
+  id_stoType     Int
+  id_stoProperty Int
+  id_stoPlace    Int
+  content        String   @db.Char(2)
+  barcode        String   @unique @db.VarChar(80)
+  lab_display    String   @db.VarChar(20)
+  sciper         Int
+  author         String   @db.VarChar(50)
+  date           DateTime @db.DateTime(0)
+
+  @@unique([barcode, lab_display], name: "unique_barcode")
+  @@index([id_stoPlace], name: "id_stoPlace")
+  @@index([id_stoProperty], name: "id_stoProperty")
+  @@index([id_stoType], name: "id_stoType")
+}
+
+model sub_storage_catalyse {
+  id_sub_storage      Int    @id @default(autoincrement())
+  id_storage          Int
+  sub_storage_barcode String @unique @db.VarChar(80)
+
+  @@unique([id_storage, sub_storage_barcode], name: "unique_sub_storage_barcode")
+}
+
+model subunpro {
+  id_subunpro Int     @id @default(autoincrement())
+  id_unit     Int?
+  id_person   Int?
+  id_subject  String? @db.Char(2)
+  person      person? @relation(fields: [id_person], references: [id_person])
+  unit        unit?   @relation(fields: [id_unit], references: [id_unit])
+
+  @@unique([id_unit, id_person], name: "unique_subunpro")
+  @@index([id_person], name: "id_person")
+  @@index([id_unit], name: "id_unit")
+}
+
+model tdegree {
+  id_tdegree    Int     @id @default(autoincrement())
+  id_lab        Int?
+  tdegree       Float?
+  tdegree_type  String? @db.Char(2)
+  tdegree_place String? @db.Char(1)
+  lab           lab?    @relation(fields: [id_lab], references: [id_lab])
+
+  @@index([id_lab], name: "id_lab")
+}
+
+model unit {
+  id_unit     Int          @id @default(autoincrement())
+  sciper_unit Int?         @unique
+  name_unit   String?      @db.VarChar(60)
+  id_institut Int?
+  institut    institut?    @relation(fields: [id_institut], references: [id_institut])
+  aa          aa[]
+  labunpe     labunpe[]
+  stolabunpe  stolabunpe[]
+  subunpro    subunpro[]
+
+  @@unique([name_unit, id_institut], name: "unique_un")
+  @@unique([sciper_unit, name_unit, id_institut], name: "unique_unit")
+  @@index([id_institut], name: "id_institut")
+}
+
+model user_catalyse {
+  id_user Int    @id @default(autoincrement())
+  sciper  Int    @unique
+  role    String @db.VarChar(15)
+
+  @@unique([sciper, role], name: "unique_role")
 }
