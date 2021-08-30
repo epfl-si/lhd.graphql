@@ -4,6 +4,7 @@
   "description": "GraphQL server for the LHD MySQL database",
   "main": "index.ts",
   "dependencies": {
+    "@prisma/client": "^2.30.2",
     "bignumber.js": "^9.0.0",
     "core-util-is": "^1.0.2",
     "debug": "^4.3.2",
