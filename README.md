@@ -4,7 +4,9 @@
 
 1. Read the instructions in `.env.example` and apply them to configure your `~/.ssh/config` and `.env`
 1. Ensure that an ssh tunnel is up and running to `dsps03`
-1. <pre>yarn</pre>
+1. <pre>yarn</pre><pre>yarn start</pre>
+
+💡 `yarn start --inspect-brk` also work.
 
 ## Browse the data set with Prisma studio
 

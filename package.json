@@ -33,6 +33,7 @@
   },
   "scripts": {
     "prepublish": "prisma generate",
+    "start": "sh -c 'node \"$@\" -r ts-node/register index.ts' -- ",
     "test": "mocha -r ts-node/register --exclude 'tests/testlib/**' 'tests/**/*.ts'"
   },
   "keywords": [
