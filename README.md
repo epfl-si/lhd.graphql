@@ -8,6 +8,4 @@
 
 💡 `yarn start --inspect-brk` also work.
 
-## Browse the data set with Prisma studio
-
-Run `npx prisma studio`.
+[More developer instructions](DEVELOPING.md)
