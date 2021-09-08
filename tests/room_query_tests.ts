@@ -1,5 +1,6 @@
 import 'mocha'
 import * as assert from 'assert'
+import { Prisma } from '@prisma/client'
 
 import {
   makeServer,
@@ -20,8 +21,14 @@ describe("`rooms` query", () => {
   let client : GraphQLClient<Room>
   function q(params: QueryParams) { return queryRooms(client, params) }
 
+  const queries : Array<Prisma.QueryEvent> = []
+  function onQuery(q) {
+    queries.push(q)
+  }
+  afterEach(() => queries.splice(0, queries.length))
+
   before(async () => {
-    server = makeServer(configFromDotEnv())
+    server = makeServer(configFromDotEnv(), { onQuery })
     const serverInfo = await server.listen(0)
     port = serverInfo.port as number
     console.log(`Test server listening on port ${port}`)
@@ -51,12 +58,19 @@ describe("`rooms` query", () => {
       assert(rooms.length < 10)
       rooms = await q({building: "ZZ"})
       assert.equal(0, rooms.length)
+
+      assert(queries.some((q) => q.query.includes(' WHERE ')))
+      assert(! queries.some((q) => q.query.includes(' JOIN ')))
+      assert(! queries.some((q) => q.query.includes(' AND ')))
     })
 
     it("filters by building `AND` floor", async () => {
       const rooms : Array<Room> = await q({building: "BC", floor: "3"})
       assert(rooms.length >= 1)
       assert(rooms.length < 5)
+
+      assert(queries.some((q) => q.query.includes(' WHERE ')))
+      assert(queries.some((q) => q.query.includes(' AND ')))
     })
 
     it("filters by sector", async () => {
@@ -86,6 +100,8 @@ describe("`rooms` query", () => {
     const svRooms = await q({building: { equals: "SV"}})
     const svRoomsWithRadioactiveHazard = await q({ building: { equals: "SV"}, nirad: {some: {} }})
     assert(svRoomsWithRadioactiveHazard.length < svRooms.length)
+
+    assert(queries.some((q) => q.query.includes(' JOIN ')))
   })
 
   it("paginates")

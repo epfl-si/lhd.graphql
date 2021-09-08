@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { Prisma, PrismaClient } from '@prisma/client'
 import { ApolloServer } from 'apollo-server'
 import { PluginDefinition } from 'apollo-server-core'
 
@@ -6,8 +6,25 @@ import * as dotenv from 'dotenv'
 
 import { schema } from './nexus/schema'
 
-export function makeServer(config: BackendConfig) : ApolloServer {
-  const prisma = new PrismaClient({datasources: {db: {url: config.LHD_DB_URL}}})
+type TestInjections = {
+  onQuery ?: (q: Prisma.QueryEvent) => void
+}
+
+export function makeServer(config: BackendConfig,
+                           { onQuery }: TestInjections = {}) : ApolloServer {
+  const onQueryParams: Prisma.PrismaClientOptions = {}
+  if (onQuery) {
+    onQueryParams.log = [{ level: "query", emit: "event" }]
+  }
+
+  const prisma = new PrismaClient({
+    datasources: {db: {url: config.LHD_DB_URL}},
+    ...onQueryParams
+  })
+
+  if (onQuery) {
+    (prisma as any).$on("query", onQuery)
+  }
 
   return new ApolloServer({
     context: () => ({ prisma }),
