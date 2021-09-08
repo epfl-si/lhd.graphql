@@ -58,8 +58,7 @@
 import * as path from 'path'
 
 import { makeSchema } from 'nexus'
-// We use the old plug-in *in addition to* the new one for t.crud():
-import { nexusPrisma } from '@kenchi/nexus-plugin-prisma'
+import { NexusPrismaCRUDPlugin } from './prisma_crud_plugin'
 
 import * as roomTypes from '../schema/rooms'
 
@@ -71,40 +70,14 @@ const shouldGenerateArtifacts = !! process.env.DO_TYPEGEN
 
 export const schema = makeSchema({
   shouldGenerateArtifacts,
-  plugins: [
-    // This is the “old” @kenchi/nexus-plugin-prisma, which is implemented as a
-    // Nexus plug-in (or more precisely, masquerades as one - More on that
-    // below). The “new” plug-in is implemented as a Prisma code generator
-    // instead (invoked by `../prisma/schema.prisma`, and therefore nowhere to be
-    // seen in this here `schema.ts` file)
-    nexusPrisma({
-      experimentalCRUD: true,          // `.crud()` is the feature we need the
-                                       // “old” plug-in for — the new one doesn't
-                                       // have something equivalent yet.
-
-      shouldGenerateArtifacts,   // So as to get `.crud.rooms() ` etc. to type-check
-      // Long story short, the implementation of the `.crud.rooms()`
-      // feature, as documented at
-      // https://nexusjs.org/docs/plugins/prisma/overview is *not*
-      // something that fits nicely within the vision of the Nexus API
-      // and build-time typegen workflow — Specially the `.rooms()`
-      // part. This appears to be at least part of what is alluded to
-      // as “technical debt” at the top of
-      // https://github.com/graphql-nexus/nexus-plugin-prisma/issues/1039,
-      // and no doubt, a driving reason why they opted for a different
-      // approach in the rewrite (i.e. as a Prisma code generator
-      // instead of a Nexus plug-in). In the meanwhile, we have to
-      // live with the knowledge that `shouldGenerateArtifacts: true`,
-      // as the name implies, results in an additional typegen file
-      // being generated
-      // (`node_modules/@types/typegen-nexus-prisma/index.d.ts`) when
-      // this script runs in DO_TYPEGEN mode.
-    })
-  ],
   outputs: {
     // We are here to chew gum and output typegens, and we are all out of gum.
     typegen: path.join(__dirname, '../node_modules/@types/typegen-nexus/index.d.ts')
   },
+  plugins: [
+    // Note: this plugin also outputs a typegen (but doesn't let us choose where)
+    NexusPrismaCRUDPlugin({ shouldGenerateArtifacts })
+  ],
 
   // The actual payload (which is also useful at run-time):
   types: [roomTypes]
