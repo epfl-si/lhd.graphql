@@ -39,7 +39,8 @@ describe("End-to-end tests", () => {
     await server.stop()
   })
 
-  it("serves", async () => {
+  it("serves", async function() {
+    this.timeout(10000)
     const rooms = await q({})
     assert(rooms.length > 9)
 
