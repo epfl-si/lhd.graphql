@@ -473,6 +473,7 @@ model Room {
   @@map("lab")
 
   id_lab        Int             @id @default(autoincrement())
+  name          String?         @db.VarChar(20) @map("lab_display")
   sciper_lab    Int?            @unique
   building      String          @db.VarChar(5)
   sector        String?         @db.VarChar(5)
@@ -483,7 +484,6 @@ model Room {
   location      String?         @db.VarChar(10)
   vol           Float?
   vent          String?         @db.Char(1)
-  lab_display   String?         @db.VarChar(20)
   kind          RoomKind?        @relation(fields: [id_labType], references: [id_labType])
   aa            aa[]
   auth_dsps_lab auth_dsps_lab[]

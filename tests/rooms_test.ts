@@ -9,11 +9,14 @@ import {
 import { graphqlClient, GraphQLClient, asGraphQL } from './testlib/graphql'
 
 type Room = {
+  name: string
+  site: string
+  catalyseType : string | null
   building: string
   floor: string
   sector: string
   roomNo: string
-  kind : { name: string }
+  kind : { name: string | null }
 }
 
 describe("End-to-end tests", () => {
@@ -43,17 +46,22 @@ describe("End-to-end tests", () => {
     this.timeout(10000)
     const rooms = await q({})
     assert(rooms.length > 9)
-
-    for (const room of rooms) {
-      const roomJSON = JSON.stringify(room)
-      assert(room.building,            `bad building: ${roomJSON}`)
-      assert(room.sector != undefined, `bad sector: ${roomJSON}`)
-      assert(room.floor != undefined,  `bad floor: ${roomJSON}`)
-      assert(room.roomNo,              `bad roomNo: ${roomJSON}`)
-    }
   })
 
   describe("`room` type and queries", () => {
+    it("has all the fields", async () => {
+      const svRooms = await q({building: { equals: "SV"}})
+      for (const room of svRooms) {
+        const roomJSON = JSON.stringify(room)
+        assert(room.name,                `bad name: ${roomJSON}`)
+        assert(room.site,                `bad site: ${roomJSON}`)
+        assert(room.building,            `bad building: ${roomJSON}`)
+        assert(room.sector != undefined, `bad sector: ${roomJSON}`)
+        assert(room.floor != undefined,  `bad floor: ${roomJSON}`)
+        assert(room.roomNo,              `bad roomNo: ${roomJSON}`)
+      }
+      assert(svRooms.some((r) => !! r.catalyseType))
+    })
 
     describe("filtering", () => {
       it("filters by building", async () => {
@@ -170,6 +178,9 @@ async function queryRooms(client : GraphQLClient<Room>, params: QueryParams) : P
   }
 
   return client.query(`{ rooms (where : ${asGraphQL(params)}) {
+        name
+        catalyseType
+        site
         building
         sector
         floor
