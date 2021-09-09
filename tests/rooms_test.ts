@@ -117,6 +117,22 @@ describe("End-to-end tests", () => {
         assert.equal(1, svWashRooms.length)
         assert.equal("Washing room", svWashRooms[0].kind.name)
       })
+
+      it("doesn't make N+1 queries", async () => {
+        const svRooms = await q({building: { equals: "SV"}})
+        assert(svRooms.length > 9)
+
+        const kinds : { [id : string] : number } = {}
+        for (const room of svRooms) {
+          const k = room.kind?.name
+          kinds[k] = kinds[k] ? kinds[k] + 1 : 1
+        }
+        const kindCount = Object.keys(kinds).length
+        assert(kindCount > 5)
+
+        assert(queries.length < kindCount)
+        assert(queries.some((q) => q.query.includes(' IN (')))
+      })
     })
 
     it("paginates")
