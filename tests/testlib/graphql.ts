@@ -36,3 +36,7 @@ export function graphqlClient<TRecord>(port: number) : GraphQLClient<TRecord> {
     }
   }
 }
+
+export function asGraphQL (whereClause : any) {
+  return JSON.stringify(whereClause).replace(/"([^"]*)":/g, (_match, $1) => $1+ ": ")
+}

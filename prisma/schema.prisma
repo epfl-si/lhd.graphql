@@ -484,7 +484,7 @@ model Room {
   vol           Float?
   vent          String?         @db.Char(1)
   lab_display   String?         @db.VarChar(20)
-  labType       labType?        @relation(fields: [id_labType], references: [id_labType])
+  kind          RoomKind?        @relation(fields: [id_labType], references: [id_labType])
   aa            aa[]
   auth_dsps_lab auth_dsps_lab[]
   auth_lab      auth_lab[]
@@ -514,9 +514,11 @@ model Room {
   @@index([id_labType], name: "id_labType")
 }
 
-model labType {
-  id_labType Int     @id @default(autoincrement())
-  labType    String? @db.VarChar(100)
+model RoomKind {
+  @@map("labType")
+
+  id_labType Int      @id @default(autoincrement())
+  name        String? @db.VarChar(100) @map("labType")
   Room        Room[]
 }
 
