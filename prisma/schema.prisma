@@ -1,3 +1,6 @@
+// Prisma schema for the LHD MySQL database
+// Run `yarn` after each change
+
 generator client {
   provider = "prisma-client-js"
 }
