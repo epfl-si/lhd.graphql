@@ -32,7 +32,7 @@ export const CatalyseTypeEnum = enumType({
 export const RoomStruct = objectType({
   name: Room.$name,
   definition(t) {
-    for (const f of ["name", "building", "sector", "floor", "roomNo", "kind"]) {
+    for (const f of ["id", "name", "building", "sector", "floor", "roomNo", "kind"]) {
       t.field(Room[f])
     }
 

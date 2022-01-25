@@ -28,7 +28,7 @@ model aa {
   flag                       Boolean?
   person_aa_id_cosecToperson person   @relation("aa_id_cosecToperson", fields: [id_cosec], references: [id_person])
   person_aa_id_headToperson  person   @relation("aa_id_headToperson", fields: [id_head], references: [id_person])
-  Room                        Room      @relation(fields: [id_lab], references: [id_lab])
+  Room                        Room      @relation(fields: [id_lab], references: [id])
   unit                       unit     @relation(fields: [id_unit], references: [id_unit])
 
   @@index([id_cosec], name: "id_cosec")
@@ -102,7 +102,7 @@ model auth_dsps_lab {
   id_auth_dsps_version Int
   id_lab               Int
   auth_dsps_version    auth_dsps_version @relation(fields: [id_auth_dsps_version], references: [id_auth_dsps_version])
-  Room                  Room               @relation(fields: [id_lab], references: [id_lab])
+  Room                  Room               @relation(fields: [id_lab], references: [id])
 
   @@unique([id_lab, id_auth_dsps_version], name: "authlab")
   @@index([id_auth_dsps_version], name: "id_auth_dsps_version")
@@ -146,7 +146,7 @@ model auth_lab {
   id_lab      Int?
   id_storage  Int?
   auth_req    auth_req @relation(fields: [id_auth_req], references: [id_auth_req])
-  Room         Room?     @relation(fields: [id_lab], references: [id_lab])
+  Room         Room?     @relation(fields: [id_lab], references: [id])
   storage     storage? @relation(fields: [id_storage], references: [id_storage])
 
   @@index([id_auth_req], name: "id_auth_req")
@@ -197,7 +197,7 @@ model bio {
   id_lab      Int           @unique
   bio_level   Int
   comment     String?       @db.VarChar(2000)
-  Room         Room           @relation(fields: [id_lab], references: [id_lab])
+  Room         Room           @relation(fields: [id_lab], references: [id])
   bio_org_lab bio_org_lab[]
 
   @@index([id_lab], name: "id_lab")
@@ -229,7 +229,7 @@ model cad_corr {
   id_storage Int?
   id_haz     Int?
   score      Int?
-  Room        Room?     @relation(fields: [id_lab], references: [id_lab])
+  Room        Room?     @relation(fields: [id_lab], references: [id])
   storage    storage? @relation(fields: [id_storage], references: [id_storage])
 
   @@index([id_haz], name: "id_haz")
@@ -243,7 +243,7 @@ model cad_lab {
   id_haz Int?
   score  Int?
   haz    haz? @relation(fields: [id_haz], references: [id_haz])
-  Room    Room? @relation(fields: [id_lab], references: [id_lab])
+  Room    Room? @relation(fields: [id_lab], references: [id])
 
   @@index([id_haz], name: "id_haz")
   @@index([id_lab], name: "id_lab")
@@ -267,7 +267,7 @@ model cut {
   cut_hazard   String? @db.VarChar(500)
   cut_measure  String? @db.VarChar(500)
   cut_priority Int?
-  Room          Room?    @relation(fields: [id_lab], references: [id_lab])
+  Room          Room?    @relation(fields: [id_lab], references: [id])
 
   @@index([id_lab], name: "id_lab")
 }
@@ -293,7 +293,7 @@ model dewar {
   id_dewar Int     @id @default(autoincrement())
   id_lab   Int?
   comment  String? @db.VarChar(500)
-  Room      Room?    @relation(fields: [id_lab], references: [id_lab])
+  Room      Room?    @relation(fields: [id_lab], references: [id])
   cryo     cryo[]
 
   @@index([id_lab], name: "id_lab")
@@ -309,7 +309,7 @@ model elec {
   i_battery Float?
   state     Int?
   access    Int?
-  Room       Room?    @relation(fields: [id_lab], references: [id_lab])
+  Room       Room?    @relation(fields: [id_lab], references: [id])
 
   @@index([id_lab], name: "id_lab")
 }
@@ -345,7 +345,7 @@ model gaschem {
   id_haz     Int
   score      Int?
   haz        haz      @relation(fields: [id_haz], references: [id_haz])
-  Room        Room?     @relation(fields: [id_lab], references: [id_lab])
+  Room        Room?     @relation(fields: [id_lab], references: [id])
   storage    storage? @relation(fields: [id_storage], references: [id_storage])
 
   @@unique([id_lab, id_haz], name: "labhaz")
@@ -379,7 +379,7 @@ model gnb_labsto {
   id_storage Int?
   id_lab     Int?
   gnb        gnb?     @relation(fields: [id_gnb], references: [id_gnb])
-  Room        Room?     @relation(fields: [id_lab], references: [id_lab])
+  Room        Room?     @relation(fields: [id_lab], references: [id])
   storage    storage? @relation(fields: [id_storage], references: [id_storage])
 
   @@index([id_gnb], name: "id_gnb")
@@ -415,7 +415,7 @@ model haz_date {
   log_in_time     DateTime?    @db.DateTime(0)
   haz             haz?         @relation(fields: [id_haz], references: [id_haz])
   haz_category    haz_category @relation(fields: [id_haz_category], references: [id_haz_category])
-  Room             Room          @relation(fields: [id_lab], references: [id_lab])
+  Room             Room          @relation(fields: [id_lab], references: [id])
 
   @@index([id_haz], name: "id_haz")
   @@index([id_haz_category], name: "id_haz_category")
@@ -451,7 +451,7 @@ model irad {
   irad_state_authorisation  String?   @db.VarChar(20)
   irad_exdate_authorisation DateTime? @db.Date
   irad_comment              String?   @db.VarChar(200)
-  Room                       Room?      @relation(fields: [id_lab], references: [id_lab])
+  Room                       Room?      @relation(fields: [id_lab], references: [id])
   person                    person?   @relation(fields: [id_person], references: [id_person])
 
   @@index([id_lab], name: "id_lab")
@@ -527,7 +527,7 @@ model labunpe {
   id_lab     Int?
   id_unit    Int?
   id_person  Int?
-  Room        Room?    @relation(fields: [id_lab], references: [id_lab])
+  room        Room?    @relation(fields: [id_lab], references: [id])
   person     person? @relation(fields: [id_person], references: [id_person])
   unit       unit?   @relation(fields: [id_unit], references: [id_unit])
 
@@ -548,7 +548,7 @@ model laser {
   laser_pulse     Float?
   laser_frequency Float?
   comment         String? @db.VarChar(300)
-  Room             Room?    @relation(fields: [id_lab], references: [id_lab])
+  Room             Room?    @relation(fields: [id_lab], references: [id])
 
   @@index([id_lab], name: "id_lab")
 }
@@ -603,7 +603,7 @@ model mag {
   id_person   Int?
   bmax        Float?
   mag_comment String? @db.VarChar(500)
-  Room         Room?    @relation(fields: [id_lab], references: [id_lab])
+  Room         Room?    @relation(fields: [id_lab], references: [id])
   person      person? @relation(fields: [id_person], references: [id_person])
   mag_f       mag_f[]
 
@@ -617,7 +617,7 @@ model mag_f {
   id_lab     Int
   line       Float
   line_place String? @db.Char(1)
-  Room        Room     @relation(fields: [id_lab], references: [id_lab])
+  Room        Room     @relation(fields: [id_lab], references: [id])
   mag        mag     @relation(fields: [id_mag], references: [id_mag])
 
   @@unique([id_mag, id_lab, line], name: "magf_unique")
@@ -639,7 +639,7 @@ model nano {
   nano_state    String? @db.VarChar(20)
   nano_quantity Float?
   nano_activity String? @db.VarChar(500)
-  Room           Room?    @relation(fields: [id_lab], references: [id_lab])
+  Room           Room?    @relation(fields: [id_lab], references: [id])
 
   @@index([id_lab], name: "id_lab")
 }
@@ -656,7 +656,7 @@ model naudits {
   score7     Float?
   score8     Float?
   naudits    Float?
-  Room        Room?   @relation(fields: [id_lab], references: [id_lab])
+  Room        Room?   @relation(fields: [id_lab], references: [id])
 
   @@index([id_lab], name: "id_lab")
 }
@@ -671,7 +671,7 @@ model nirad {
   h_field    Float?
   b_field    Float?
   power      Float?
-  Room        Room?    @relation(fields: [id_lab], references: [id_lab])
+  Room        Room?    @relation(fields: [id_lab], references: [id])
 
   @@index([id_lab], name: "id_lab")
 }
@@ -681,7 +681,7 @@ model noise {
   id_lab   Int?   @unique
   lex      Float?
   lpeak    Float?
-  Room      Room?   @relation(fields: [id_lab], references: [id_lab])
+  Room      Room?   @relation(fields: [id_lab], references: [id])
 
   @@index([id_lab], name: "id_lab")
 }
@@ -750,7 +750,7 @@ model stolabunpe {
   id_lab        Int?
   id_unit       Int?
   id_person     Int?
-  Room           Room?     @relation(fields: [id_lab], references: [id_lab])
+  Room           Room?     @relation(fields: [id_lab], references: [id])
   person        person?  @relation(fields: [id_person], references: [id_person])
   storage       storage? @relation(fields: [id_storage], references: [id_storage])
   unit          unit?    @relation(fields: [id_unit], references: [id_unit])
@@ -828,7 +828,7 @@ model tdegree {
   tdegree       Float?
   tdegree_type  String? @db.Char(2)
   tdegree_place String? @db.Char(1)
-  Room           Room?    @relation(fields: [id_lab], references: [id_lab])
+  Room           Room?    @relation(fields: [id_lab], references: [id])
 
   @@index([id_lab], name: "id_lab")
 }
