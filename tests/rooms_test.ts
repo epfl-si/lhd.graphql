@@ -12,7 +12,7 @@ type Room = {
   floor: string
   sector: string
   roomNo: string
-  kind : { name: string | null }
+  kind? : { name: string | null }
 }
 
 describe("End-to-end tests", () => {
@@ -23,7 +23,7 @@ describe("End-to-end tests", () => {
   afterEach(() => queries.splice(0, queries.length))
 
   let client = useTestServer<Room>({ before, after, onQuery })
-  function q(params: QueryParams) { return queryRooms(client(), params) }
+  function q(params: QueryParams, queryMore?: string) { return queryRooms(client(), params, queryMore) }
 
   it("serves", async function() {
     this.timeout(10000)
@@ -104,13 +104,13 @@ describe("End-to-end tests", () => {
         const svWashRooms = await q({
           building: { equals: "SV" },
           roomNo: { equals: "1522" }
-        })
+        }, 'kind { name }')
         assert.equal(1, svWashRooms.length)
         assert.equal("Washing room", svWashRooms[0].kind.name)
       })
 
       it("doesn't make N+1 queries", async () => {
-        const svRooms = await q({building: { equals: "SV"}})
+        const svRooms = await q({building: { equals: "SV"}}, 'kind { name }')
         assert(svRooms.length > 9)
 
         const kinds : { [id : string] : number } = {}
@@ -153,7 +153,8 @@ type QueryParams = {
   nirad    ?: QueryJoinField
 }
 
-async function queryRooms(client : GraphQLClient<Room>, params: QueryParams) : Promise< Array<Room> > {
+async function queryRooms(client : GraphQLClient<Room>, params: QueryParams, queryMore?: string) : Promise< Array<Room> > {
+  if (! queryMore) queryMore = ''
   for (const k of ["building", "nirad", "sector", "floor", "roomNo"]) {
     if (typeof(params[k]) === "string") {
       params[k] = { "equals": params[k] }
@@ -168,6 +169,6 @@ async function queryRooms(client : GraphQLClient<Room>, params: QueryParams) : P
         sector
         floor
         roomNo
-        kind { name }
+        ${queryMore}
   } }`)
 }
