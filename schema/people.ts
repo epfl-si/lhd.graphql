@@ -12,8 +12,9 @@ export const PersonStruct = objectType({
 });
 
 export const PersonQuery = extendType({
-	type: 'Query',
-	definition(t) {
-		t.crud.people({ filtering: true });
-	},
-});
+  type: 'Query',
+  definition(t) {
+    t.crud.people({ filtering: true });
+  }
+  // TODO: filter out person with person ID 158 (“Not Available”)
+})
