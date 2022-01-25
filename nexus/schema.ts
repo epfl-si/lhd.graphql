@@ -55,30 +55,31 @@
 // the Nexus plug-in API and kind of oversteps them (more on that
 // below)
 
-import * as path from 'path'
+import * as path from 'path';
 
-import { makeSchema } from 'nexus'
-import { NexusPrismaCRUDPlugin } from './prisma_crud_plugin'
+import { makeSchema } from 'nexus';
+import { NexusPrismaCRUDPlugin } from './prisma_crud_plugin';
 
-import * as roomTypes from '../schema/rooms'
+import * as roomTypes from '../schema/rooms';
+import * as peopleTypes from '../schema/people';
 
 // No user-serviceable parts below /////////////////////////////////////////////////
 //
 // ... Or if you must, refer to https://github.com/graphql-nexus/nexus-plugin-prisma/issues/769#issuecomment-754279309
 
-const shouldGenerateArtifacts = !! process.env.DO_TYPEGEN
+const shouldGenerateArtifacts = !!process.env.DO_TYPEGEN;
 
 export const schema = makeSchema({
-  shouldGenerateArtifacts,
-  outputs: {
-    // We are here to chew gum and output typegens, and we are all out of gum.
-    typegen: path.join(__dirname, '../node_modules/@types/typegen-nexus/index.d.ts')
-  },
-  plugins: [
-    // Note: this plugin also outputs a typegen (but doesn't let us choose where)
-    NexusPrismaCRUDPlugin({ shouldGenerateArtifacts })
-  ],
+	shouldGenerateArtifacts,
+	outputs: {
+		// We are here to chew gum and output typegens, and we are all out of gum.
+		typegen: path.join(__dirname, '../node_modules/@types/typegen-nexus/index.d.ts'),
+	},
+	plugins: [
+		// Note: this plugin also outputs a typegen (but doesn't let us choose where)
+		NexusPrismaCRUDPlugin({ shouldGenerateArtifacts }),
+	],
 
-  // The actual payload (which is also useful at run-time):
-  types: [roomTypes]
-})
+	// The actual payload (which is also useful at run-time):
+	types: [roomTypes, peopleTypes],
+});
