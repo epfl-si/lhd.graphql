@@ -61,6 +61,13 @@ export const RoomStruct = objectType({
         return null
       }
     })
+
+    t.nonNull.list.nonNull.field('occupancies', {
+      type: 'Occupancy',
+      resolve: async (parent, _, context) => {
+        return await context.prisma.labunpe.findMany({where: {id_lab: parent.id }, include: { room: true }})
+      }
+    })
   }
 })
 

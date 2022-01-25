@@ -472,7 +472,7 @@ model irad_resp {
 model Room {
   @@map("lab")
 
-  id_lab        Int             @id @default(autoincrement())
+  id            Int             @id @default(autoincrement()) @map("id_lab")
   name          String?         @db.VarChar(20) @map("lab_display")
   sciper_lab    Int?            @unique
   building      String          @db.VarChar(5)

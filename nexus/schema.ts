@@ -62,6 +62,7 @@ import { NexusPrismaCRUDPlugin } from './prisma_crud_plugin';
 
 import * as roomTypes from '../schema/rooms';
 import * as peopleTypes from '../schema/people';
+import * as occupancyTypes from '../schema/occupancies';
 
 // No user-serviceable parts below /////////////////////////////////////////////////
 //
@@ -81,5 +82,5 @@ export const schema = makeSchema({
 	],
 
 	// The actual payload (which is also useful at run-time):
-	types: [roomTypes, peopleTypes],
+	types: [roomTypes, peopleTypes, occupancyTypes],
 });
