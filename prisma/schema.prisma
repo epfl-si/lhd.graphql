@@ -689,9 +689,9 @@ model noise {
 model person {
   id_person              Int                @id @default(autoincrement())
   sciper                 Int?               @unique
-  name_person            String?            @db.VarChar(60)
-  surname_person         String?            @db.VarChar(60)
-  email_person           String?            @db.VarChar(60)
+  name                   String?            @db.VarChar(60) @map("name_person")
+  surname                String?            @db.VarChar(60) @map("surname_person")
+  email                  String?            @db.VarChar(60) @map("email_person")
   aa_aa_id_cosecToperson aa[]               @relation("aa_id_cosecToperson")
   aa_aa_id_headToperson  aa[]               @relation("aa_id_headToperson")
   auth_dsps_holder       auth_dsps_holder[]
@@ -702,8 +702,8 @@ model person {
   stolabunpe             stolabunpe[]
   subunpro               subunpro[]
 
-  @@unique([name_person, surname_person, email_person], name: "unique_per")
-  @@unique([sciper, name_person, surname_person, email_person], name: "unique_person")
+  @@unique([name, surname, email], name: "unique_per")
+  @@unique([sciper, name, surname, email], name: "unique_person")
 }
 
 model personType {
