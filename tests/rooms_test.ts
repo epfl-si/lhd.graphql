@@ -2,11 +2,7 @@ import 'mocha'
 import * as assert from 'assert'
 import { Prisma } from '@prisma/client'
 
-import {
-  makeServer,
-  configFromDotEnv  // Hermetic tests for a brown-field DB are hard mmkay
-} from '../server'
-import { graphqlClient, GraphQLClient, asGraphQL } from './testlib/graphql'
+import { GraphQLClient, asGraphQL, useTestServer } from './testlib/graphql'
 
 type Room = {
   name: string
@@ -20,27 +16,14 @@ type Room = {
 }
 
 describe("End-to-end tests", () => {
-  let server : ReturnType<typeof makeServer>
-  let port: number
-  let client : GraphQLClient<Room>
-  function q(params: QueryParams) { return queryRooms(client, params) }
-
   const queries : Array<Prisma.QueryEvent> = []
   function onQuery(q) {
     queries.push(q)
   }
   afterEach(() => queries.splice(0, queries.length))
 
-  before(async () => {
-    server = makeServer(configFromDotEnv(), { onQuery })
-    const serverInfo = await server.listen(0)
-    port = serverInfo.port as number
-    console.log(`Test server listening on port ${port}`)
-    client = graphqlClient(port)
-  })
-  after(async () => {
-    await server.stop()
-  })
+  let client = useTestServer<Room>({ before, after, onQuery })
+  function q(params: QueryParams) { return queryRooms(client(), params) }
 
   it("serves", async function() {
     this.timeout(10000)
@@ -148,7 +131,7 @@ describe("End-to-end tests", () => {
 
   describe('`roomKind` type and queries', () => {
     it('serves', async () => {
-      const roomKinds = await client.query(`{ roomKinds { name }}`)
+      const roomKinds = await client().query(`{ roomKinds { name }}`)
       assert(roomKinds.length > 9)
     })
   })

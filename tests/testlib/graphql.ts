@@ -7,6 +7,10 @@
 
 import fetch from 'node-fetch'
 import * as debug_ from 'debug'
+import {
+  makeServer,
+  configFromDotEnv  // Hermetic tests for a brown-field DB are hard mmkay
+} from '../../server'
 
 const debug = debug_('lhd-tests:graphql')
 
@@ -39,4 +43,22 @@ export function graphqlClient<TRecord>(port: number) : GraphQLClient<TRecord> {
 
 export function asGraphQL (whereClause : any) {
   return JSON.stringify(whereClause).replace(/"([^"]*)":/g, (_match, $1) => $1+ ": ")
+}
+
+export function useTestServer<TRecord>(opts: { before: any, after: any, onQuery?: any }) : () => GraphQLClient<TRecord> {
+  let port: number
+  let server: ReturnType<typeof makeServer>
+
+  let makeServerOpts = opts.onQuery ? { onQuery : opts.onQuery } : {}
+
+  opts.before(async () => {
+    server = makeServer(configFromDotEnv(), makeServerOpts)
+    const serverInfo = await server.listen(0)
+    port = serverInfo.port as number
+    console.log(`Test server listening on port ${port}`)
+  })
+  opts.after(async () => {
+    await server.stop()
+  })
+  return () => graphqlClient(port)
 }
