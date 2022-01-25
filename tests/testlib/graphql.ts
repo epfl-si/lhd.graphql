@@ -12,6 +12,9 @@ import {
   configFromDotEnv  // Hermetic tests for a brown-field DB are hard mmkay
 } from '../../server'
 
+import { HookFunction } from 'mocha'
+import { Prisma } from '@prisma/client'
+
 const debug = debug_('lhd-tests:graphql')
 
 export interface GraphQLClient<TRecord> {
@@ -45,7 +48,11 @@ export function asGraphQL (whereClause : any) {
   return JSON.stringify(whereClause).replace(/"([^"]*)":/g, (_match, $1) => $1+ ": ")
 }
 
-export function useTestServer<TRecord>(opts: { before: any, after: any, onQuery?: any }) : () => GraphQLClient<TRecord> {
+export function useTestServer<TRecord>(opts: {
+  before: HookFunction,
+  after: HookFunction,
+  onQuery?: (q: Prisma.QueryEvent) => void }
+) : () => GraphQLClient<TRecord> {
   let port: number
   let server: ReturnType<typeof makeServer>
 
