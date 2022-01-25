@@ -1,4 +1,4 @@
-import { enumType, objectType, extendType } from 'nexus';
+import { objectType, extendType } from 'nexus';
 import { person } from 'nexus-prisma';
 
 export const PersonStruct = objectType({
