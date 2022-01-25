@@ -527,8 +527,8 @@ model labunpe {
   id_lab     Int?
   id_unit    Int?
   id_person  Int?
-  room        Room?    @relation(fields: [id_lab], references: [id])
-  person     person? @relation(fields: [id_person], references: [id_person])
+  room       Room?    @relation(fields: [id_lab], references: [id])
+  cosec      person? @relation(fields: [id_person], references: [id_person])
   unit       unit?   @relation(fields: [id_unit], references: [id_unit])
 
   @@unique([id_lab, id_unit, id_person], name: "unique_labunpe")

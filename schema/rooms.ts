@@ -65,7 +65,18 @@ export const RoomStruct = objectType({
     t.nonNull.list.nonNull.field('occupancies', {
       type: 'Occupancy',
       resolve: async (parent, _, context) => {
-        return await context.prisma.labunpe.findMany({where: {id_lab: parent.id }, include: { room: true }})
+        interface Occupancies {
+          [key : string] : any  // TODO: improve
+        }
+        const occupancies : Occupancies = {}
+        for(const labunpe of await context.prisma.labunpe.findMany({
+          where: {id_lab: parent.id },
+          include: { room: true, cosec: true }
+        })) {
+          if (! occupancies[labunpe.room.id]) occupancies[labunpe.room.id] = { room: labunpe.room, cosecs: [] }
+          occupancies[labunpe.room.id].cosecs.push(labunpe.cosec)
+        }
+        return Object.values(occupancies).sort((a: any, b: any) => a.room.name.localeCompare(b.room.name))
       }
     })
   }

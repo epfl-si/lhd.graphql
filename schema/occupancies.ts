@@ -24,5 +24,6 @@ export const OccupancyStruct = objectType({
   definition(t) {
     t.field("room", { type: RoomStruct })
     t.field("professor", { type: PersonStruct })
+    t.nonNull.list.nonNull.field("cosecs", { type: PersonStruct })
   }
 })
