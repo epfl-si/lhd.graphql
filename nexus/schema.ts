@@ -48,7 +48,7 @@
 // https://www.npmjs.com/package/@kenchi/nexus-plugin-prisma .
 //
 // ² Said metadata consists of the Nexus types and queries written in
-// the Nexus JavaScript DSL in files under `../schema/**/*.ts and
+// the Nexus JavaScript DSL in files under `../schema/**/*.ts` and
 // `./queries/**/*.ts`, and the Prisma schema in
 // `../prisma/schema.prisma` written in a Prisma-specific IDL
 // language. The latter contains the `generator nexusPrisma` statement
