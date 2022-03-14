@@ -38,15 +38,17 @@
 // --transpile-only` (i.e. without type checks).
 //
 // ¹ Plugins, plural — There is a full-blown rewrite in progress (see
-// https://github.com/graphql-nexus/nexus-plugin-prisma/issues/1039).
-// For practical reasons (i.e. because the rewrite is not quite
+// https://github.com/graphql-nexus/nexus-plugin-prisma/issues/1039),
+// not to mention reimplementations from the ground up (such as
+// @paljs/nexus, see https://stackoverflow.com/a/64249735/435004). For
+// practical reasons (i.e. because the rewrite is not quite
 // feature-complete yet) we have to use both the new hotness,
 // https://www.npmjs.com/package/nexus-prisma and the old and busted
 // version, actually a maintained fork thereof, known as
 // https://www.npmjs.com/package/@kenchi/nexus-plugin-prisma .
 //
 // ² Said metadata consists of the Nexus types and queries written in
-// the Nexus JavaScript DSL in files under `../schema/**/*.ts and
+// the Nexus JavaScript DSL in files under `../schema/**/*.ts` and
 // `./queries/**/*.ts`, and the Prisma schema in
 // `../prisma/schema.prisma` written in a Prisma-specific IDL
 // language. The latter contains the `generator nexusPrisma` statement
