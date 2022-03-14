@@ -11,19 +11,20 @@
  * Room, a responsible Person, and has-many COSECs (also Persons).
  */
 
-import { objectType } from 'nexus'
-import { RoomStruct } from './rooms'
-import { PersonStruct } from './people'
-import { labunpe } from 'nexus-prisma'
+import { objectType } from 'nexus';
+import { RoomStruct } from './rooms';
+import { PersonStruct } from './people';
+import { labunpe } from 'nexus-prisma';
 
 /**
  * The abstract Occupancy type.
  */
 export const OccupancyStruct = objectType({
-  name: "Occupancy",
-  definition(t) {
-    t.field("room", { type: RoomStruct })
-    t.field("professor", { type: PersonStruct })
-    t.nonNull.list.nonNull.field("cosecs", { type: PersonStruct })
-  }
-})
+	name: 'Occupancy',
+	definition(t) {
+		t.field('room', { type: RoomStruct });
+		t.field('professor', { type: PersonStruct });
+		t.field('unit', { type: UnitStruct });
+		t.nonNull.list.nonNull.field('cosecs', { type: PersonStruct });
+	},
+});
