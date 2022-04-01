@@ -4,7 +4,7 @@
 
 import { person, Room as roomStruct, unit } from '@prisma/client';
 import { enumType, objectType, extendType } from 'nexus';
-import { Room, RoomKind } from 'nexus-prisma';
+import { institut, Room, RoomKind } from 'nexus-prisma';
 
 const catalyseSpecialLocations = {
 	stockroom: [

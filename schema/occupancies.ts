@@ -14,7 +14,7 @@
 import { objectType } from 'nexus';
 import { RoomStruct } from './rooms';
 import { PersonStruct } from './people';
-import { labunpe } from 'nexus-prisma';
+import { UnitStruct } from './unit';
 
 /**
  * The abstract Occupancy type.
