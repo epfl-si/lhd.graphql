@@ -6,7 +6,6 @@ import { SubunproStruct } from './subunpro';
 export const UnitStruct = objectType({
 	name: unit.$name,
 	definition(t) {
-		t.field(unit.id_institut);
 		t.field(unit.name_unit);
 		t.field(unit.sciper_unit);
 		t.nonNull.field('institut', {
@@ -21,7 +20,7 @@ export const UnitStruct = objectType({
 			type: SubunproStruct,
 			resolve: async (parent, _, context) => {
 				return await context.prisma.subunpro.findFirst({
-					where: { id_unit: parent.id_unit },
+					where: { id_unit: parent.sciper_unit },
 				});
 			},
 		});
