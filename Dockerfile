@@ -18,6 +18,8 @@ RUN yarn
 
 # Copies everything over to Docker environment
 COPY . ./
+# Runs yarn a second time to generate types from the Prisma schema
+RUN yarn prepublish
 EXPOSE 3001
 # start app
 CMD ["yarn", "start"]
