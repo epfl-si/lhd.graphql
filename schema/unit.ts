@@ -12,7 +12,7 @@ export const UnitStruct = objectType({
 			type: InstitutStruct,
 			resolve: async (parent, _, context) => {
 				return await context.prisma.institut.findFirst({
-					where: { id_institut: parent.id_institut },
+					where: { id_institut: (parent as any).id_institut },
 				});
 			},
 		});
@@ -20,7 +20,7 @@ export const UnitStruct = objectType({
 			type: SubunproStruct,
 			resolve: async (parent, _, context) => {
 				return await context.prisma.subunpro.findFirst({
-					where: { id_unit: parent.sciper_unit },
+					where: { id_unit: (parent as any).id_unit },
 				});
 			},
 		});

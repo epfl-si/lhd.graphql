@@ -5,6 +5,8 @@
 import { person, Room as roomStruct, unit } from '@prisma/client';
 import { enumType, objectType, extendType } from 'nexus';
 import { institut, Room, RoomKind } from 'nexus-prisma';
+import { debug as debug_ } from 'debug';
+const debug = debug_('lhd:rooms');
 
 const catalyseSpecialLocations = {
 	stockroom: [
@@ -117,7 +119,7 @@ export const RoomStruct = objectType({
 					occupanciesListList
 				); /* used to be: Object.values(occupancies) */
 				// Return it sorted:
-				console.log(occupanciesFlatList);
+				debug(occupanciesFlatList);
 				return occupanciesFlatList.sort((a: any, b: any) =>
 					a.room.name.localeCompare(b.room.name)
 				);
