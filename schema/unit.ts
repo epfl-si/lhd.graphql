@@ -1,5 +1,5 @@
 import { objectType } from 'nexus';
-import { unit, subunpro } from 'nexus-prisma';
+import { unit } from 'nexus-prisma';
 import { InstitutStruct } from './instituts';
 import { SubunproStruct } from './subunpro';
 
@@ -26,11 +26,3 @@ export const UnitStruct = objectType({
 		});
 	},
 });
-
-// export const UnitQuery = extendType({
-// 	type: 'Query',
-// 	definition(t) {
-// 		t.crud.units({ filtering: true });
-// 	},
-// 	// TODO: filter out person with person ID 158 (“Not Available”)
-// });

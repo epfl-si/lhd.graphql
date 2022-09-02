@@ -4,7 +4,7 @@
 
 import { person, Room as roomStruct, unit } from '@prisma/client';
 import { enumType, objectType, extendType } from 'nexus';
-import { institut, Room, RoomKind } from 'nexus-prisma';
+import { Room, RoomKind } from 'nexus-prisma';
 import { debug as debug_ } from 'debug';
 const debug = debug_('lhd:rooms');
 
@@ -91,11 +91,6 @@ export const RoomStruct = objectType({
 					where: { id_lab: parent.id },
 					include: { room: true, cosec: true, unit: true },
 				})) {
-					/* Ça c'était quand la vie était simple, et qu'on ne collectait pas les unités... 
-					if (!occupancies[labunpe.room.id])
-						occupancies[labunpe.room.id] = { room: labunpe.room, cosecs: [], unit: labunpe.unit };
-					occupancies[labunpe.room.id].cosecs.push(labunpe.cosec);
-					*/
 					if (!occupancies[labunpe.room.id]) {
 						// If first-level key is empty, create it:
 						occupancies[labunpe.room.id] = {};
@@ -117,7 +112,7 @@ export const RoomStruct = objectType({
 				const occupanciesFlatList = Array.prototype.concat.apply(
 					[],
 					occupanciesListList
-				); /* used to be: Object.values(occupancies) */
+				);
 				// Return it sorted:
 				debug(occupanciesFlatList);
 				return occupanciesFlatList.sort((a: any, b: any) =>
