@@ -91,6 +91,7 @@ export const RoomStruct = objectType({
 					where: { id_lab: parent.id },
 					include: { room: true, cosec: true, unit: true },
 				})) {
+					if (labunpe.id_person === 185) continue;
 					if (!occupancies[labunpe.room.id]) {
 						// If first-level key is empty, create it:
 						occupancies[labunpe.room.id] = {};
