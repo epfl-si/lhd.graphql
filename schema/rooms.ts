@@ -92,7 +92,8 @@ export const RoomStruct = objectType({
 				// See https://www.prisma.io/docs/guides/performance-and-optimization/query-optimization-performance#solving-n1-in-graphql-with-findunique-and-prismas-dataloader
 				const room = await context.prisma.Room.findUnique({
 					where: { id: parent.id },
-					include: { labunpe: { include: { cosec: true, unit: true } } } });
+					include: { labunpe: { include: { cosec: true,
+								      unit: { include: { subunpro: { include: { person : true } } } } } } } });
 				for (const labunpe of room.labunpe) {
 					if (labunpe.id_person === 185) continue;
 					if (!occupancies[room.id]) {
@@ -100,16 +101,22 @@ export const RoomStruct = objectType({
 						occupancies[room.id] = {};
 					}
 					if (!occupancies[room.id][labunpe.unit.id]) {
+						// Ditto for second-level key:
 						occupancies[room.id][labunpe.unit.id] = {
 							room,
-							cosecs: [],
 							unit: labunpe.unit,
+							cosecs: [],
+							professors: {}
 						};
 					}
-					occupancies[room.id][labunpe.unit.id].cosecs.push(labunpe.cosec);
+					const occupancy = occupancies[room.id][labunpe.unit.id]
+					occupancy.cosecs.push(labunpe.cosec);
+					for (const subunpro of labunpe.unit.subunpro) {
+						occupancy.professors[subunpro.person.id_person] = subunpro.person;
+                                        }
 				}
 
-				// Shake out all Occupancy objects from the Occupancies temporary data structure:
+				// Shake out all Occupancy objects from the occupancies temporary data structure:
 				const occupanciesListList = Object.values(occupancies).map(l2 =>
 					Object.values(l2)
 				);
@@ -117,11 +124,11 @@ export const RoomStruct = objectType({
 					[],
 					occupanciesListList
 				);
-				// Return it sorted:
+				// Return the sorted list, with professors turned into lists as well:
 				debug(occupanciesFlatList);
 				return occupanciesFlatList.sort((a: any, b: any) =>
 					a.room.name.localeCompare(b.room.name)
-				);
+				).map((o : Occupancy) => ({...o, professors: Object.values(o.professors) }));
 			},
 		});
 	},
