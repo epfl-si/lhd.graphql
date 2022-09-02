@@ -78,6 +78,7 @@ export const RoomStruct = objectType({
 			resolve: async (parent, _, context) => {
 				interface Occupancy {
 					cosecs: person[];
+					professors: { [id : string ] : person };
 					room: roomStruct;
 					unit: unit;
 				}
