@@ -35,12 +35,12 @@ To observe “simple” (run-time) Nexus in action:
 1. Create a new file `foo.ts` anywhere and start typing<pre>import { Room } from '@prisma/client'</pre> You will get a warning regarding `Room` being unused (which you can fix by replacing `import` with `export`, if you like), but no errors
 1. Replace `Room` with something that doesn't exist, e.g. `Roomzor`. Now an error appears!
 
-There is black magic at play here: the types of `@prisma/client` aren't limited to just what came out of the `@prisma/client` NPM download. Rather, a build-time procedure (visible in the `scripts` section of [`package.json`](package.json)) creates additional TypeScript typings (and actually, TypeScript code as well) out of your project's Prisma schema. You can watch this mechanism at play like this:
+There is black magic at play here: the types of `@prisma/client` aren't limited to just what came out of the `@prisma/client` NPM download. Rather, a build-time procedure (that you can run manually with `yarn codegen`; see [`package.json`](package.json)) creates additional TypeScript typings (and actually, TypeScript code as well) out of your project's Prisma schema. You can watch this mechanism at play like this:
 
 <pre>
 ls -l node_modules/.prisma/client/index.d.ts
 rm node_modules/.prisma/client/index.d.ts
-yarn prisma:generate
+yarn codegen
 ls -l node_modules/.prisma/client/index.d.ts
 </pre>
 
@@ -59,7 +59,7 @@ yarn test --inspect-brk
 
 Then, open Chrome and navigate to `chrome://inspect`.
 
-As far as the other scripts are concerned (e.g. the typegen steps), the least intrusive way to pass `--inspect-brk` is through the `NODE_OPTIONS` environment variable — but be careful that you don't want to do that while using [npx](https://www.npmjs.com/package/npx) as that would cause a port conflict (whereby both `npx` itself, and then the actual debuggee you intended, would honor `NODE_OPTIONS` and try to `bind()` to the same local TCP port). You need to invoke the desired binary directly from the `./node_modules/.bin/` directory instead, e.g.
+As far as the other scripts (such as the `yarn codegen` steps) are concerned, the least intrusive way to pass `--inspect-brk` is through the `NODE_OPTIONS` environment variable — but be careful that you don't want to do that while using [npx](https://www.npmjs.com/package/npx) as that would cause a port conflict (whereby both `npx` itself, and then the actual debuggee you intended, would honor `NODE_OPTIONS` and try to `bind()` to the same local TCP port). You need to invoke the desired binary directly from the `./node_modules/.bin/` directory instead, e.g.
 
 ```
 NODE_OPTIONS=--inspect-brk ./node_modules/.bin/prisma generate

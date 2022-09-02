@@ -36,7 +36,8 @@
     "mocha": "^9.1.1"
   },
   "scripts": {
-    "prepublish": "yarn prisma:generate && yarn nexus:reflect",
+    "prepublish": "yarn codegen",
+    "codegen": "yarn prisma:generate && yarn nexus:reflect",
     "prisma:generate": "prisma generate",
     "nexus:reflect": "env DO_TYPEGEN=1 ts-node --transpile-only nexus/schema",
     "clean": "yarn nexus:clean",
