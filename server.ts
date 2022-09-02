@@ -19,17 +19,9 @@ export function makeServer(
 		onQueryParams.log = [{ level: 'query', emit: 'event' }];
 	}
 
-	// Found on https://github.com/prisma/prisma/issues/6088, and we really want Unix Sockets for security.
-	const unixDomainSocketParams = {
-		__internal: {
-			useUds: true,
-		},
-	} as ConstructorParameters<typeof PrismaClient>[0];
-
 	const prisma = new PrismaClient({
 		datasources: { db: { url: config.LHD_DB_URL } },
-		...unixDomainSocketParams,
-		...onQueryParams,
+		...onQueryParams
 	});
 
 	if (onQuery) {
