@@ -1,6 +1,7 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import { ApolloServer } from 'apollo-server';
 import { PluginDefinition } from 'apollo-server-core';
+import { debug } from 'debug';
 
 import * as dotenv from 'dotenv';
 
@@ -14,14 +15,16 @@ export function makeServer(
 	config: BackendConfig,
 	{ onQuery }: TestInjections = {}
 ): ApolloServer {
-	const onQueryParams: Prisma.PrismaClientOptions = {};
+	const clientOptions : Prisma.PrismaClientOptions = {};
 	if (onQuery) {
-		onQueryParams.log = [{ level: 'query', emit: 'event' }];
+		clientOptions.log = [{ level: 'query', emit: 'event' }];
+	} else if (debug.enabled("prisma:query")) {
+		clientOptions.log = [ 'query' ];
 	}
 
 	const prisma = new PrismaClient({
 		datasources: { db: { url: config.LHD_DB_URL } },
-		...onQueryParams
+		...clientOptions
 	});
 
 	if (onQuery) {

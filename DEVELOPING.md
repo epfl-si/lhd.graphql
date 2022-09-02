@@ -48,6 +48,12 @@ There is an equivalent `yarn nexus:reflect` command for Nexus-generated types un
 
 ## Cookbook
 
+### Logging SQL queries
+
+```
+DEBUG=prisma:query yarn start
+```
+
 ### Debugging the commands in the `scripts` section of `package.json`
 
 The `start` and `test` scripts have explicit support for debuggability through the [`--inspect-brk` flag](https://nodejs.org/en/docs/guides/debugging-getting-started/):
