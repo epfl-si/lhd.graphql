@@ -85,25 +85,27 @@ export const RoomStruct = objectType({
 					// “Dict” of Occupancy, keyed by the room ID
 					[roomID: string]: { [unitID: string]: Occupancy };
 				}
-
 				const occupancies: Occupancies = {};
-				for (const labunpe of await context.prisma.labunpe.findMany({
-					where: { id_lab: parent.id },
-					include: { room: true, cosec: true, unit: true },
-				})) {
+
+				// Do what it takes to use `findUnique()`, so as to achieve O(1) queries
+				// See https://www.prisma.io/docs/guides/performance-and-optimization/query-optimization-performance#solving-n1-in-graphql-with-findunique-and-prismas-dataloader
+				const room = await context.prisma.Room.findUnique({
+					where: { id: parent.id },
+					include: { labunpe: { include: { cosec: true, unit: true } } } });
+				for (const labunpe of room.labunpe) {
 					if (labunpe.id_person === 185) continue;
-					if (!occupancies[labunpe.room.id]) {
+					if (!occupancies[room.id]) {
 						// If first-level key is empty, create it:
-						occupancies[labunpe.room.id] = {};
+						occupancies[room.id] = {};
 					}
-					if (!occupancies[labunpe.room.id][labunpe.unit.id]) {
-						occupancies[labunpe.room.id][labunpe.unit.id] = {
-							room: labunpe.room,
+					if (!occupancies[room.id][labunpe.unit.id]) {
+						occupancies[room.id][labunpe.unit.id] = {
+							room,
 							cosecs: [],
 							unit: labunpe.unit,
 						};
 					}
-					occupancies[labunpe.room.id][labunpe.unit.id].cosecs.push(labunpe.cosec);
+					occupancies[room.id][labunpe.unit.id].cosecs.push(labunpe.cosec);
 				}
 
 				// Shake out all Occupancy objects from the Occupancies temporary data structure:

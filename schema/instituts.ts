@@ -10,7 +10,7 @@ export const InstitutStruct = objectType({
 		t.nonNull.field('faculty', {
 			type: FacultyStruct,
 			resolve: async (parent, _, context) => {
-				return await context.prisma.faculty.findFirst({
+				return await context.prisma.faculty.findUnique({
 					where: { id_faculty: parent.id_faculty },
 				});
 			},

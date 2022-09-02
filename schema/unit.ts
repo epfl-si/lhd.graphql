@@ -11,7 +11,7 @@ export const UnitStruct = objectType({
 		t.nonNull.field('institut', {
 			type: InstitutStruct,
 			resolve: async (parent, _, context) => {
-				return await context.prisma.institut.findFirst({
+				return await context.prisma.institut.findUnique({
 					where: { id_institut: parent.id_institut },
 				});
 			},
