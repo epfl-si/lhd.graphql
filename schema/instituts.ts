@@ -13,7 +13,7 @@ export const InstitutStruct = objectType({
 				//console.log(parent, _, context);
 				console.log(Object.keys(parent), Object.keys(_), Object.keys(context));
 				return await context.prisma.faculty.findFirst({
-					where: { id_faculty: (parent as any).id_faculty },
+					where: { id_faculty: parent.id_faculty },
 				});
 			},
 		});

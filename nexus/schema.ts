@@ -82,6 +82,14 @@ export const schema = makeSchema({
 		// Note: this plugin also outputs a typegen (but doesn't let us choose where)
 		NexusPrismaCRUDPlugin({ shouldGenerateArtifacts }),
 	],
+	sourceTypes: {
+		modules: [
+			{
+				module: require.resolve('.prisma/client/index.d.ts'),
+				alias: "prisma",
+			}
+		]
+	},
 
 	// The actual payload (which is also useful at run-time):
 	types: [roomTypes, peopleTypes, occupancyTypes],

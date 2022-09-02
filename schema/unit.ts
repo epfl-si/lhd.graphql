@@ -12,7 +12,7 @@ export const UnitStruct = objectType({
 			type: InstitutStruct,
 			resolve: async (parent, _, context) => {
 				return await context.prisma.institut.findFirst({
-					where: { id_institut: (parent as any).id_institut },
+					where: { id_institut: parent.id_institut },
 				});
 			},
 		});
