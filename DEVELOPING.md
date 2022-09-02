@@ -22,7 +22,7 @@ On top of that, [nexus-plugin-prisma](https://nexusjs.org/docs/plugins/prisma/ov
 To observe “simple” (run-time) Nexus in action:
 1. Run the test suite: <pre>yarn test</pre>A green bar is expected, otherwise see in [`README.md`](README.md) regarding setting up the ssh tunnel
 1. Open [`./schema/rooms.ts`](schema/rooms.ts) to take a look at what Nexus-style definitions for GraphQL types and queries look like
-1. Remove  `Room.building` from the `exposedFields` list and run the test suite again with debugging on: <pre>DEBUG=lhd-tests:'*' yarn test</pre> You should now be getting GraphQL errors with messages like `Cannot query field "building" on type "Room"`
+1. Remove  `Room.building` from the fields list next to `definition(t)` and run the test suite again with debugging on: <pre>DEBUG=lhd-tests:'*' yarn test</pre> You should now be getting GraphQL errors with messages like `Cannot query field "building" on type "Room"`
 1. Don't forget to revert the change before moving on
 
 💡 In the `./schema/rooms.ts` file we can see both the “new” Prisma plug-in in action (the line that `import`s from `'nexus-prisma'`) and the “old” one which is behind `t.crud`, which automagically takes care of querying, filtering and more for us.
