@@ -1,7 +1,6 @@
 import { objectType } from 'nexus';
 import { unit } from 'nexus-prisma';
 import { InstitutStruct } from './instituts';
-import { SubunproStruct } from './subunpro';
 
 export const UnitStruct = objectType({
 	name: unit.$name,
@@ -13,14 +12,6 @@ export const UnitStruct = objectType({
 			resolve: async (parent, _, context) => {
 				return await context.prisma.institut.findUnique({
 					where: { id_institut: parent.id_institut },
-				});
-			},
-		});
-		t.nonNull.field('subunpro', {
-			type: SubunproStruct,
-			resolve: async (parent, _, context) => {
-				return await context.prisma.subunpro.findFirst({
-					where: { id_unit: (parent as any).id_unit },
 				});
 			},
 		});
