@@ -11,10 +11,12 @@ export const PersonStruct = objectType({
 	},
 });
 
+export const nilPersonId = 185;  // Name is “Available.” “Not” Available.
+
 export const PersonQuery = extendType({
   type: 'Query',
   definition(t) {
     t.crud.people({ filtering: true });
   }
-  // TODO: filter out person with person ID 158 (“Not Available”)
+  // TODO: filter out nilPersonId
 })

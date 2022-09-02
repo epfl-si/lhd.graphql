@@ -2,7 +2,7 @@
  * GraphQL types and queries for Room's and RoomKind's
  */
 
-import { person, Room as roomStruct, unit } from '@prisma/client';
+import { Room as roomStruct, unit } from '@prisma/client';
 import { enumType, objectType, extendType } from 'nexus';
 import { Room, RoomKind } from 'nexus-prisma';
 import { debug as debug_ } from 'debug';
@@ -75,60 +75,28 @@ export const RoomStruct = objectType({
 
 		t.nonNull.list.nonNull.field('occupancies', {
 			type: 'Occupancy',
-			resolve: async (parent, _, context) => {
+			async resolve (parent, _, context) {
 				interface Occupancy {
-					cosecs: person[];
-					professors: { [id : string ] : person };
 					room: roomStruct;
 					unit: unit;
 				}
-				interface Occupancies {
-					// “Dict” of Occupancy, keyed by the room ID
-					[roomID: string]: { [unitID: string]: Occupancy };
-				}
-				const occupancies: Occupancies = {};
+				const occupancies: { [unitID: string] : Occupancy } = {};
 
-				// Do what it takes to use `findUnique()`, so as to achieve O(1) queries
-				// See https://www.prisma.io/docs/guides/performance-and-optimization/query-optimization-performance#solving-n1-in-graphql-with-findunique-and-prismas-dataloader
 				const room = await context.prisma.Room.findUnique({
 					where: { id: parent.id },
-					include: { labunpe: { include: { cosec: true,
-								      unit: { include: { subunpro: { include: { person : true } } } } } } } });
+					include: { labunpe: { include: { unit: true } } } });
 				for (const labunpe of room.labunpe) {
-					if (labunpe.id_person === 185) continue;
-					if (!occupancies[room.id]) {
-						// If first-level key is empty, create it:
-						occupancies[room.id] = {};
-					}
-					if (!occupancies[room.id][labunpe.unit.id]) {
-						// Ditto for second-level key:
-						occupancies[room.id][labunpe.unit.id] = {
-							room,
-							unit: labunpe.unit,
-							cosecs: [],
-							professors: {}
-						};
-					}
-					const occupancy = occupancies[room.id][labunpe.unit.id]
-					occupancy.cosecs.push(labunpe.cosec);
-					for (const subunpro of labunpe.unit.subunpro) {
-						occupancy.professors[subunpro.person.id_person] = subunpro.person;
-                                        }
+					const unit = labunpe.unit;
+					if (unit) {
+						occupancies[labunpe.unit.id_unit] = { room, unit };
+					};
 				}
 
-				// Shake out all Occupancy objects from the occupancies temporary data structure:
-				const occupanciesListList = Object.values(occupancies).map(l2 =>
-					Object.values(l2)
-				);
-				const occupanciesFlatList = Array.prototype.concat.apply(
-					[],
-					occupanciesListList
-				);
-				// Return the sorted list, with professors turned into lists as well:
-				debug(occupanciesFlatList);
-				return occupanciesFlatList.sort((a: any, b: any) =>
+				const occupanciesList = Object.values(occupancies).sort((a: any, b: any) =>
 					a.room.name.localeCompare(b.room.name)
-				).map((o : Occupancy) => ({...o, professors: Object.values(o.professors) }));
+				);
+				debug(occupanciesList);
+				return occupanciesList;
 			},
 		});
 	},
