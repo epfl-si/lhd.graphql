@@ -51,7 +51,7 @@ export async function makeServer(
 
 	await server.start();
 
-	server.applyMiddleware({ app });
+	server.applyMiddleware({ path: "/", app });
 
 	return httpServer;
 }
