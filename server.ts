@@ -3,7 +3,6 @@ import { ApolloServer } from 'apollo-server-express';
 import {
 	PluginDefinition,
 	ApolloServerPluginDrainHttpServer,
-	ApolloServerPluginLandingPageProductionDefault,
 } from 'apollo-server-core';
 import { debug } from 'debug';
 
@@ -51,7 +50,17 @@ export async function makeServer(
 
 	await server.start();
 
-	server.applyMiddleware({ path: "/", app });
+	app.use(express.json());
+	app.use(function(req, res, next) {
+		if (req.method === "POST" &&
+		    ! isHarmless(req) &&
+                    ! isLoggedIn(req)) {
+			res.send('{"no": "way"}');
+		} else {
+			next();
+		}
+	});
+	server.applyMiddleware({ path: "/", bodyParserConfig: false, app });
 
 	return httpServer;
 }
@@ -77,3 +86,16 @@ function onServerStop(cb: () => Promise<void>): PluginDefinition {
 		},
 	};
 }
+
+/**
+ * Whether a POST query is harmless.
+ *
+ * `IntrospectionQuery` GraphQL requests are presumed harmless;
+ * everything else returns `false`.
+ */
+function isHarmless(req : express.Request) : boolean {
+	const query = (req?.body?.query || "").trim();
+	return query.startsWith("query IntrospectionQuery");
+}
+
+function isLoggedIn (req) : boolean { return true; }
