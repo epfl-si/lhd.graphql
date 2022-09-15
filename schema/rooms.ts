@@ -34,6 +34,7 @@ export const CatalyseTypeEnum = enumType({
 
 export const RoomStruct = objectType({
 	name: Room.$name,
+	description: `A room on EPFL campus or any of the satellite locations.`,
 	definition(t) {
 		for (const f of [
 			'id',

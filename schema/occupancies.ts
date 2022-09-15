@@ -1,14 +1,7 @@
 /**
- * Model for “occupancies,” an LHD-specific concept designating a part of
- * a Room that is dedicated to a given professor or responsible person.
- *
- * Rooms are a purely “land-based” concept; they are defined in
- * Archibus and given a unique identifier with letters and digits
- * (e.g. SV 1631). However, owing to “political” considerations, such
- * as the room being big enough for it, there might be more than one
- * person in charge (e.g. Professors) for any given room. The finest
- * possible unit of responsibilty is called an Occupancy; it has-a
- * Room, a responsible Person, and has-many COSECs (also Persons).
+ * Model for “occupancies,” an LHD-specific concept designating a part
+ * of a Room for which a given professor and one or more cosecs are
+ * accountable.
  */
 
 import { objectType } from 'nexus';
@@ -23,13 +16,30 @@ import { person, labunpe } from '@prisma/client';
  */
 export const OccupancyStruct = objectType({
 	name: 'Occupancy',
+	description: `The smallest unit of accountability in a Room (LHD-specific concept).
+
+Rooms are a purely “land-based” concept; they are defined in
+Archibus and given a unique identifier with letters and digits
+(e.g. SV 1631). However, owing to “political” considerations, such
+as the room being big enough for it, there might be more than one
+person in charge (e.g. Professors) for any given room. The finest
+possible unit of responsibilty is called an Occupancy; it has-a
+Room, a responsible Person, and has-many COSECs (also Persons).
+`,
 	definition(t) {
 		// `room` and `unit` get resolved from the `occupancy` resolver in ./rooms.ts
 		// (it being currently the only code path that can join to this objectType):
-		t.field('room', { type: RoomStruct });
-		t.field('unit', { type: UnitStruct });
+		t.field('room', {
+			type: RoomStruct,
+			description: `The Room that this Occupancy occupies.`
+		});
+		t.field('unit', {
+			type: UnitStruct,
+			description: `The Unit that this Occupancy is for.`
+		});
 		t.nonNull.list.nonNull.field('cosecs', {
 			type: PersonStruct,
+			description: `The security officers (“COrrespondants de SÉCurité”) for this Occupancy.`,
 			async resolve (parent, _, context) {
 				// Despite TypeScript's opinion, we know that `parent.room.labunpe`
 				// exists and is an array of labunpeStruct's, because we know (as per
@@ -50,6 +60,7 @@ export const OccupancyStruct = objectType({
 		});
 		t.nonNull.list.nonNull.field('professors', {
 			type: PersonStruct,
+                  	description: `The security officers (“COrrespondants de SÉCurité”) for this Occupancy.`,
 			async resolve (parent, _, context) {
 				const unit = await context.prisma.unit.findUnique({
 					where: { id_unit: parent.unit.id_unit },
