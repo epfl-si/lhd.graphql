@@ -1,9 +1,15 @@
 import { Prisma, PrismaClient } from '@prisma/client';
-import { ApolloServer } from 'apollo-server';
-import { PluginDefinition } from 'apollo-server-core';
+import { ApolloServer } from 'apollo-server-express';
+import {
+	PluginDefinition,
+	ApolloServerPluginDrainHttpServer,
+	ApolloServerPluginLandingPageProductionDefault,
+} from 'apollo-server-core';
 import { debug } from 'debug';
 
 import * as dotenv from 'dotenv';
+import * as express from 'express';
+import * as http from 'http';
 
 import { schema } from './nexus/schema';
 
@@ -11,31 +17,43 @@ type TestInjections = {
 	onQuery?: (q: Prisma.QueryEvent) => void;
 };
 
-export function makeServer(
+export async function makeServer(
 	config: BackendConfig,
 	{ onQuery }: TestInjections = {}
-): ApolloServer {
-	const clientOptions : Prisma.PrismaClientOptions = {};
+) {
+	const app = express();
+	const clientOptions: Prisma.PrismaClientOptions = {};
 	if (onQuery) {
 		clientOptions.log = [{ level: 'query', emit: 'event' }];
-	} else if (debug.enabled("prisma:query")) {
-		clientOptions.log = [ 'query' ];
+	} else if (debug.enabled('prisma:query')) {
+		clientOptions.log = ['query'];
 	}
 
 	const prisma = new PrismaClient({
 		datasources: { db: { url: config.LHD_DB_URL } },
-		...clientOptions
+		...clientOptions,
 	});
 
 	if (onQuery) {
 		(prisma as any).$on('query', onQuery);
 	}
 
-	return new ApolloServer({
+	const httpServer = http.createServer(app);
+
+	const server = new ApolloServer({
 		context: () => ({ prisma }),
 		schema,
-		plugins: [onServerStop(() => prisma.$disconnect())],
+		plugins: [
+			onServerStop(() => prisma.$disconnect()),
+			ApolloServerPluginDrainHttpServer({ httpServer }),
+		],
 	});
+
+	await server.start();
+
+	server.applyMiddleware({ app });
+
+	return httpServer;
 }
 
 type BackendConfig = {
