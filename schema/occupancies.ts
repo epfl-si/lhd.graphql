@@ -7,9 +7,9 @@
 import { objectType } from 'nexus';
 import { RoomStruct } from './rooms';
 import { PersonStruct, nilPersonId } from './people';
-import { UnitStruct } from './unit';
+import { UnitStruct } from './units';
 import { subunpro } from 'nexus-prisma';
-import { person, labunpe } from '@prisma/client';
+import { Person, labunpe } from '@prisma/client';
 
 /**
  * The abstract Occupancy type.
@@ -63,10 +63,10 @@ Room, a responsible Person, and has-many COSECs (also Persons).
                   	description: `The security officers (“COrrespondants de SÉCurité”) for this Occupancy.`,
 			async resolve (parent, _, context) {
 				const unit = await context.prisma.unit.findUnique({
-					where: { id_unit: parent.unit.id_unit },
+					where: { id: parent.unit.id },
 					// See previous comment regarding joining to person:
 					include: { subunpro: { include: { person : true } } } });
-				return sanitizePersonList<person>(unit.subunpro.map((subunpro : subunpro) => subunpro.person));
+				return sanitizePersonList<Person>(unit.subunpro.map((subunpro : subunpro) => subunpro.person));
 			}
 		});
 	},

@@ -26,10 +26,10 @@ model aa {
   updated                    String   @db.VarChar(100)
   who_when                   String?  @db.VarChar(100)
   flag                       Boolean?
-  person_aa_id_cosecToperson person   @relation("aa_id_cosecToperson", fields: [id_cosec], references: [id_person])
-  person_aa_id_headToperson  person   @relation("aa_id_headToperson", fields: [id_head], references: [id_person])
-  Room                        Room      @relation(fields: [id_lab], references: [id])
-  unit                       unit     @relation(fields: [id_unit], references: [id_unit])
+  person_aa_id_cosecToperson Person   @relation("aa_id_cosecToperson", fields: [id_cosec], references: [id_person])
+  person_aa_id_headToperson  Person   @relation("aa_id_headToperson", fields: [id_head], references: [id_person])
+  room                        Room      @relation(fields: [id_lab], references: [id])
+  unit                       Unit     @relation(fields: [id_unit], references: [id])
 
   @@index([id_cosec], name: "id_cosec")
   @@index([id_head], name: "id_head")
@@ -91,7 +91,7 @@ model auth_dsps_holder {
   id_auth_dsps_version Int
   id_person            Int
   auth_dsps_version    auth_dsps_version @relation(fields: [id_auth_dsps_version], references: [id_auth_dsps_version])
-  person               person            @relation(fields: [id_person], references: [id_person])
+  person               Person            @relation(fields: [id_person], references: [id_person])
 
   @@unique([id_person, id_auth_dsps_version], name: "authholder")
   @@index([id_auth_dsps_version], name: "id_auth_dsps_version")
@@ -318,7 +318,7 @@ model School {
   @@map("faculty")
   id   Int        @id @default(autoincrement()) @map("id_faculty")
   name String?    @unique @db.VarChar(20) @map("name_faculty")
-  institut     institut[]
+  institute     Institute[]
 }
 
 model gas {
@@ -423,14 +423,15 @@ model haz_date {
   @@index([id_lab], name: "id_lab")
 }
 
-model institut {
-  id_institut   Int     @id @default(autoincrement())
-  name_institut String? @db.VarChar(60)
+model Institute {
+  @@map("institut")
+  id  Int     @id @default(autoincrement())   @map("id_institut")
+  name String? @db.VarChar(60)   @map("name_institut")
   id_school    Int @map("id_faculty")
   school       School @relation(fields: [id_school], references: [id])
-  unit          unit[]
+  unit          Unit[]
 
-  @@unique([name_institut, id_school], name: "unique_institut")
+  @@unique([name, id_school], name: "unique_institut")
   @@index([id_school], name: "id_faculty")
 }
 
@@ -453,7 +454,7 @@ model irad {
   irad_exdate_authorisation DateTime? @db.Date
   irad_comment              String?   @db.VarChar(200)
   Room                       Room?      @relation(fields: [id_lab], references: [id])
-  person                    person?   @relation(fields: [id_person], references: [id_person])
+  person                    Person?   @relation(fields: [id_person], references: [id_person])
 
   @@index([id_lab], name: "id_lab")
   @@index([id_person], name: "id_person")
@@ -465,7 +466,7 @@ model irad_resp {
   irad_resp_training       String? @db.VarChar(30)
   irad_resp_training_place String? @db.VarChar(10)
   irad_resp_training_year  Int?    @db.Year
-  person                   person? @relation(fields: [id_person], references: [id_person])
+  person                   Person? @relation(fields: [id_person], references: [id_person])
 
   @@index([id_person], name: "id_person")
 }
@@ -529,8 +530,8 @@ model labunpe {
   id_unit    Int?
   id_person  Int?
   room       Room?    @relation(fields: [id_lab], references: [id])
-  cosec      person? @relation(fields: [id_person], references: [id_person])
-  unit       unit?   @relation(fields: [id_unit], references: [id_unit])
+  cosec      Person? @relation(fields: [id_person], references: [id_person])
+  unit       Unit?   @relation(fields: [id_unit], references: [id])
 
   @@unique([id_lab, id_unit, id_person], name: "unique_labunpe")
   @@index([id_lab], name: "id_lab")
@@ -605,7 +606,7 @@ model mag {
   bmax        Float?
   mag_comment String? @db.VarChar(500)
   Room         Room?    @relation(fields: [id_lab], references: [id])
-  person      person? @relation(fields: [id_person], references: [id_person])
+  person      Person? @relation(fields: [id_person], references: [id_person])
   mag_f       mag_f[]
 
   @@index([id_lab], name: "id_lab")
@@ -687,7 +688,8 @@ model noise {
   @@index([id_lab], name: "id_lab")
 }
 
-model person {
+model Person {
+  @@map("person")
   id_person              Int                @id @default(autoincrement())
   sciper                 Int?               @unique
   name                   String?            @db.VarChar(60) @map("name_person")
@@ -752,9 +754,9 @@ model stolabunpe {
   id_unit       Int?
   id_person     Int?
   Room           Room?     @relation(fields: [id_lab], references: [id])
-  person        person?  @relation(fields: [id_person], references: [id_person])
+  person        Person?  @relation(fields: [id_person], references: [id_person])
   storage       storage? @relation(fields: [id_storage], references: [id_storage])
-  unit          unit?    @relation(fields: [id_unit], references: [id_unit])
+  unit          Unit?    @relation(fields: [id_unit], references: [id])
 
   @@unique([id_storage, id_lab, id_unit, id_person], name: "unique_stolabunpe")
   @@index([id_lab], name: "id_lab")
@@ -815,8 +817,8 @@ model subunpro {
   id_unit     Int?
   id_person   Int?
   id_subject  String? @db.Char(2)
-  person      person? @relation(fields: [id_person], references: [id_person])
-  unit        unit?   @relation(fields: [id_unit], references: [id_unit])
+  person      Person? @relation(fields: [id_person], references: [id_person])
+  unit        Unit?   @relation(fields: [id_unit], references: [id])
 
   @@unique([id_unit, id_person], name: "unique_subunpro")
   @@index([id_person], name: "id_person")
@@ -834,20 +836,21 @@ model tdegree {
   @@index([id_lab], name: "id_lab")
 }
 
-model unit {
-  id_unit     Int          @id @default(autoincrement())
-  sciper_unit Int?         @unique
-  name_unit   String?      @db.VarChar(60)
-  id_institut Int?
-  institut    institut?    @relation(fields: [id_institut], references: [id_institut])
+model Unit {
+  @@map("unit")
+  id      Int               @id @default(autoincrement()) @map("id_unit")
+  unitId  Int?         @unique  @map("sciper_unit")
+  name   String?      @db.VarChar(60)   @map("name_unit")
+  id_institute Int?   @map("id_institut")
+  institute    Institute?    @relation(fields: [id_institute], references: [id])
   aa          aa[]
   labunpe     labunpe[]
   stolabunpe  stolabunpe[]
   subunpro    subunpro[]
 
-  @@unique([name_unit, id_institut], name: "unique_un")
-  @@unique([sciper_unit, name_unit, id_institut], name: "unique_unit")
-  @@index([id_institut], name: "id_institut")
+  @@unique([name, id_institute], name: "unique_un")
+  @@unique([unitId, name, id], name: "unique_unit")
+  @@index([id], name: "id_institut")
 }
 
 model user_catalyse {
