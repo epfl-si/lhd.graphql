@@ -314,9 +314,10 @@ model elec {
   @@index([id_lab], name: "id_lab")
 }
 
-model faculty {
-  id_faculty   Int        @id @default(autoincrement())
-  name_faculty String?    @unique @db.VarChar(20)
+model School {
+  @@map("faculty")
+  id   Int        @id @default(autoincrement()) @map("id_faculty")
+  name String?    @unique @db.VarChar(20) @map("name_faculty")
   institut     institut[]
 }
 
@@ -425,12 +426,12 @@ model haz_date {
 model institut {
   id_institut   Int     @id @default(autoincrement())
   name_institut String? @db.VarChar(60)
-  id_faculty    Int
-  faculty       faculty @relation(fields: [id_faculty], references: [id_faculty])
+  id_school    Int @map("id_faculty")
+  school       School @relation(fields: [id_school], references: [id])
   unit          unit[]
 
-  @@unique([name_institut, id_faculty], name: "unique_institut")
-  @@index([id_faculty], name: "id_faculty")
+  @@unique([name_institut, id_school], name: "unique_institut")
+  @@index([id_school], name: "id_faculty")
 }
 
 model irad {
