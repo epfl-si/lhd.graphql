@@ -22,20 +22,21 @@
 // typechecks now will run smoothly later, and vice versa).
 //
 // This means that files such as `../schema/rooms.ts` won't type-check
-// in a freshly checked-out git clone! The `yarn prepublish` hook
-// takes care of straightening this out; one of the things it does
-// (`yarn nexus:reflect`) is to run this here `schema.ts` file
-// directly with the DO_TYPEGEN environment variable set. Constructing
-// the schema with `makeSchema`, below, then has the side effect of
-// creating `node_modules/@types/typegen-nexus/index.d.ts` and
-// `node_modules/@types/typegen-nexus-prisma/index.d.ts` where all the
-// TypeScript implementations in play (your IDE's and the run-time)
-// can find them, and validate the whole source tree.
+// in a freshly checked-out git clone! The `yarn codegen` hook takes
+// care of fixing that up; one of the things it does (`yarn
+// nexus:reflect`) is to run this here `schema.ts` file directly with
+// the DO_TYPEGEN environment variable set. In such circumstance,
+// constructing the schema with `makeSchema`, below, creates
+// `node_modules/@types/typegen-nexus/index.d.ts` and
+// `node_modules/@types/typegen-nexus-prisma/index.d.ts` by side
+// effect; and then all the TypeScript implementations in play (your
+// IDE's and the run-time) can find them, and validate the whole
+// source tree.
 //
 // Obviously this presents a chicken-and-egg problem, since this very
-// `schema.ts` file imports (indirectly) `../schema/rooms.ts` et al.
-// That's why `yarn nexus:reflect` runs schema.ts with `ts-node
-// --transpile-only` (i.e. without type checks).
+// `schema.ts` file imports `../schema/rooms.ts` et al. That's why
+// `yarn nexus:reflect` must run `schema.ts` with the
+// `--transpile-only` flag (i.e. with type checking disabled).
 //
 // ¹ Plugins, plural — There is a full-blown rewrite in progress (see
 // https://github.com/graphql-nexus/nexus-plugin-prisma/issues/1039),
@@ -62,9 +63,14 @@ import * as path from 'path';
 import { makeSchema } from 'nexus';
 import { NexusPrismaCRUDPlugin } from './prisma_crud_plugin';
 
-import * as roomTypes from '../schema/rooms';
-import * as peopleTypes from '../schema/people';
+import * as schoolTypes from '../schema/schools';
+import * as instituteTypes from '../schema/institutes';
 import * as occupancyTypes from '../schema/occupancies';
+import * as peopleTypes from '../schema/people';
+import * as roomTypes from '../schema/rooms';
+import * as unitTypes from '../schema/units';
+
+const types = [schoolTypes, instituteTypes, occupancyTypes, peopleTypes, roomTypes, unitTypes ];
 
 // No user-serviceable parts below /////////////////////////////////////////////////
 //
@@ -92,5 +98,5 @@ export const schema = makeSchema({
 	},
 
 	// The actual payload (which is also useful at run-time):
-	types: [roomTypes, peopleTypes, occupancyTypes],
+	types,
 });

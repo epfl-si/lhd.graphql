@@ -2,7 +2,7 @@
  * GraphQL types and queries for Room's and RoomKind's
  */
 
-import { Room as roomStruct, unit } from '@prisma/client';
+import { Room as roomStruct, Unit } from '@prisma/client';
 import { enumType, objectType, extendType } from 'nexus';
 import { Room, RoomKind } from 'nexus-prisma';
 import { debug as debug_ } from 'debug';
@@ -34,6 +34,7 @@ export const CatalyseTypeEnum = enumType({
 
 export const RoomStruct = objectType({
 	name: Room.$name,
+	description: `A room on EPFL campus or any of the satellite locations.`,
 	definition(t) {
 		for (const f of [
 			'id',
@@ -78,7 +79,7 @@ export const RoomStruct = objectType({
 			async resolve (parent, _, context) {
 				interface Occupancy {
 					room: roomStruct;
-					unit: unit;
+					unit: Unit;
 				}
 				const occupancies: { [unitID: string] : Occupancy } = {};
 
@@ -88,7 +89,7 @@ export const RoomStruct = objectType({
 				for (const labunpe of room.labunpe) {
 					const unit = labunpe.unit;
 					if (unit) {
-						occupancies[labunpe.unit.id_unit] = { room, unit };
+						occupancies[labunpe.unit.id] = { room, unit };
 					};
 				}
 
