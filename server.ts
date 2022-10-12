@@ -12,6 +12,20 @@ import * as http from 'http';
 
 import { schema } from './nexus/schema';
 
+import { createRemoteJWKSet, jwtVerify, errors } from 'jose';
+
+let jwks;
+async function JWKS() {
+	if (!jwks) {
+		const response = await fetch(
+			'http://localhost:8080/realms/LHD/.well-known/openid-configuration'
+		);
+		const { jwks_uri } = await response.json();
+		jwks = createRemoteJWKSet(new URL(jwks_uri));
+	}
+	return jwks;
+}
+
 type TestInjections = {
 	onQuery?: (q: Prisma.QueryEvent) => void;
 };
@@ -51,16 +65,19 @@ export async function makeServer(
 	await server.start();
 
 	app.use(express.json());
-	app.use(function(req, res, next) {
-		if (req.method === "POST" &&
-		    ! isHarmless(req) &&
-                    ! isLoggedIn(req)) {
-			res.send('{"no": "way"}');
-		} else {
-			next();
+	app.use(async function (req, res, next) {
+		try {
+			if (req.method === 'POST' && !isHarmless(req) && !(await isLoggedIn(req))) {
+				res.send('{"no": "way"}');
+			} else {
+				next();
+			}
+		} catch (e) {
+			console.error('Authentication failed', e);
+			res.send('{"i": "fckd up"}');
 		}
 	});
-	server.applyMiddleware({ path: "/", bodyParserConfig: false, app });
+	server.applyMiddleware({ path: '/', bodyParserConfig: false, app });
 
 	return httpServer;
 }
@@ -93,9 +110,30 @@ function onServerStop(cb: () => Promise<void>): PluginDefinition {
  * `IntrospectionQuery` GraphQL requests are presumed harmless;
  * everything else returns `false`.
  */
-function isHarmless(req : express.Request) : boolean {
-	const query = (req?.body?.query || "").trim();
-	return query.startsWith("query IntrospectionQuery");
+function isHarmless(req: express.Request): boolean {
+	const query = (req?.body?.query || '').trim();
+	return query.startsWith('query IntrospectionQuery');
 }
 
-function isLoggedIn (req) : boolean { return true; }
+async function isLoggedIn(req): Promise<boolean> {
+	async function verifyToken(token) {
+		try {
+			return await jwtVerify(token, await JWKS());
+		} catch (e) {
+			if (e instanceof errors.JWSInvalid || e instanceof errors.JWTExpired) {
+				console.error(`Invalid or expired token: ${token}\n`, e);
+				return undefined;
+			} else {
+				throw e;
+			}
+		}
+	}
+
+	const matched = req.headers.authorization?.match(/^Bearer\s(.*)$/);
+
+	if (!matched) {
+		return undefined;
+	}
+
+	return !!(await verifyToken(matched[1]));
+}
