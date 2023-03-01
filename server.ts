@@ -18,7 +18,9 @@ let jwks;
 async function JWKS() {
 	if (!jwks) {
 		const response = await fetch(
-			'http://localhost:8080/realms/LHD/.well-known/openid-configuration'
+			`${
+				process.env.FETCH_URL ? process.env.FETCH_URL : 'http://localhost:8080'
+			}/realms/LHD/.well-known/openid-configuration`
 		);
 		const { jwks_uri } = await response.json();
 		jwks = createRemoteJWKSet(new URL(jwks_uri));
