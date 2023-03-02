@@ -18,7 +18,7 @@ RUN yarn
 
 # Copies everything over to Docker environment
 COPY . ./
-ENV FETCH_URL=https://tkgi-satosa.epfl.ch
+
 # Runs yarn a second time to generate types from the Prisma schema
 RUN yarn prepublish
 EXPOSE 3001

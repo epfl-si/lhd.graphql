@@ -12,23 +12,7 @@ import * as http from 'http';
 
 import { schema } from './nexus/schema';
 
-import { createRemoteJWKSet, jwtVerify, errors } from 'jose';
-
-let jwks;
-async function JWKS() {
-	var fetchUrl = `${
-		process.env.FETCH_URL
-			? process.env.FETCH_URL
-			: 'http://localhost:8080/realms/LHD'
-	}/.well-known/openid-configuration`;
-	console.log('fetchUrl', fetchUrl);
-	if (!jwks) {
-		const response = await fetch(fetchUrl);
-		const { jwks_uri } = await response.json();
-		jwks = createRemoteJWKSet(new URL(jwks_uri));
-	}
-	return jwks;
-}
+import { Issuer } from 'openid-client';
 
 type TestInjections = {
 	onQuery?: (q: Prisma.QueryEvent) => void;
@@ -119,18 +103,25 @@ function isHarmless(req: express.Request): boolean {
 	return query.startsWith('query IntrospectionQuery');
 }
 
+let _issuer: Issuer | undefined = undefined;
+
+async function issuer() {
+	if (_issuer) return _issuer;
+
+	_issuer = await Issuer.discover(process.env.OIDC_BASE_URL
+		|| 'http://localhost:8080/realms/LHD');
+
+	return _issuer;
+}
+
 async function isLoggedIn(req): Promise<boolean> {
-	async function verifyToken(token) {
-		try {
-			return await jwtVerify(token, await JWKS());
-		} catch (e) {
-			if (e instanceof errors.JWSInvalid || e instanceof errors.JWTExpired) {
-				console.error(`Invalid or expired token: ${token}\n`, e);
-				return undefined;
-			} else {
-				throw e;
-			}
-		}
+	async function verifyToken(access_token : string) {
+		const issuer_ = await issuer();
+		const client = new issuer_.Client({client_id: 'LHDv3 server'});
+		const userinfo = await client.userinfo(access_token);
+		// TODO: should check claims in `userinfo` — Right now, everyone can log in.
+		console.log("Logged in", userinfo);
+		return true;
 	}
 
 	const matched = req.headers.authorization?.match(/^Bearer\s(.*)$/);
