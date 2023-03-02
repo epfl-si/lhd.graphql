@@ -15,7 +15,6 @@
     "graphql": "^15.5.2",
     "inherits": "^2.0.4",
     "isarray": "^1.0.0",
-    "jose": "^4.10.0",
     "keycloak-connect": "^19.0.2",
     "mysql": "^2.18.1",
     "nexus": "^1.1.0",
