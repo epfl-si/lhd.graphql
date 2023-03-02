@@ -16,12 +16,14 @@ import { createRemoteJWKSet, jwtVerify, errors } from 'jose';
 
 let jwks;
 async function JWKS() {
+	var fetchUrl = `${
+		process.env.FETCH_URL
+			? process.env.FETCH_URL
+			: 'http://localhost:8080/realms/LHD'
+	}/.well-known/openid-configuration`;
+	console.log('fetchUrl', fetchUrl);
 	if (!jwks) {
-		const response = await fetch(
-			`${
-				process.env.FETCH_URL ? process.env.FETCH_URL : 'http://localhost:8080'
-			}/realms/LHD/.well-known/openid-configuration`
-		);
+		const response = await fetch(fetchUrl);
 		const { jwks_uri } = await response.json();
 		jwks = createRemoteJWKSet(new URL(jwks_uri));
 	}
