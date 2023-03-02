@@ -12,7 +12,7 @@ import * as http from 'http';
 
 import { schema } from './nexus/schema';
 
-import { Issuer } from 'openid-client';
+import { Issuer, errors } from 'openid-client';
 
 type TestInjections = {
 	onQuery?: (q: Prisma.QueryEvent) => void;
@@ -118,10 +118,18 @@ async function isLoggedIn(req): Promise<boolean> {
 	async function verifyToken(access_token : string) {
 		const issuer_ = await issuer();
 		const client = new issuer_.Client({client_id: 'LHDv3 server'});
-		const userinfo = await client.userinfo(access_token);
-		// TODO: should check claims in `userinfo` — Right now, everyone can log in.
-		console.log("Logged in", userinfo);
-		return true;
+		try {
+			const userinfo = await client.userinfo(access_token);
+			// TODO: should check claims in `userinfo` — Right now, everyone can log in.
+			console.log("Logged in", userinfo);
+			return true;
+		} catch (e : any) {
+			if ( (e instanceof errors.OPError) && (e.error == "invalid_token") ) {
+				return false;
+			} else {
+				throw e;
+			}
+		}
 	}
 
 	const matched = req.headers.authorization?.match(/^Bearer\s(.*)$/);
