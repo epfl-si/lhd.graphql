@@ -21,6 +21,7 @@
     "nexus": "^1.1.0",
     "nexus-prisma": "0.35.0",
     "node-fetch": "^2.6.1",
+    "openid-client": "^5.4.0",
     "prisma": "^3",
     "process-nextick-args": "^2.0.1",
     "readable-stream": "^2.3.7",
