@@ -108,23 +108,37 @@ let _issuer: Issuer | undefined = undefined;
 async function issuer() {
 	if (_issuer) return _issuer;
 
-	_issuer = await Issuer.discover(process.env.OIDC_BASE_URL
-		|| 'http://localhost:8080/realms/LHD');
+	_issuer = await Issuer.discover(
+		process.env.OIDC_BASE_URL || 'http://localhost:8080/realms/LHD'
+	);
 
 	return _issuer;
 }
 
 async function isLoggedIn(req): Promise<boolean> {
-	async function verifyToken(access_token : string) {
+	async function verifyToken(access_token: string) {
+		// TODO: Move this in type file.
+		type UserInfo = {
+			sub: string;
+			given_name: string;
+			family_name: string;
+			groups: string[];
+		};
+
 		const issuer_ = await issuer();
-		const client = new issuer_.Client({client_id: 'LHDv3 server'});
+		const client = new issuer_.Client({ client_id: 'LHDv3 server' });
+
 		try {
-			const userinfo = await client.userinfo(access_token);
-			// TODO: should check claims in `userinfo` — Right now, everyone can log in.
-			console.log("Logged in", userinfo);
-			return true;
-		} catch (e : any) {
-			if ( (e instanceof errors.OPError) && (e.error == "invalid_token") ) {
+			const userinfo: UserInfo = await client.userinfo(access_token);
+			console.log('Logged in', userinfo);
+			// TODO: Some pages do not have the same access rights as others. Rewrite this to account for that.
+			if (userinfo.groups.some(e => process.env.ALLOWED_GROUPS.includes(e))) {
+				return true;
+			}
+			console.log('Allowed groups', process.env.ALLOWED_GROUPS);
+			return false;
+		} catch (e: any) {
+			if (e instanceof errors.OPError && e.error == 'invalid_token') {
 				return false;
 			} else {
 				throw e;
