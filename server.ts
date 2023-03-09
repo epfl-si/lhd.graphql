@@ -130,12 +130,13 @@ async function isLoggedIn(req): Promise<boolean> {
 
 		try {
 			const userinfo: UserInfo = await client.userinfo(access_token);
+			const allowedGroups = process.env.ALLOWED_GROUPS.split(',');
 			console.log('Logged in', userinfo);
 			// TODO: Some pages do not have the same access rights as others. Rewrite this to account for that.
-			if (userinfo.groups.some(e => process.env.ALLOWED_GROUPS.includes(e))) {
+			if (userinfo.groups.some(e => allowedGroups.includes(e))) {
 				return true;
 			}
-			console.log('Allowed groups', process.env.ALLOWED_GROUPS);
+			console.log('Allowed groups', allowedGroups);
 			return false;
 		} catch (e: any) {
 			if (e instanceof errors.OPError && e.error == 'invalid_token') {
