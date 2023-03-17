@@ -13,6 +13,7 @@ import * as http from 'http';
 import { schema } from './nexus/schema';
 
 import { Issuer, errors } from 'openid-client';
+import { UserInfo, loginResponse } from './serverTypes';
 
 type TestInjections = {
 	onQuery?: (q: Prisma.QueryEvent) => void;
@@ -55,14 +56,17 @@ export async function makeServer(
 	app.use(express.json());
 	app.use(async function (req, res, next) {
 		try {
-			if (req.method === 'POST' && !isHarmless(req) && !(await isLoggedIn(req))) {
-				res.send('{"no": "way"}');
+			var loginResponse = await isLoggedIn(req);
+			if (req.method === 'POST' && !isHarmless(req) && !loginResponse.loggedIn) {
+				res.status(loginResponse.httpCode);
+				res.send(loginResponse.message);
 			} else {
 				next();
 			}
 		} catch (e) {
+			res.status(500);
 			console.error('Authentication failed', e);
-			res.send('{"i": "fckd up"}');
+			res.send('Backend Error');
 		}
 	});
 	server.applyMiddleware({ path: '/', bodyParserConfig: false, app });
@@ -115,16 +119,8 @@ async function issuer() {
 	return _issuer;
 }
 
-async function isLoggedIn(req): Promise<boolean> {
+async function isLoggedIn(req): Promise<loginResponse> {
 	async function verifyToken(access_token: string) {
-		// TODO: Move this in type file.
-		type UserInfo = {
-			sub: string;
-			given_name: string;
-			family_name: string;
-			groups: string[];
-		};
-
 		const issuer_ = await issuer();
 		const client = new issuer_.Client({ client_id: 'LHDv3 server' });
 
@@ -132,15 +128,15 @@ async function isLoggedIn(req): Promise<boolean> {
 			const userinfo: UserInfo = await client.userinfo(access_token);
 			const allowedGroups = process.env.ALLOWED_GROUPS.split(',');
 			console.log('Logged in', userinfo);
+			console.log('Allowed groups', allowedGroups);
 			// TODO: Some pages do not have the same access rights as others. Rewrite this to account for that.
 			if (userinfo.groups && userinfo.groups.some(e => allowedGroups.includes(e))) {
-				return true;
+				return { loggedIn: true, httpCode: 200, message: 'Logged in' };
 			}
-			console.log('Allowed groups', allowedGroups);
-			return false;
+			return { loggedIn: false, httpCode: 403, message: 'Wrong access rights' };
 		} catch (e: any) {
 			if (e instanceof errors.OPError && e.error == 'invalid_token') {
-				return false;
+				return { loggedIn: false, httpCode: 401, message: 'Wrong token' };
 			} else {
 				throw e;
 			}
@@ -153,5 +149,5 @@ async function isLoggedIn(req): Promise<boolean> {
 		return undefined;
 	}
 
-	return !!(await verifyToken(matched[1]));
+	return await verifyToken(matched[1]);
 }
