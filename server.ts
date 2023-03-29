@@ -9,6 +9,7 @@ import { debug } from 'debug';
 import * as dotenv from 'dotenv';
 import * as express from 'express';
 import * as http from 'http';
+import * as cors from 'cors';
 
 import { schema } from './nexus/schema';
 
@@ -54,6 +55,7 @@ export async function makeServer(
 	await server.start();
 
 	app.use(express.json());
+	app.use(cors());
 	app.use(async function (req, res, next) {
 		try {
 			var loginResponse = await isLoggedIn(req);
