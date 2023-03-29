@@ -65,8 +65,7 @@ export async function makeServer(
 			}
 		} catch (e) {
 			res.status(500);
-			console.error('Authentication failed', e);
-			res.send('Backend Error');
+			res.send(`GraphQL Error: ${e}`);
 		}
 	});
 	server.applyMiddleware({ path: '/', bodyParserConfig: false, app });
@@ -131,12 +130,26 @@ async function isLoggedIn(req): Promise<loginResponse> {
 			console.log('Allowed groups', allowedGroups);
 			// TODO: Some pages do not have the same access rights as others. Rewrite this to account for that.
 			if (userinfo.groups && userinfo.groups.some(e => allowedGroups.includes(e))) {
-				return { loggedIn: true, httpCode: 200, message: 'Logged in' };
+				return {
+					loggedIn: true,
+					httpCode: 200,
+					message: 'Correct access rights and token are working, user logged in.',
+				};
 			}
-			return { loggedIn: false, httpCode: 403, message: 'Wrong access rights' };
+			return {
+				loggedIn: false,
+				httpCode: 403,
+				message: `Wrong access rights. You are required to have one of the following groups: ${allowedGroups.join(
+					', '
+				)}`,
+			};
 		} catch (e: any) {
 			if (e instanceof errors.OPError && e.error == 'invalid_token') {
-				return { loggedIn: false, httpCode: 401, message: 'Wrong token' };
+				return {
+					loggedIn: false,
+					httpCode: 401,
+					message: `JWT Token is invalid: ${e}`,
+				};
 			} else {
 				throw e;
 			}
