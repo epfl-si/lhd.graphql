@@ -1,10 +1,12 @@
+import { HazLevelStruct } from './hazlevel';
+import { BioStruct } from './biohazard';
 /**
  * GraphQL types and queries for Room's and RoomKind's
  */
 
 import { Room as roomStruct, Unit } from '@prisma/client';
 import { enumType, objectType, extendType } from 'nexus';
-import { Room, RoomKind } from 'nexus-prisma';
+import { Room, RoomKind, cad_lab } from 'nexus-prisma';
 import { debug as debug_ } from 'debug';
 const debug = debug_('lhd:rooms');
 
@@ -76,21 +78,22 @@ export const RoomStruct = objectType({
 
 		t.nonNull.list.nonNull.field('occupancies', {
 			type: 'Occupancy',
-			async resolve (parent, _, context) {
+			async resolve(parent, _, context) {
 				interface Occupancy {
 					room: roomStruct;
 					unit: Unit;
 				}
-				const occupancies: { [unitID: string] : Occupancy } = {};
+				const occupancies: { [unitID: string]: Occupancy } = {};
 
 				const room = await context.prisma.Room.findUnique({
 					where: { id: parent.id },
-					include: { labunpe: { include: { unit: true } } } });
+					include: { labunpe: { include: { unit: true } } },
+				});
 				for (const labunpe of room.labunpe) {
 					const unit = labunpe.unit;
 					if (unit) {
 						occupancies[labunpe.unit.id] = { room, unit };
-					};
+					}
 				}
 
 				const occupanciesList = Object.values(occupancies).sort((a: any, b: any) =>
@@ -98,6 +101,26 @@ export const RoomStruct = objectType({
 				);
 				debug(occupanciesList);
 				return occupanciesList;
+			},
+		});
+
+		t.field('bio', {
+			type: BioStruct,
+			resolve: async (parent, _, context) => {
+				return await context.prisma.bio.findUnique({
+					where: { id_lab: parent.id },
+					include: { bio_org_lab: { include: { bio_org: true } } },
+				});
+			},
+		});
+
+		t.list.field('haz_levels', {
+			type: HazLevelStruct,
+			resolve: async (parent, _, context) => {
+				return await context.prisma.cad_lab.findMany({
+					where: { id_lab: parent.id },
+					include: { haz: true },
+				});
 			},
 		});
 	},
