@@ -59,12 +59,12 @@ export async function makeServer(
 	app.use(async function (req, res, next) {
 		try {
 			var loginResponse = await isLoggedIn(req);
-			if (req.method === 'POST' && !isHarmless(req) && !loginResponse.loggedIn) {
-				res.status(loginResponse.httpCode);
-				res.send(loginResponse.message);
-			} else {
-				next();
-			}
+			// if (req.method === 'POST' && !isHarmless(req) && !loginResponse.loggedIn) {
+			// 	res.status(loginResponse.httpCode);
+			// 	res.send(loginResponse.message);
+			// } else {
+			next();
+			// }
 		} catch (e) {
 			res.status(500);
 			res.send(`GraphQL Error: ${e}`);
