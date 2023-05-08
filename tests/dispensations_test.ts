@@ -49,6 +49,14 @@ describe("End-to-end tests", () => {
   let client = useTestServer<Dispensation>({ before, after, onQuery })
   function q(params: {}, queryMore?: string) { return queryDispensations(client(), queryMore) }
 
+  it.only("serves dispensations", async function() {
+    this.timeout(10000)
+    const c = client()
+    const dispensations = await (c.query(`{ dispensations { slug } }`))
+    assert(dispensations.length > 20)
+  })
+
+
   it("serves dispensations with versions", async function() {
     this.timeout(10000)
     const dispensations = await q({})

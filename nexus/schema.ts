@@ -69,8 +69,9 @@ import * as occupancyTypes from '../schema/occupancies';
 import * as peopleTypes from '../schema/people';
 import * as roomTypes from '../schema/rooms';
 import * as unitTypes from '../schema/units';
+import * as dispensationTypes from '../schema/dispensations';
 
-const types = [schoolTypes, instituteTypes, occupancyTypes, peopleTypes, roomTypes, unitTypes ];
+const types = [schoolTypes, instituteTypes, occupancyTypes, peopleTypes, roomTypes, unitTypes, dispensationTypes ];
 
 // No user-serviceable parts below /////////////////////////////////////////////////
 //
