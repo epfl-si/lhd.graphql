@@ -22,7 +22,12 @@ and recorded indirectly in a DispensationVersion object.
     // concerned, the slug is the primary key.
     t.field(Dispensation.slug)
     t.nonNull.list.nonNull.field("versions", {
-      type: 'DispensationVersion'
+      type: 'DispensationVersion',
+      async resolve(parent, _, context) {
+        const dispensation = context.prisma.Dispensation.findUnique({
+          where: { id: parent.id } })
+        return dispensation.versions()
+      }
     })
   }
 })
@@ -55,6 +60,6 @@ export const DispensationVersionStruct = objectType({
 export const DispensationsQuery = extendType({
 	type: 'Query',
 	definition(t) {
-		t.crud.dispensations({filtering: false});
+		t.crud.dispensations({filtering: true});
 	},
 });

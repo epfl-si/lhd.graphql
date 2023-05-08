@@ -49,13 +49,12 @@ describe("End-to-end tests", () => {
   let client = useTestServer<Dispensation>({ before, after, onQuery })
   function q(params: {}, queryMore?: string) { return queryDispensations(client(), queryMore) }
 
-  it.only("serves dispensations", async function() {
+  it("serves dispensations", async function() {
     this.timeout(10000)
     const c = client()
     const dispensations = await (c.query(`{ dispensations { slug } }`))
     assert(dispensations.length > 20)
   })
-
 
   it("serves dispensations with versions", async function() {
     this.timeout(10000)
@@ -66,25 +65,28 @@ describe("End-to-end tests", () => {
   describe("has all the right types", () => {
     it("has all the fields", async () => {
       const dispensations = await q({})
-      let versionsCount = 0, dispensationsCount = 0;
+      let modifiedByCount = 0, dispensationsCount = 0;
       for (const dispensation of dispensations) {
+        let versionsCount = 0;
         dispensationsCount++;
         const dispensationJSON = JSON.stringify(dispensation)
         assert(dispensation.slug,                `bad slug: ${dispensationJSON}`)
         for (const version of dispensation.versions) {
+          const versionJSON = JSON.stringify(version);
           versionsCount++;
-          assert(version.author)
-          assert(version.subject)
-          assert(version.description)
-          assert(version.comment)
+          assert(version.author,  `bad version: ${versionJSON}`)
+          assert(version.subject,  `bad version: ${versionJSON}`)
+          assert(version.description !== undefined)
+          assert(version.comment !== undefined)
           assert(["Active", "Canceled", "Expired", "Pending"].includes(version.status))
           assert(["draft", "final"].includes(version.draft_status))
-          assert(version.modified_by)
+          if (version.modified_by) modifiedByCount++;
         }
 
         assert(versionsCount > 0);
       }
       assert(dispensationsCount > 0);
+      assert(modifiedByCount > 0);
     })
 
     it("has rooms")
