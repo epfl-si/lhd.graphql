@@ -53,6 +53,28 @@ export const DispensationVersionStruct = objectType({
     ]) {
       t.field(DispensationVersion[f]);
     }
+    t.nonNull.list.nonNull.field("rooms", {
+      type: "Room",
+      async resolve(parent, _, context) {
+        const roomRelations = await context.prisma.DispensationInRoomRelation.findMany({
+          where: {
+            id_dispensation_version: parent.id
+          },
+          include: { room: true }})
+        return roomRelations.map((rr) => rr.room)
+      }
+    })
+    t.nonNull.list.nonNull.field("holders", {
+      type: "Person",
+      async resolve(parent, _, context) {
+        const dhrs = await context.prisma.DispensationHeldRelation.findMany({
+          where: {
+            id_dispensation_version: parent.id
+          },
+          include: { person: true }})
+        return dhrs.map((dhr) => dhr.person)
+      }
+    })
   }
 })
 

@@ -119,6 +119,9 @@ async function queryDispensations(client : GraphQLClient<Dispensation>, queryMor
           date_modified
 
           modified_by
+
+          rooms { name }
+          holders { name surname }
         }
         ${queryMore}
   } }`)
