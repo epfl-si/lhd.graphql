@@ -87,15 +87,16 @@ model Dispensation {
   // @@unique([log_in_time, id_auth_dsps], name: "log_in_time_auth_dsps")
 }
 
-model auth_dsps_holder {
-  id_auth_dsps_holder  Int               @id @default(autoincrement())
-  id_auth_dsps_version Int
+model DispensationHeldRelation {
+  @@map("auth_dsps_holder")
+  // id_auth_dsps_holder  Int               @id @default(autoincrement())  -- Unused
+  id_dispensation_version Int               @map("id_auth_dsps_version")
   id_person            Int
-  auth_dsps_version    DispensationVersion @relation(fields: [id_auth_dsps_version], references: [id])
+  auth_dsps_version    DispensationVersion @relation(fields: [id_dispensation_version], references: [id])
   person               Person            @relation(fields: [id_person], references: [id_person])
 
-  @@unique([id_person, id_auth_dsps_version], name: "authholder")
-  @@index([id_auth_dsps_version], name: "id_auth_dsps_version")
+  @@unique([id_person, id_dispensation_version], name: "authholder")
+  @@index([id_dispensation_version], name: "id_auth_dsps_version")
 }
 
 model auth_dsps_lab {
@@ -126,7 +127,7 @@ model DispensationVersion {
   notifier             String?            @db.VarChar(50)
   notification_date    DateTime?          @db.DateTime(0)
   dispensation         Dispensation       @relation(fields: [id_dispensation], references: [id])
-  auth_dsps_holder     auth_dsps_holder[]
+  held                 DispensationHeldRelation[]
   auth_dsps_lab        auth_dsps_lab[]
 
   @@index([id], name: "id_auth_dsps")
@@ -699,7 +700,7 @@ model Person {
   email                  String?            @db.VarChar(60) @map("email_person")
   aa_aa_id_cosecToperson aa[]               @relation("aa_id_cosecToperson")
   aa_aa_id_headToperson  aa[]               @relation("aa_id_headToperson")
-  auth_dsps_holder       auth_dsps_holder[]
+  dispensations_held       DispensationHeldRelation[]
   irad                   irad[]
   irad_resp              irad_resp[]
   labunpe                labunpe[]
