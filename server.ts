@@ -17,12 +17,13 @@ import { Issuer, errors } from 'openid-client';
 import { UserInfo, loginResponse } from './serverTypes';
 
 type TestInjections = {
+	insecure?: boolean;
 	onQuery?: (q: Prisma.QueryEvent) => void;
 };
 
 export async function makeServer(
 	config: BackendConfig,
-	{ onQuery }: TestInjections = {}
+	{ insecure, onQuery }: TestInjections = {}
 ) {
 	const app = express();
 	const clientOptions: Prisma.PrismaClientOptions = {};
@@ -56,20 +57,22 @@ export async function makeServer(
 
 	app.use(express.json());
 	app.use(cors());
-	app.use(async function (req, res, next) {
-		try {
-			var loginResponse = await isLoggedIn(req);
-			if (req.method === 'POST' && !isHarmless(req) && !loginResponse.loggedIn) {
-				res.status(loginResponse.httpCode);
-				res.send(loginResponse.message);
-			} else {
-				next();
+	if (! insecure) {
+		app.use(async function (req, res, next) {
+			try {
+				var loginResponse = await isLoggedIn(req);
+				if (req.method === 'POST' && !isHarmless(req) && !loginResponse.loggedIn) {
+					res.status(loginResponse.httpCode);
+					res.send(loginResponse.message);
+				} else {
+					next();
+				}
+			} catch (e) {
+				res.status(500);
+				res.send(`GraphQL Error: ${e}`);
 			}
-		} catch (e) {
-			res.status(500);
-			res.send(`GraphQL Error: ${e}`);
-		}
-	});
+		});
+	}
 	server.applyMiddleware({ path: '/', bodyParserConfig: false, app });
 
 	return httpServer;
