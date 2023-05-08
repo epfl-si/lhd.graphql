@@ -74,23 +74,24 @@ model auth_chem_old {
   auth_chem_fr  String? @db.VarChar(100)
 }
 
-model auth_dsps {
-  id_auth_dsps      Int                 @id @default(autoincrement())
-  auth_dsps         String              @unique @db.VarChar(10)
-  log_in            Int?
-  log_in_time       DateTime?           @db.DateTime(0)
-  auth_dsps_version auth_dsps_version[]
+model Dispensation {
+  @@map("auth_dsps")
+  id      Int                 @id @default(autoincrement()) @map("id_auth_dsps")
+  slug         String              @unique @db.VarChar(10)  @map("auth_dsps")
+  // log_in            Int?                                  -- Always NULL
+  // log_in_time       DateTime?           @db.DateTime(0)   -- Only 5 data points, all before 2019
+  versions DispensationVersion[]
 
-  @@unique([auth_dsps, id_auth_dsps], name: "auth_dsps_id_auth_dsps")
-  @@unique([log_in, id_auth_dsps], name: "log_in_auth_dsps")
-  @@unique([log_in_time, id_auth_dsps], name: "log_in_time_auth_dsps")
+  @@unique([slug, id], name: "auth_dsps_id_auth_dsps")
+  // @@unique([log_in, id_auth_dsps], name: "log_in_auth_dsps")
+  // @@unique([log_in_time, id_auth_dsps], name: "log_in_time_auth_dsps")
 }
 
 model auth_dsps_holder {
   id_auth_dsps_holder  Int               @id @default(autoincrement())
   id_auth_dsps_version Int
   id_person            Int
-  auth_dsps_version    auth_dsps_version @relation(fields: [id_auth_dsps_version], references: [id_auth_dsps_version])
+  auth_dsps_version    DispensationVersion @relation(fields: [id_auth_dsps_version], references: [id])
   person               Person            @relation(fields: [id_person], references: [id_person])
 
   @@unique([id_person, id_auth_dsps_version], name: "authholder")
@@ -101,16 +102,17 @@ model auth_dsps_lab {
   id_auth_dsps_lab     Int               @id @default(autoincrement())
   id_auth_dsps_version Int
   id_lab               Int
-  auth_dsps_version    auth_dsps_version @relation(fields: [id_auth_dsps_version], references: [id_auth_dsps_version])
-  Room                  Room               @relation(fields: [id_lab], references: [id])
+  auth_dsps_version    DispensationVersion @relation(fields: [id_auth_dsps_version], references: [id])
+  Room                 Room               @relation(fields: [id_lab], references: [id])
 
   @@unique([id_lab, id_auth_dsps_version], name: "authlab")
   @@index([id_auth_dsps_version], name: "id_auth_dsps_version")
 }
 
-model auth_dsps_version {
-  id_auth_dsps_version Int                @id @default(autoincrement())
-  id_auth_dsps         Int
+model DispensationVersion {
+  @@map("auth_dsps_version")
+  id                   Int                @id @default(autoincrement())   @map("id_auth_dsps_version")
+  id_dispensation      Int                @map("id_auth_dsps")
   author               String             @db.VarChar(50)
   sciper_author        Int
   subject              String             @db.VarChar(50)
@@ -123,11 +125,11 @@ model auth_dsps_version {
   version              String             @db.Char(5)
   notifier             String?            @db.VarChar(50)
   notification_date    DateTime?          @db.DateTime(0)
-  auth_dsps            auth_dsps          @relation(fields: [id_auth_dsps], references: [id_auth_dsps])
+  dispensation         Dispensation       @relation(fields: [id_dispensation], references: [id])
   auth_dsps_holder     auth_dsps_holder[]
   auth_dsps_lab        auth_dsps_lab[]
 
-  @@index([id_auth_dsps], name: "id_auth_dsps")
+  @@index([id], name: "id_auth_dsps")
 }
 
 model auth_holder {
