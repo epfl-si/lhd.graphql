@@ -118,15 +118,15 @@ model DispensationVersion {
   author               String             @db.VarChar(50)
   sciper_author        Int
   subject              String             @db.VarChar(50)
-  requires             String?            @db.VarChar(2000)
+  description          String?            @db.VarChar(2000)   @map("requires")
   comment              String?            @db.VarChar(2000)
-  status               String             @db.VarChar(10)
+  status               String             @db.VarChar(10)     // One of "Active", "Canceled", "Expired" or "Pending"
   date_start           DateTime           @db.Date
   date_end             DateTime           @db.Date
-  date                 DateTime           @db.DateTime(0)
-  version              String             @db.Char(5)
-  notifier             String?            @db.VarChar(50)
-  notification_date    DateTime?          @db.DateTime(0)
+  date_created         DateTime           @db.DateTime(0)     @map("date")
+  draft_status         String             @db.Char(5)       @map("version")  // Either "draft" or "final"
+  modified_by          String?            @db.VarChar(50)  @map("notifier")
+  date_modified        DateTime?          @db.DateTime(0)  @map("notification_date")
   dispensation         Dispensation       @relation(fields: [id_dispensation], references: [id])
   held                 DispensationHeldRelation[]
   in_room              DispensationInRoomRelation[]
