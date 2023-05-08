@@ -1,4 +1,4 @@
-import { objectType, extendType } from 'nexus';
+import { objectType, extendType, nonNull, intArg, stringArg } from 'nexus';
 import { Dispensation, DispensationVersion } from 'nexus-prisma';
 
 export const DispensationStruct = objectType({
@@ -85,3 +85,80 @@ export const DispensationsQuery = extendType({
 		t.crud.dispensations({filtering: true});
 	},
 });
+
+export const DispensationEditStatus = objectType({
+  name: "DispensationEditStatus",
+  definition(t) {
+    t.nonNull.boolean('isSuccess')
+    t.string('errorMessage')
+  }
+})
+
+export const DispensationVersionMutation = extendType({
+  type: 'Mutation',
+  definition(t) {
+    t.nonNull.field('editDraftDispensation', {
+      type: 'DispensationEditStatus',
+      args: {
+        slug: nonNull(stringArg()),
+        author: stringArg(),
+        sciper_author: intArg(),
+        subject: stringArg(),
+        description: stringArg(),
+        comment: stringArg(),
+        date_start: stringArg(),
+        date_end: stringArg(),
+        // TODO: more.
+      },
+      async resolve(root, args, context) {
+        const slug = args.slug, prisma = context.prisma
+        const dispensation = await prisma.Dispensation.findUnique(
+          { where: { slug }})
+        if (! dispensation) {
+          return { isSuccess: false, errorMessage: `Unknown dispensation ${slug}` }
+        }
+
+        const draftAlready = await prisma.DispensationVersion.findMany({ where: {
+          id_dispensation: dispensation.id,
+          draft_status: 'draft'
+          }})
+        const toUpsert = {
+          author: args.author,
+          sciper_author: args.sciper_author,
+          subject: args.subject,
+          description: args.description,
+          comment: args.comment,
+          date_start: args.date_start ? new Date(args.date_start) : undefined,
+          date_end: args.date_start ? new Date(args.date_start) : undefined,
+          date_modified: new Date(),
+          modified_by: args.author || "GraphQL",
+        }
+
+        if (draftAlready.length == 1) {
+          await prisma.DispensationVersion.update({
+            where: {
+              id: draftAlready[0].id
+            },
+            data: { ...toUpsert, modified_by: args.author }
+          })
+        } else if (draftAlready.length == 0) {
+          await prisma.DispensationVersion.create({
+            data: {
+              dispensation: { connect: { id: dispensation.id }},
+              status: "Pending",
+              draft_status: "draft",
+              date_created: new Date(),
+              ...toUpsert
+            }
+          })
+        } else {
+          return {
+            isSuccess: false,
+            errrorMessage: `${slug} has multiple drafts!!`
+          }
+        }
+        return { isSuccess: true }
+      }
+    })
+  }
+})
