@@ -1,5 +1,6 @@
 import { objectType, extendType, nonNull, intArg, stringArg } from 'nexus';
 import { Dispensation, DispensationVersion } from 'nexus-prisma';
+import { mutationStatusType } from './statuses';
 
 export const DispensationStruct = objectType({
   name: Dispensation.$name,
@@ -86,13 +87,9 @@ export const DispensationsQuery = extendType({
 	},
 });
 
-export const DispensationEditStatus = objectType({
-  name: "DispensationEditStatus",
-  definition(t) {
-    t.nonNull.boolean('isSuccess')
-    t.string('errorMessage')
-  }
-})
+export const DispensationEditStatus = mutationStatusType({
+  name: "DispensationEditStatus"
+});
 
 export const DispensationVersionMutation = extendType({
   type: 'Mutation',
@@ -115,7 +112,7 @@ export const DispensationVersionMutation = extendType({
         const dispensation = await prisma.Dispensation.findUnique(
           { where: { slug }})
         if (! dispensation) {
-          return { isSuccess: false, errorMessage: `Unknown dispensation ${slug}` }
+          return mutationStatusType.error(`Unknown dispensation ${slug}`)
         }
 
         const draftAlready = await prisma.DispensationVersion.findMany({ where: {
@@ -141,6 +138,7 @@ export const DispensationVersionMutation = extendType({
             },
             data: { ...toUpsert, modified_by: args.author }
           })
+          return mutationStatusType.success()
         } else if (draftAlready.length == 0) {
           await prisma.DispensationVersion.create({
             data: {
@@ -151,13 +149,10 @@ export const DispensationVersionMutation = extendType({
               ...toUpsert
             }
           })
+          return mutationStatusType.success()
         } else {
-          return {
-            isSuccess: false,
-            errrorMessage: `${slug} has multiple drafts!!`
-          }
+          return mutationStatusType.error(`${slug} has multiple drafts!!`)
         }
-        return { isSuccess: true }
       }
     })
   }
