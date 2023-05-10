@@ -8,6 +8,7 @@ import { Room as roomStruct, Unit } from '@prisma/client';
 import { enumType, objectType, extendType } from 'nexus';
 import { Room, RoomKind, cad_lab } from 'nexus-prisma';
 import { debug as debug_ } from 'debug';
+import { NauditsStruct } from './naudits';
 const debug = debug_('lhd:rooms');
 
 const catalyseSpecialLocations = {
@@ -120,6 +121,15 @@ export const RoomStruct = objectType({
 				return await context.prisma.cad_lab.findMany({
 					where: { id_lab: parent.id },
 					include: { haz: true },
+				});
+			},
+		});
+
+		t.list.field('naudits', {
+			type: NauditsStruct,
+			resolve: async (parent, _, context) => {
+				return await context.prisma.naudits.findMany({
+					where: { id_lab: parent.id },
 				});
 			},
 		});
