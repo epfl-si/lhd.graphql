@@ -11,6 +11,7 @@ import {
 	makeServer,
 	configFromDotEnv, // Hermetic tests for a brown-field DB are hard mmkay
 } from '../../server';
+import { AddressInfo } from 'node:net';
 
 import { HookFunction } from 'mocha';
 import { Prisma } from '@prisma/client';
@@ -57,18 +58,27 @@ export function useTestServer<TRecord>(opts: {
 	onQuery?: (q: Prisma.QueryEvent) => void;
 }): () => GraphQLClient<TRecord> {
 	let port: number;
-	let server: ReturnType<typeof makeServer>;
+	let server: Awaited<ReturnType<typeof makeServer>>;
 
-	let makeServerOpts = opts.onQuery ? { onQuery: opts.onQuery } : {};
+	let makeServerOpts = { insecure: true, onQuery: opts.onQuery }
 
 	opts.before(async () => {
-		server = makeServer(configFromDotEnv(), makeServerOpts);
-		const serverInfo = await server.listen(0);
-		port = serverInfo.port as number;
+		server = await makeServer(configFromDotEnv(), makeServerOpts);
+		await server.listen(0);
+		port = (server.address() as AddressInfo).port;
+
 		console.log(`Test server listening on port ${port}`);
 	});
 	opts.after(async () => {
-		await server.stop();
+		await new Promise<void>((resolve, reject) => {
+			server.close((error) => {
+				if (error) {
+					reject(error);
+				} else {
+					resolve();
+				}
+			});
+                });
 	});
 	return () => graphqlClient(port);
 }
