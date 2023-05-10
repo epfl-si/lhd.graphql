@@ -4,6 +4,7 @@
 
 import { HazLevelStruct } from '../hazards/hazlevel';
 import { BioStruct } from '../bio/biohazard';
+import { DispensationStruct } from '../dispensations';
 import { Room as roomStruct, Unit } from '@prisma/client';
 import { enumType, objectType, extendType } from 'nexus';
 import { Room, RoomKind, cad_lab } from 'nexus-prisma';
@@ -134,6 +135,18 @@ export const RoomStruct = objectType({
 				return naudits[naudits.length - 1]?.naudits;
 			},
 		});
+		t.nonNull.list.nonNull.field('dispensations', {
+			type: DispensationStruct,
+			description: `The list of all dispensations that concern or have ever concerned this room.`,
+			async resolve(parent, _, context) {
+				const id_lab = parent.id;
+				const dispensationsInRoom = await context.prisma.DispensationInRoomRelation.findMany({
+					where: { id_room: parent.id },
+					include: { dispensation_version: { include : { dispensation : true } } }
+				})
+			  return dispensationsInRoom.map((dr) => dr?.dispensation_version?.dispensation).filter((d) => d !== undefined)
+			}
+		})
 	},
 });
 
