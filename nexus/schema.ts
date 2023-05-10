@@ -63,14 +63,21 @@ import * as path from 'path';
 import { makeSchema } from 'nexus';
 import { NexusPrismaCRUDPlugin } from './prisma_crud_plugin';
 
-import * as schoolTypes from '../schema/schools';
-import * as instituteTypes from '../schema/institutes';
-import * as occupancyTypes from '../schema/occupancies';
-import * as peopleTypes from '../schema/people';
-import * as roomTypes from '../schema/rooms';
-import * as unitTypes from '../schema/units';
+import * as schoolTypes from '../schema/roomdetails/schools';
+import * as instituteTypes from '../schema/roomdetails/institutes';
+import * as occupancyTypes from '../schema/roomdetails/occupancies';
+import * as peopleTypes from '../schema/roomdetails/people';
+import * as roomTypes from '../schema/global/rooms';
+import * as unitTypes from '../schema/roomdetails/units';
 
-const types = [schoolTypes, instituteTypes, occupancyTypes, peopleTypes, roomTypes, unitTypes ];
+const types = [
+	schoolTypes,
+	instituteTypes,
+	occupancyTypes,
+	peopleTypes,
+	roomTypes,
+	unitTypes,
+];
 
 // No user-serviceable parts below /////////////////////////////////////////////////
 //
@@ -92,9 +99,9 @@ export const schema = makeSchema({
 		modules: [
 			{
 				module: require.resolve('.prisma/client/index.d.ts'),
-				alias: "prisma",
-			}
-		]
+				alias: 'prisma',
+			},
+		],
 	},
 
 	// The actual payload (which is also useful at run-time):

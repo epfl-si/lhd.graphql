@@ -1,14 +1,22 @@
-import { HazLevelStruct } from './hazlevel';
-import { BioStruct } from './biohazard';
+import { HazLevelStruct } from '../hazards/hazlevel';
+import { BioStruct } from '../bio/biohazard';
 /**
  * GraphQL types and queries for Room's and RoomKind's
  */
 
 import { Room as roomStruct, Unit } from '@prisma/client';
 import { enumType, objectType, extendType } from 'nexus';
-import { Room, RoomKind, cad_lab } from 'nexus-prisma';
+import {
+	Room,
+	RoomKind,
+	cad_lab,
+	auth_dsps_lab,
+	auth_dsps_version,
+	auth_dsps,
+} from 'nexus-prisma';
 import { debug as debug_ } from 'debug';
-import { NauditsStruct } from './naudits';
+import { NauditsStruct } from '../roomdetails/naudits';
+import { DispensationLabStruct } from '../dispensations/dspslab';
 const debug = debug_('lhd:rooms');
 
 const catalyseSpecialLocations = {
@@ -130,6 +138,16 @@ export const RoomStruct = objectType({
 			resolve: async (parent, _, context) => {
 				return await context.prisma.naudits.findMany({
 					where: { id_lab: parent.id },
+				});
+			},
+		});
+
+		t.list.field('dispensations', {
+			type: DispensationLabStruct,
+			resolve: async (parent, _, context) => {
+				return await context.prisma.auth_dsps_lab.findMany({
+					where: { id_lab: parent.id },
+					include: { auth_dsps_version: { include: { auth_dsps: true } } },
 				});
 			},
 		});
