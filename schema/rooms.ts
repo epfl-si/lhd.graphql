@@ -1,5 +1,6 @@
 import { HazLevelStruct } from './hazlevel';
 import { BioStruct } from './biohazard';
+
 /**
  * GraphQL types and queries for Room's and RoomKind's
  */
@@ -125,12 +126,14 @@ export const RoomStruct = objectType({
 			},
 		});
 
-		t.list.field('naudits', {
-			type: NauditsStruct,
+		t.int('yearly_audits', {
 			resolve: async (parent, _, context) => {
-				return await context.prisma.naudits.findMany({
+				const naudits = await context.prisma.naudits.findMany({
 					where: { id_lab: parent.id },
 				});
+				// For some reason this is a 1:n relationship in the LHDv2
+				// database ‽
+				return naudits[naudits.length - 1]?.naudits;
 			},
 		});
 	},
