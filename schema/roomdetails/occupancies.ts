@@ -5,7 +5,7 @@
  */
 
 import { objectType } from 'nexus';
-import { RoomStruct } from './rooms';
+import { RoomStruct } from '../global/rooms';
 import { PersonStruct, nilPersonId } from './people';
 import { UnitStruct } from './units';
 import { subunpro } from 'nexus-prisma';
@@ -31,16 +31,16 @@ Room, a responsible Person, and has-many COSECs (also Persons).
 		// (it being currently the only code path that can join to this objectType):
 		t.field('room', {
 			type: RoomStruct,
-			description: `The Room that this Occupancy occupies.`
+			description: `The Room that this Occupancy occupies.`,
 		});
 		t.field('unit', {
 			type: UnitStruct,
-			description: `The Unit that this Occupancy is for.`
+			description: `The Unit that this Occupancy is for.`,
 		});
 		t.nonNull.list.nonNull.field('cosecs', {
 			type: PersonStruct,
 			description: `The security officers (“COrrespondants de SÉCurité”) for this Occupancy.`,
-			async resolve (parent, _, context) {
+			async resolve(parent, _, context) {
 				// Despite TypeScript's opinion, we know that `parent.room.labunpe`
 				// exists and is an array of labunpeStruct's, because we know (as per
 				// comment above) that `parent` was made in ./rooms.ts:
@@ -48,32 +48,41 @@ Room, a responsible Person, and has-many COSECs (also Persons).
 				// ... But we need to make this SQL query anyway, so as to join
 				// with cosecs (which ./rooms.ts doesn't do):
 				const labunpes = await Promise.all(
-					labunpeStructs.map((labunpe) =>
+					labunpeStructs.map(labunpe =>
 						context.prisma.labunpe.findUnique({
 							where: { id_labunpe: labunpe.id_labunpe },
 							// We could punt the cosec join into the
 							// ./people.ts resolver, but that would
 							// leave us unable to sort:
-							include: { cosec : true } })));
-				return sanitizePersonList(labunpes.map((labunpe) => labunpe.cosec));
-			}
+							include: { cosec: true },
+						})
+					)
+				);
+				return sanitizePersonList(labunpes.map(labunpe => labunpe.cosec));
+			},
 		});
 		t.nonNull.list.nonNull.field('professors', {
 			type: PersonStruct,
-                  	description: `The security officers (“COrrespondants de SÉCurité”) for this Occupancy.`,
-			async resolve (parent, _, context) {
+			description: `The security officers (“COrrespondants de SÉCurité”) for this Occupancy.`,
+			async resolve(parent, _, context) {
 				const unit = await context.prisma.unit.findUnique({
 					where: { id: parent.unit.id },
 					// See previous comment regarding joining to person:
-					include: { subunpro: { include: { person : true } } } });
-				return sanitizePersonList<Person>(unit.subunpro.map((subunpro : subunpro) => subunpro.person));
-			}
+					include: { subunpro: { include: { person: true } } },
+				});
+				return sanitizePersonList<Person>(
+					unit.subunpro.map((subunpro: subunpro) => subunpro.person)
+				);
+			},
 		});
 	},
 });
 
-function sanitizePersonList<T extends { id_person: number, name: string, surname: string }> (persons : T[]) {
-	return persons.filter((p) => (p.id_person !== nilPersonId))
+function sanitizePersonList<
+	T extends { id_person: number; name: string; surname: string }
+>(persons: T[]) {
+	return persons
+		.filter(p => p.id_person !== nilPersonId)
 		.sort((a: T, b: T) => {
 			const compareSurame = a.surname.localeCompare(b.surname);
 			if (compareSurame) return compareSurame;

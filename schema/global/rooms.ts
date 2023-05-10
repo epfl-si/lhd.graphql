@@ -1,15 +1,13 @@
-import { HazLevelStruct } from './hazlevel';
-import { BioStruct } from './biohazard';
-
 /**
  * GraphQL types and queries for Room's and RoomKind's
  */
 
+import { HazLevelStruct } from '../hazards/hazlevel';
+import { BioStruct } from '../bio/biohazard';
 import { Room as roomStruct, Unit } from '@prisma/client';
 import { enumType, objectType, extendType } from 'nexus';
 import { Room, RoomKind, cad_lab } from 'nexus-prisma';
 import { debug as debug_ } from 'debug';
-import { NauditsStruct } from './naudits';
 const debug = debug_('lhd:rooms');
 
 const catalyseSpecialLocations = {
