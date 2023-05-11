@@ -125,7 +125,7 @@ export const RoomStruct = objectType({
 			},
 		});
 
-		t.int('yearly_audits', {
+		t.float('yearly_audits', {
 			resolve: async (parent, _, context) => {
 				const naudits = await context.prisma.naudits.findMany({
 					where: { id_lab: parent.id },
@@ -140,13 +140,16 @@ export const RoomStruct = objectType({
 			description: `The list of all dispensations that concern or have ever concerned this room.`,
 			async resolve(parent, _, context) {
 				const id_lab = parent.id;
-				const dispensationsInRoom = await context.prisma.DispensationInRoomRelation.findMany({
-					where: { id_room: parent.id },
-					include: { dispensation_version: { include : { dispensation : true } } }
-				})
-			  return dispensationsInRoom.map((dr) => dr?.dispensation_version?.dispensation).filter((d) => d !== undefined)
-			}
-		})
+				const dispensationsInRoom =
+					await context.prisma.DispensationInRoomRelation.findMany({
+						where: { id_room: parent.id },
+						include: { dispensation_version: { include: { dispensation: true } } },
+					});
+				return dispensationsInRoom
+					.map(dr => dr?.dispensation_version?.dispensation)
+					.filter(d => d !== undefined);
+			},
+		});
 	},
 });
 
