@@ -124,17 +124,7 @@ export const DispensationVersionMutations = extendType({
           id_dispensation: dispensation.id,
           draft_status: 'draft'
           }})
-        const toUpsert = {
-          author: args.author,
-          sciper_author: args.sciper_author,
-          subject: args.subject,
-          description: args.description,
-          comment: args.comment,
-          date_start: args.date_start ? new Date(args.date_start) : undefined,
-          date_end: args.date_start ? new Date(args.date_start) : undefined,
-          date_modified: new Date(),
-          modified_by: args.author || "GraphQL",
-        }
+        const toUpsert = normalizeDispensationVersionArgs(args);
 
         if (draftAlready.length == 1) {
           await prisma.DispensationVersion.update({
@@ -162,3 +152,17 @@ export const DispensationVersionMutations = extendType({
     })
   }
 })
+
+function normalizeDispensationVersionArgs (args) {
+  return {
+    author: args.author,
+    sciper_author: args.sciper_author,
+    subject: args.subject,
+    description: args.description,
+    comment: args.comment,
+    date_start: args.date_start ? new Date(args.date_start) : undefined,
+    date_end: args.date_start ? new Date(args.date_start) : undefined,
+    date_modified: new Date(),
+    modified_by: args.author || "GraphQL",
+  }
+}
