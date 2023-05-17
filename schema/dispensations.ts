@@ -91,7 +91,7 @@ export const DispensationEditStatus = mutationStatusType({
   name: "DispensationEditStatus"
 });
 
-export const DispensationVersionMutation = extendType({
+export const DispensationVersionMutations = extendType({
   type: 'Mutation',
   definition(t) {
     t.nonNull.field('editDraftDispensation', {
