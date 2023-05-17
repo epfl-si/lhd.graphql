@@ -153,6 +153,55 @@ export const DispensationVersionMutations = extendType({
   }
 })
 
+export const DispensationCreateStatus = mutationStatusType({
+  name: "DispensationCreateStatus",
+  definition(t) {
+    t.string('slug', { description: `A string representation of the new Dispensation's object identity; may be thereafter passed to e.g. \`editDraftDispensation\``});
+  }
+});
+
+
+export const DispensationMutations = extendType({
+  type: 'Mutation',
+  definition(t) {
+    t.nonNull.field('createDispensation', {
+      description: `Create a new Dispensation object in draft state.`,
+      args: {
+        ...dispensationFieldsType
+      },
+      type: "DispensationCreateStatus",
+      async resolve(root, args, context) {
+        const prisma = context.prisma;
+        return await prisma.$transaction(async (tx) => {
+          const newId = (await tx.Dispensation.create({ data: {
+            slug: "CHANGEME",   // Below
+          }})).id;
+
+          const slug = `DSPS-${newId}`;
+          await tx.Dispensation.update(
+            { where: { id: newId },
+              data: { slug }});
+
+          await tx.DispensationVersion.create({
+            data: {
+              dispensation: { connect: { id: newId } },
+              status: "Pending",
+              draft_status: "draft",
+              date_created: new Date(),
+              ...normalizeDispensationVersionArgs(args)
+            }
+          });
+
+          return {
+            slug,
+            ...mutationStatusType.success()
+          };
+        });
+      }
+    });
+  }
+});
+
 function normalizeDispensationVersionArgs (args) {
   return {
     author: args.author,
