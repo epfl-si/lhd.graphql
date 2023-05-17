@@ -91,6 +91,18 @@ export const DispensationEditStatus = mutationStatusType({
   name: "DispensationEditStatus"
 });
 
+
+const dispensationFieldsType = {
+  author: stringArg(),
+  sciper_author: intArg(),
+  subject: stringArg(),
+  description: stringArg(),
+  comment: stringArg(),
+  date_start: stringArg(),
+  date_end: stringArg(),
+  // TODO: more.
+};
+
 export const DispensationVersionMutations = extendType({
   type: 'Mutation',
   definition(t) {
@@ -98,14 +110,7 @@ export const DispensationVersionMutations = extendType({
       type: 'DispensationEditStatus',
       args: {
         slug: nonNull(stringArg()),
-        author: stringArg(),
-        sciper_author: intArg(),
-        subject: stringArg(),
-        description: stringArg(),
-        comment: stringArg(),
-        date_start: stringArg(),
-        date_end: stringArg(),
-        // TODO: more.
+        ...dispensationFieldsType
       },
       async resolve(root, args, context) {
         const slug = args.slug, prisma = context.prisma
