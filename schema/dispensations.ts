@@ -91,6 +91,9 @@ export const DispensationEditStatus = mutationStatusType({
   name: "DispensationEditStatus"
 });
 
+export const DispensationCommitStatus = mutationStatusType({
+  name: "DispensationCommitStatus"
+});
 
 const dispensationFieldsType = {
   author: stringArg(),
@@ -111,6 +114,7 @@ export const DispensationVersionMutations = extendType({
       args: {
         slug: nonNull(stringArg()),
         ...dispensationFieldsType
+        // TODO: edit the 1-N relationships (DispensationHeldRelation, DispensationInRoomRelation)
       },
       async resolve(root, args, context) {
         const slug = args.slug, prisma = context.prisma
@@ -149,7 +153,13 @@ export const DispensationVersionMutations = extendType({
           return mutationStatusType.error(`${slug} has multiple drafts!!`)
         }
       }
-    })
+    });
+
+    // TODO: implement this.
+    t.nonNull.field('commitDispensation', {
+      description: `Move a Dispensation currently in draft state into final state.`,
+      type: 'DispensationCommitStatus',
+    });
   }
 })
 
@@ -168,6 +178,7 @@ export const DispensationMutations = extendType({
       description: `Create a new Dispensation object in draft state.`,
       args: {
         ...dispensationFieldsType
+        // TODO: create the 1-N relationships (DispensationHeldRelation, DispensationInRoomRelation)
       },
       type: "DispensationCreateStatus",
       async resolve(root, args, context) {
