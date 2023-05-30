@@ -171,6 +171,11 @@ export const DispensationCreateStatus = mutationStatusType({
 });
 
 
+export const DispensationDeleteeStatus = mutationStatusType({
+  name: "DispensationDeleteStatus"
+});
+
+
 export const DispensationMutations = extendType({
   type: 'Mutation',
   definition(t) {
@@ -210,8 +215,46 @@ export const DispensationMutations = extendType({
         });
       }
     });
-  }
-});
+
+    t.nonNull.field('deleteDispensation', {
+      description: 'Delete a Dispensation.',
+      args: {
+        slug: nonNull(stringArg())
+      },
+      type: "DispensationDeleteStatus",
+      async resolve (root, args, context) {
+        const slug = args.slug;
+        await context.prisma.$transaction(async (tx) => {
+          const dispensation = await tx.Dispensation.findUnique({ where: { slug }});
+          if (! dispensation) {
+            throw new Error(`Dispensation ${slug} not found`);
+          }
+
+          const versionIDsSet : Set<number> = new Set();
+          for (const v of await tx.DispensationVersion.findMany(
+            { where: { id_dispensation : dispensation.id },
+              select: { id : true }})) {
+            versionIDsSet.add(v.id);
+          }
+          const versionIDs = [...versionIDsSet.values() ];
+
+          for (const table of [tx.DispensationHeldRelation,
+                                   tx.DispensationInRoomRelation]) {
+            await table.deleteMany({
+              where: { id_dispensation_version: { in: versionIDs } } });
+          }
+
+          await tx.DispensationVersion.deleteMany({
+            where: { id: { in: versionIDs } } });
+
+          await tx.Dispensation.delete({
+            where: { id: dispensation.id } });
+        });
+        return mutationStatusType.success();
+      }  // async resolve
+    });  // t.nonNull.field
+  }  // definition(t)
+});  // extendType
 
 function normalizeDispensationVersionArgs (args) {
   return {
