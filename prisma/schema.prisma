@@ -92,7 +92,7 @@ model DispensationHeldRelation {
   // id_auth_dsps_holder  Int               @id @default(autoincrement())  -- Unused
   id_dispensation_version Int               @map("id_auth_dsps_version")
   id_person            Int
-  auth_dsps_version    DispensationVersion @relation(fields: [id_dispensation_version], references: [id])
+  dispensation_version    DispensationVersion @relation(fields: [id_dispensation_version], references: [id])
   person               Person            @relation(fields: [id_person], references: [id_person])
 
   @@unique([id_person, id_dispensation_version], name: "authholder")

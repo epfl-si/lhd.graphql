@@ -1,4 +1,4 @@
-import { objectType, extendType, nonNull, list, intArg, stringArg } from 'nexus';
+import { objectType, extendType, inputObjectType, nonNull, list, intArg, stringArg } from 'nexus';
 import { Dispensation, DispensationVersion } from 'nexus-prisma';
 import { mutationStatusType } from './statuses';
 
@@ -95,6 +95,20 @@ export const DispensationCommitStatus = mutationStatusType({
   name: "DispensationCommitStatus"
 });
 
+export const DispensationHolder = inputObjectType({
+  name: "DispensationHolder",
+  definition(t) {
+    t.nonNull.string('sciper');
+  }
+})
+
+export const DispensationRoom = inputObjectType({
+  name: "DispensationRoom",
+  definition(t) {
+    t.nonNull.int('id');
+  }
+})
+
 const dispensationFieldsType = {
   author: stringArg(),
   sciper_author: intArg(),
@@ -103,7 +117,8 @@ const dispensationFieldsType = {
   comment: stringArg(),
   date_start: stringArg(),
   date_end: stringArg(),
-  // TODO: more.
+  holders: list(nonNull(DispensationHolder)),
+  rooms: list(nonNull(DispensationRoom)),
 };
 
 export const DispensationVersionMutations = extendType({
@@ -136,10 +151,11 @@ export const DispensationVersionMutations = extendType({
               id: draftAlready[0].id
             },
             data: { ...toUpsert, modified_by: args.author }
-          })
+          });
+          await setRoomsAndHolders(prisma, draftAlready[0], args.rooms, args.holders);
           return mutationStatusType.success()
         } else if (draftAlready.length == 0) {
-          await prisma.DispensationVersion.create({
+          const draftVersion = await prisma.DispensationVersion.create({
             data: {
               dispensation: { connect: { id: dispensation.id }},
               status: "Pending",
@@ -147,7 +163,8 @@ export const DispensationVersionMutations = extendType({
               date_created: new Date(),
               ...toUpsert
             }
-          })
+          });
+          await setRoomsAndHolders(prisma, draftVersion, args.rooms, args.holders);
           return mutationStatusType.success()
         } else {
           return mutationStatusType.error(`${slug} has multiple drafts!!`)
@@ -198,7 +215,7 @@ export const DispensationMutations = extendType({
             { where: { id: newId },
               data: { slug }});
 
-          await tx.DispensationVersion.create({
+          const theVersion = await tx.DispensationVersion.create({
             data: {
               dispensation: { connect: { id: newId } },
               status: "Pending",
@@ -207,6 +224,8 @@ export const DispensationMutations = extendType({
               ...normalizeDispensationVersionArgs(args)
             }
           });
+
+          await setRoomsAndHolders(tx, theVersion, args.rooms, args.holders);
 
           return {
             slug,
@@ -268,4 +287,86 @@ function normalizeDispensationVersionArgs (args) {
     date_modified: new Date(),
     modified_by: args.author || "GraphQL",
   }
+}
+
+async function setRoomsAndHolders (prisma: any,
+  dispensationVersion: DispensationVersion,
+  rooms: null | { id : number }[],
+  holders: null | { sciper : string }[]) {
+    const id_dispensation_version = dispensationVersion.id,
+    where = { id_dispensation_version },
+    connect_dispensation_version = { connect : { id: id_dispensation_version } };
+
+    if (rooms) {
+      const wantRooms = setOfArray(rooms.map((room) => room.id));
+      const existing : number[] = (await prisma.DispensationInRoomRelation.findMany({ where })).map((dirr) => dirr.id_room);
+
+      await prisma.DispensationInRoomRelation.deleteMany({
+        where: {
+          id_room: { in: existing.filter(roomId => ! wantRooms.has(roomId)) },
+          ...where
+        }
+      });
+
+      for (const addRoom of setDifference(wantRooms, existing)) {
+          await prisma.DispensationInRoomRelation.create({
+            data: {
+              room: { connect: { id: addRoom } },
+              dispensation_version: connect_dispensation_version
+            }
+          });
+      }
+    }
+
+    if (holders) { 
+      const wantHolders = setOfArray(holders.map((h) => h.sciper));
+      const existing = (await prisma.DispensationHeldRelation.findMany({ where,
+        include: { person: true } 
+      })).map((e) => ({
+        id: e.id_person as number,
+        // Sadly, the current database schema uses integers for SCIPERs:
+        sciper: String(e.person.sciper)
+      }));
+
+      await prisma.DispensationHeldRelation.deleteMany({
+        where: {
+          id_person: { in: existing.filter(({ sciper }) => ! wantHolders.has(sciper)).map((e) => e.id) },
+          ...where
+        }
+      });
+
+      for (const addHolder of setDifference(wantHolders, existing.map((e) => e.sciper))) {
+          await prisma.DispensationHeldRelation.create({
+            data: {
+              person: { connect: { sciper:
+                // See comment above:
+                parseInt(addHolder) } },
+              dispensation_version: connect_dispensation_version
+            }
+          });
+      }
+    }
+}
+
+function setOfArray<T>(a: T[]) : Set<T> {
+  const set = new Set<T>;
+  for (const item of a) {
+    set.add(item);
+  }
+  return set;
+}
+
+function setFilter<T>(a : Set<T>, predicate: (t: T) => boolean) {
+  const filtered = new Set<T>;
+  for (const item of a) {
+    if (predicate(item)) {
+      filtered.add(item);
+    }
+  }
+  return filtered;
+}
+
+function setDifference<T>(a : Set<T>, b : T[] | Set<T>) {
+  const bSet : Set<T> = (b instanceof Array) ? setOfArray(b) : b;
+  return setFilter(a, (item) => ! bSet.has(item));
 }
