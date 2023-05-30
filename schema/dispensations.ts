@@ -1,4 +1,4 @@
-import { objectType, extendType, nonNull, intArg, stringArg } from 'nexus';
+import { objectType, extendType, nonNull, list, intArg, stringArg } from 'nexus';
 import { Dispensation, DispensationVersion } from 'nexus-prisma';
 import { mutationStatusType } from './statuses';
 
