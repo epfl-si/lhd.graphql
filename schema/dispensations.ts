@@ -220,7 +220,7 @@ function normalizeDispensationVersionArgs (args) {
     subject: args.subject,
     description: args.description,
     comment: args.comment,
-    date_start: args.date_start ? new Date(args.date_start) : undefined,
+    date_start: args.date_start ? new Date(args.date_start) : new Date(),
     date_end: args.date_end ? new Date(args.date_end) : undefined,
     date_modified: new Date(),
     modified_by: args.author || "GraphQL",
