@@ -10,7 +10,7 @@
 
 import { plugin as NexusPlugin, dynamicOutputProperty } from 'nexus';
 import { DynamicOutputPropertyDef } from 'nexus/dist/dynamicProperty';
-import { build as buildNexusPrismaTypes } from '@kenchi/nexus-plugin-prisma/dist/builder';
+import { build as buildNexusPrismaTypes } from '@mercurialweb/nexus-plugin-prisma/dist/builder';
 
 import { debug as debug_ } from 'debug';
 const debug = debug_('lhd:prisma_crud_plugin');

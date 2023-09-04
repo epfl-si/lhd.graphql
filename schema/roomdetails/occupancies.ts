@@ -6,7 +6,7 @@
 
 import { objectType } from 'nexus';
 import { RoomStruct } from '../global/rooms';
-import { PersonStruct, nilPersonId } from './people';
+import { PersonStruct, nilPersonId } from '../global/people';
 import { UnitStruct } from './units';
 import { subunpro } from 'nexus-prisma';
 import { Person, labunpe } from '@prisma/client';
