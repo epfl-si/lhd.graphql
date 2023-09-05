@@ -47,7 +47,7 @@
     "clean": "yarn nexus:clean",
     "nexus:clean": "rm -rf node_modules/@types/typegen-nexus*",
     "start": "sh -c 'node \"$@\" -r ts-node/register index.ts' -- ",
-    "test": "_mocha () { set -e -x; if [ -z \"$1\" ]; then set -- 'tests/**/*.ts'; fi; mocha -r ts-node/register --exclude 'tests/testlib/**' \"$@\" ; } ; _mocha"
+    "test": "scripts/run-tests \"$@\""
   },
   "keywords": [
     "LHD",
