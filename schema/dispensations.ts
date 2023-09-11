@@ -57,12 +57,13 @@ export const DispensationVersionStruct = objectType({
     t.nonNull.list.nonNull.field("rooms", {
       type: "Room",
       async resolve(parent, _, context) {
-        const roomRelations = await context.prisma.DispensationInRoomRelation.findUnique({
-          where: {
-            id_dispensation_version: parent.id
-          },
-          include: { room: true }})
-        return roomRelations.map((rr) => rr.room)
+          const thisVersion = context.prisma.DispensationVersion.findUnique(
+              {where: {id: parent.id}})
+          const rooms = []
+          for (const roomRelation of await thisVersion.in_room()) {
+            rooms.push(await context.prisma.Room.findUnique({ where: { id: roomRelation.id_room }}))
+          }
+          return rooms
       }
     })
     t.nonNull.list.nonNull.field("holders", {
