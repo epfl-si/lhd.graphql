@@ -57,7 +57,7 @@ export const DispensationVersionStruct = objectType({
     t.nonNull.list.nonNull.field("rooms", {
       type: "Room",
       async resolve(parent, _, context) {
-        const roomRelations = await context.prisma.DispensationInRoomRelation.findMany({
+        const roomRelations = await context.prisma.DispensationInRoomRelation.findUnique({
           where: {
             id_dispensation_version: parent.id
           },

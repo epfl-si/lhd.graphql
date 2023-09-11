@@ -89,6 +89,122 @@ describe("End-to-end tests", () => {
       assert(modifiedByCount > 0);
     })
 
+    it("save new dispensations", async function() {
+      this.timeout(10000);
+      const mutationCreation = `
+        mutation newDispensation {
+          createDispensation(
+            subject: "Inert Gas",
+            author: "TEST",
+            sciper_author: 312067,
+            description: "Rosa Test description",
+            comment: "Rosa Test comment",
+            date_start: "2023-09-07",
+            date_end: "2023-09-29",
+            rooms: [{ id: 4 }, { id: 5 }],
+            holders: [{ sciper: "100192" }, { sciper: "10634" }]
+          ) {
+            errors {
+              message
+            }
+            isSuccess
+            slug
+          }
+        }
+      `;
+
+      const c = client();
+      const mutationCreationResult = await c.mutation<{isSuccess: string, slug: string}>(mutationCreation);
+      assert(mutationCreationResult.isSuccess);
+      assert(mutationCreationResult.slug.startsWith("DSPS-"));
+
+      if(mutationCreationResult.isSuccess){
+        const mutationUpdate = `
+        mutation updateDispensation {
+            editDraftDispensation(
+              slug: "${mutationCreationResult.slug}", 
+              subject: "Inert Gas",
+              author: "TEST",
+              sciper_author: 312067,
+              description: "Rosa Test description update|n|shdjkshjshgkhfgkdhfgjk",
+              comment: "Rosa Test comment update",
+              date_start: "2023-09-07",
+              date_end: "2023-09-29",
+              rooms: [{ id: 4 }, { id: 5 }],
+              holders: [{ sciper: "100192" }, { sciper: "10634" }]
+            ) {
+              errors {
+                message               
+              }               
+              isSuccess              
+            }            
+        }
+        `;
+        const mutationUpdateResult = await c.mutation<{isSuccess: string}>(mutationUpdate);
+        assert(mutationUpdateResult.isSuccess);
+
+        if(mutationUpdateResult.isSuccess){
+          const mutationDelete = `
+          mutation deleteDispensation {
+            deleteDispensation(slug: "${mutationCreationResult.slug}") {
+              errors {
+                message
+                extensions {
+                  code
+                }
+              }
+              isSuccess
+            }
+          }`;
+          const mutationDeleteResult = await c.mutation<{isSuccess: string}>(mutationDelete);
+          assert(mutationDeleteResult.isSuccess);
+          console.log(mutationDeleteResult);
+        }
+      }
+
+    });
+
+    it("doesn't make N+1 queries", async () => {
+      //console.log('1 --> ' + queries.length)//0
+
+      //1 for dispensations + 77 dispensation + 142 versions + 81 rooms + 78 holders ==> 379
+
+      const dispensations = await q({})
+      assert(dispensations.length>0)
+      //console.log('2 disp --> ' + dispensations.length)//77
+      //console.log('2 --> ' + queries.length)//!!!!!571
+      console.log(queries)
+
+      //const dispVersions : { [id : string] : number } = {}
+      var totalVersions = 0
+      var arrRooms = []
+      var allHolders = []
+      for (const disp of dispensations){
+        //dispVersions[disp.slug] = disp.versions.length
+        totalVersions += disp.versions.length
+        for (const version of disp.versions) {
+          assert(version.description !== undefined)
+          assert(version.comment !== undefined)
+
+          for (const room of version.rooms) {
+            if(!arrRooms.includes(room.name))
+              arrRooms.push(room.name)
+          }
+
+          for (const holder of version.holders) {
+            if(!allHolders.includes(holder.name + holder.surname))
+              allHolders.push(holder.name + holder.surname)
+          }
+        }
+      }
+      //console.log(arrRooms.length)//81
+      //console.log(allHolders.length)//78
+      //console.log(totalVersions)//142
+      //console.log('3 --> ' + queries.length)//!!!!!!571
+      const totCalls = dispensations.length + totalVersions + allHolders.length + arrRooms.length + 1
+      assert(queries.length < totCalls)
+    })
+
     it("has rooms")
     it("has holders")
   })
