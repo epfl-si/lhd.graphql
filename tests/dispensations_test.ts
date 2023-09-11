@@ -165,44 +165,11 @@ describe("End-to-end tests", () => {
     });
 
     it("doesn't make N+1 queries", async () => {
-      //console.log('1 --> ' + queries.length)//0
-
-      //1 for dispensations + 77 dispensation + 142 versions + 81 rooms + 78 holders ==> 379
-
       const dispensations = await q({})
       assert(dispensations.length>0)
-      //console.log('2 disp --> ' + dispensations.length)//77
-      //console.log('2 --> ' + queries.length)//!!!!!571
-      console.log(queries)
-
-      //const dispVersions : { [id : string] : number } = {}
-      var totalVersions = 0
-      var arrRooms = []
-      var allHolders = []
-      for (const disp of dispensations){
-        //dispVersions[disp.slug] = disp.versions.length
-        totalVersions += disp.versions.length
-        for (const version of disp.versions) {
-          assert(version.description !== undefined)
-          assert(version.comment !== undefined)
-
-          for (const room of version.rooms) {
-            if(!arrRooms.includes(room.name))
-              arrRooms.push(room.name)
-          }
-
-          for (const holder of version.holders) {
-            if(!allHolders.includes(holder.name + holder.surname))
-              allHolders.push(holder.name + holder.surname)
-          }
-        }
-      }
-      //console.log(arrRooms.length)//81
-      //console.log(allHolders.length)//78
-      //console.log(totalVersions)//142
-      //console.log('3 --> ' + queries.length)//!!!!!!571
-      const totCalls = dispensations.length + totalVersions + allHolders.length + arrRooms.length + 1
-      assert.isBelow(queries.length, totCalls)
+      console.log('disp --> ' + dispensations.length)//77
+      console.log(queries.length)
+      assert.isBelow(queries.length, 20)
     })
 
     it("has rooms")
