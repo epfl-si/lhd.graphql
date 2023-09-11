@@ -19,30 +19,36 @@ import { Prisma } from '@prisma/client';
 const debug = debug_('lhd-tests:graphql');
 
 export interface GraphQLClient<TRecord> {
+	mutation<TResult>(query: string): Promise<TResult>;
 	query(query: string): Promise<Array<TRecord>>;
 }
 
 export function graphqlClient<TRecord>(port: number): GraphQLClient<TRecord> {
-	return {
-		async query(query: string): Promise<Array<TRecord>> {
-			const fetched = await fetch(`http://localhost:${port}/graphql`, {
-				method: 'POST',
-				headers: {
-					Accept: 'application/json',
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({ query }),
-			});
-			const json = await fetched.json();
-			debug(json);
-			for (const k in json.data) {
-				// In fact, we expect json.data to contain exactly one key
-				// (e.g. “rooms” for a `{ rooms { } }` query):
-				return json.data[k];
-			}
-			return []; // Not reached
-		},
-	};
+	async function request(query: string): Promise<any> {
+		const fetched = await fetch(`http://localhost:${port}/graphql`, {
+			method: 'POST',
+			headers: {
+				Accept: 'application/json',
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({ query }),
+		});
+		const json = await fetched.json();
+		debug(json);
+		for (const k in json.data) {
+			// In fact, we expect json.data to contain exactly one key
+			// (e.g. “rooms” for a `{ rooms { } }` query):
+			return json.data[k];
+		}
+		return []; // Not reached
+	}
+	async function query (query : string) : Promise<Array<TRecord>> {
+		return request(query);
+	}
+	async function mutation (query : string) : Promise<any> {
+		return request(query);
+	}
+	return { mutation, query };
 }
 
 export function asGraphQL(whereClause: any) {
@@ -78,7 +84,7 @@ export function useTestServer<TRecord>(opts: {
 					resolve();
 				}
 			});
-                });
+		});
 	});
 	return () => graphqlClient(port);
 }
