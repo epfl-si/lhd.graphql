@@ -28,9 +28,12 @@ export async function makeServer(
 	const app = express();
 	const clientOptions: Prisma.PrismaClientOptions = {};
 	if (onQuery) {
-		clientOptions.log = [{ level: 'query', emit: 'event' }];
-	} else if (debug.enabled('prisma:query')) {
-		clientOptions.log = ['query'];
+		if (! clientOptions.log) clientOptions.log = [];
+		clientOptions.log.push({ level: 'query', emit: 'event' });
+	}
+       if (debug.enabled('prisma:query')) {
+		if (! clientOptions.log) clientOptions.log = [];
+		clientOptions.log.push('query');
 	}
 
 	const prisma = new PrismaClient({
