@@ -1,5 +1,5 @@
 import 'mocha'
-import * as assert from 'assert'
+import { assert } from 'chai'
 import { Prisma } from '@prisma/client'
 
 import { GraphQLClient, asGraphQL, useTestServer } from './testlib/graphql'
@@ -202,7 +202,7 @@ describe("End-to-end tests", () => {
       //console.log(totalVersions)//142
       //console.log('3 --> ' + queries.length)//!!!!!!571
       const totCalls = dispensations.length + totalVersions + allHolders.length + arrRooms.length + 1
-      assert(queries.length < totCalls)
+      assert.isBelow(queries.length, totCalls)
     })
 
     it("has rooms")
