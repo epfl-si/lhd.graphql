@@ -20,6 +20,13 @@
         #graphiql {
             height: 100vh;
         }
+
+        .graphiql-container .graphiql-sidebar button.login{
+            color: white;
+            padding: 2px;
+            font-size: x-small;
+            border-radius: 10px;
+        }
     </style>
     <!--
       This GraphiQL example depends on Promise and fetch, which are available in
@@ -58,26 +65,16 @@
             rel="stylesheet"
             href="https://unpkg.com/@graphiql/plugin-explorer/dist/style.css"
     />
+
+    <link rel="stylesheet" href="https://web2018.epfl.ch/6.3.0/css/elements.min.css">
+    <script src="https://web2018.epfl.ch/6.3.0/js/elements.min.js"></script>
+
+    <script src="https://unpkg.com/@epfl-si/appauth@0.11.0/dist/umd/bundle.min.js"></script>
 </head>
 
 <body>
 <div id="graphiql">Loading...</div>
-<script src="https://unpkg.com/@epfl-si/appauth@0.11.0/dist/umd/bundle.min.js"></script>
 <script>
-
-    const root = ReactDOM.createRoot(document.getElementById('graphiql'));
-    let headers = {
-        accept: 'application/json',
-        authorization: ''
-    };
-    let fetcher = GraphiQL.createFetcher({
-        url: '/',
-        headers: headers,
-    });
-    const explorerPlugin = GraphiQLPluginExplorer.explorerPlugin();
-
-    updateHeadersWithToken(root, headers, fetcher, undefined);
-
     function setInnerHTML(id, html) {
         document.getElementById(id).innerHTML = html;
     }
@@ -112,30 +109,28 @@
         username = undefined;
         showAuthenticationSteadyState();
     }
-    // Function to update the headers with the new token
-    function updateHeadersWithToken(root, headers, fetcher, token) {
-        headers = {
-            accept: 'application/json',
-            authorization: token ? `Bearer ${token}` : ''
-        };
-        fetcher = GraphiQL.createFetcher({
-            url: '/',
-            headers: headers,
-        });
-        root.render(
-            React.createElement(GraphiQL, {
-                fetcher,
-                defaultEditorToolsVisibility: true,
-                plugins: [explorerPlugin],
-            }),
-        );
-    }
+
+    const root = ReactDOM.createRoot(document.getElementById('graphiql'));
+    const headers = {
+        accept: 'application/json'
+    };
+    const fetcher = GraphiQL.createFetcher({
+        url: '/',
+        headers: headers,
+    });
+    root.render(
+        React.createElement(GraphiQL, {
+            fetcher,
+            defaultEditorToolsVisibility: true,
+        }),
+    );
 
     document.addEventListener("DOMContentLoaded", async function () {
         let toolbar = document.getElementsByClassName("graphiql-sidebar")[0];
         const aDivForReact = document.createElement("div");
         const button= document.createElement('button')
         button.id = 'auth-button';
+        button.setAttribute("class", 'btn btn-primary login');
         aDivForReact.appendChild(button);
         toolbar.insertAdjacentElement('beforeend', aDivForReact);
 
@@ -157,11 +152,9 @@
         showAuthenticationInProgress();
         isLoggedIn = await oidc.run({
             accessToken(token) {
-                accToken = token;
-                updateHeadersWithToken(root, headers, fetcher, token);
+                headers["Authorization"] = `Bearer ${token}`
             },
             idToken(tokenString, parsedToken) {
-                //setInnerHTML("idtoken", JSON.stringify(parsedToken, null, 2));
                 username = parsedToken.preferred_username;
             },
             logout: onLogout,
