@@ -89,7 +89,7 @@ describe("End-to-end tests", () => {
       assert(modifiedByCount > 0);
     })
 
-    it("save new dispensations", async function() {
+    it("saves new dispensations", async function() {
       this.timeout(10000);
       const mutationCreation = `
         mutation newDispensation {
