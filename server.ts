@@ -10,7 +10,7 @@ import * as dotenv from 'dotenv';
 import * as express from 'express';
 import * as http from 'http';
 import * as cors from 'cors';
-
+import * as fs  from 'fs/promises'
 import { schema } from './nexus/schema';
 
 import { Issuer, errors } from 'openid-client';
@@ -76,6 +76,11 @@ export async function makeServer(
 			}
 		});
 	}
+
+	app.get('/graphiql', async (req, res) => {
+		const html =  await fs.readFile('developer/graphiql.html', 'utf8')
+		res.send(html)
+	})
 	server.applyMiddleware({ path: '/', bodyParserConfig: false, app });
 
 	return httpServer;
