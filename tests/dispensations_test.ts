@@ -1,5 +1,5 @@
 import 'mocha'
-import * as assert from 'assert'
+import { assert } from 'chai'
 import { Prisma } from '@prisma/client'
 
 import { GraphQLClient, asGraphQL, useTestServer } from './testlib/graphql'
@@ -87,6 +87,89 @@ describe("End-to-end tests", () => {
       }
       assert(dispensationsCount > 0);
       assert(modifiedByCount > 0);
+    })
+
+    it("saves new dispensations", async function() {
+      this.timeout(10000);
+      const mutationCreation = `
+        mutation newDispensation {
+          createDispensation(
+            subject: "Inert Gas",
+            author: "TEST",
+            sciper_author: 312067,
+            description: "Rosa Test description",
+            comment: "Rosa Test comment",
+            date_start: "2023-09-07",
+            date_end: "2023-09-29",
+            rooms: [{ id: 4 }, { id: 5 }],
+            holders: [{ sciper: "100192" }, { sciper: "10634" }]
+          ) {
+            errors {
+              message
+            }
+            isSuccess
+            slug
+          }
+        }
+      `;
+
+      const c = client();
+      const mutationCreationResult = await c.mutation<{isSuccess: string, slug: string}>(mutationCreation);
+      assert(mutationCreationResult.isSuccess);
+      assert(mutationCreationResult.slug.startsWith("DSPS-"));
+
+      if(mutationCreationResult.isSuccess){
+        const mutationUpdate = `
+        mutation updateDispensation {
+            editDraftDispensation(
+              slug: "${mutationCreationResult.slug}", 
+              subject: "Inert Gas",
+              author: "TEST",
+              sciper_author: 312067,
+              description: "Rosa Test description update|n|shdjkshjshgkhfgkdhfgjk",
+              comment: "Rosa Test comment update",
+              date_start: "2023-09-07",
+              date_end: "2023-09-29",
+              rooms: [{ id: 4 }, { id: 5 }],
+              holders: [{ sciper: "100192" }, { sciper: "10634" }]
+            ) {
+              errors {
+                message               
+              }               
+              isSuccess              
+            }            
+        }
+        `;
+        const mutationUpdateResult = await c.mutation<{isSuccess: string}>(mutationUpdate);
+        assert(mutationUpdateResult.isSuccess);
+
+        if(mutationUpdateResult.isSuccess){
+          const mutationDelete = `
+          mutation deleteDispensation {
+            deleteDispensation(slug: "${mutationCreationResult.slug}") {
+              errors {
+                message
+                extensions {
+                  code
+                }
+              }
+              isSuccess
+            }
+          }`;
+          const mutationDeleteResult = await c.mutation<{isSuccess: string}>(mutationDelete);
+          assert(mutationDeleteResult.isSuccess);
+          console.log(mutationDeleteResult);
+        }
+      }
+
+    });
+
+    it("doesn't make N+1 queries", async () => {
+      const dispensations = await q({})
+      assert(dispensations.length>0)
+      console.log('disp --> ' + dispensations.length)//77
+      console.log(queries.length)
+      assert.isBelow(queries.length, 20)
     })
 
     it("has rooms")
