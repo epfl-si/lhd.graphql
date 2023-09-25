@@ -158,7 +158,6 @@ describe("End-to-end tests", () => {
           }`;
           const mutationDeleteResult = await c.mutation<{isSuccess: string}>(mutationDelete);
           assert(mutationDeleteResult.isSuccess);
-          console.log(mutationDeleteResult);
         }
       }
 
@@ -167,8 +166,6 @@ describe("End-to-end tests", () => {
     it("doesn't make N+1 queries", async () => {
       const dispensations = await q({})
       assert(dispensations.length>0)
-      console.log('disp --> ' + dispensations.length)//77
-      console.log(queries.length)
       assert.isBelow(queries.length, 20)
     })
 
