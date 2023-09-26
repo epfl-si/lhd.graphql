@@ -112,21 +112,17 @@ describe("End-to-end tests", () => {
 
       it("doesn't make N+1 queries", async () => {
 
-        console.log(queries.length)
         const svRooms = await q({building: { equals: "SV"}}, 'kind { name }')
         assert(svRooms.length > 9)
 
-        console.log(svRooms)
         const kinds : { [id : string] : number } = {}
         for (const room of svRooms) {
           const k = room.kind?.name
           kinds[k] = kinds[k] ? kinds[k] + 1 : 1
         }
-        console.log(kinds)
         const kindCount = Object.keys(kinds).length
         assert(kindCount > 5)
 
-        console.log(queries.length)
         assert(queries.length < kindCount)
         assert(queries.some((q) => q.query.includes(' IN (')))
       })
