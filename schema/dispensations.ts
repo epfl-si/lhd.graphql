@@ -107,7 +107,7 @@ export const DispensationHolder = inputObjectType({
 export const DispensationRoom = inputObjectType({
   name: "DispensationRoom",
   definition(t) {
-    t.nonNull.int('id');
+    t.nonNull.string('name');
   }
 })
 
@@ -293,30 +293,38 @@ function normalizeDispensationVersionArgs (args) {
 
 async function setRoomsAndHolders (prisma: any,
   dispensationVersion: DispensationVersion,
-  rooms: null | { id : number }[],
+  rooms: null | { name : string }[],
   holders: null | { sciper : string }[]) {
     const id_dispensation_version = dispensationVersion.id,
     where = { id_dispensation_version },
     connect_dispensation_version = { connect : { id: id_dispensation_version } };
 
     if (rooms) {
-      const wantRooms = setOfArray(rooms.map((room) => room.id));
-      const existing : number[] = (await prisma.DispensationInRoomRelation.findMany({ where })).map((dirr) => dirr.id_room);
+      const wantRooms = setOfArray(rooms.map((room) => room.name));
+      const existing = (await prisma.DispensationInRoomRelation.findMany({ where ,
+        include: { room: true }
+      })).map((e) => ({
+        id: e.id as number,
+        name: String(e.room.name)
+      }));
 
       await prisma.DispensationInRoomRelation.deleteMany({
         where: {
-          id_room: { in: existing.filter(roomId => ! wantRooms.has(roomId)) },
+          id_room: { in: existing.filter(({ name }) => ! wantRooms.has(name)).map(e => e.id) },
           ...where
         }
       });
 
-      for (const addRoom of setDifference(wantRooms, existing)) {
+      for (const addRoom of setDifference(wantRooms, existing.map((e) => e.name))) {
+        const room = await prisma.Room.findFirst({where: { name: addRoom } });
+        if (room){
           await prisma.DispensationInRoomRelation.create({
             data: {
-              room: { connect: { id: addRoom } },
+              room: { connect: { id: room.id}},
               dispensation_version: connect_dispensation_version
             }
           });
+        }
       }
     }
 

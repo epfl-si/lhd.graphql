@@ -101,7 +101,7 @@ describe("End-to-end tests", () => {
             comment: "Rosa Test comment",
             date_start: "2023-09-07",
             date_end: "2023-09-29",
-            rooms: [{ id: 4 }, { id: 5 }],
+            rooms: [{ name: "BCH 1107" }, { name: "BCH 0407" }],
             holders: [{ sciper: "100192" }, { sciper: "10634" }]
           ) {
             errors {
@@ -130,7 +130,7 @@ describe("End-to-end tests", () => {
               comment: "Rosa Test comment update",
               date_start: "2023-09-07",
               date_end: "2023-09-29",
-              rooms: [{ id: 4 }, { id: 5 }],
+              rooms: [{ name: "BCH 1107" }, { name: "BCH 0405" } ],
               holders: [{ sciper: "100192" }, { sciper: "10634" }]
             ) {
               errors {

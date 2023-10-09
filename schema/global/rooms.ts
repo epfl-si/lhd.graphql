@@ -40,7 +40,6 @@ export const RoomStruct = objectType({
 	description: `A room on EPFL campus or any of the satellite locations.`,
 	definition(t) {
 		for (const f of [
-			'id',
 			'name',
 			'building',
 			'sector',
