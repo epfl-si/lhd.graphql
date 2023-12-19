@@ -46,6 +46,8 @@ export const RoomStruct = objectType({
 			'floor',
 			'roomNo',
 			'kind',
+			'vol',
+			'vent'
 		]) {
 			t.field(Room[f]);
 		}
