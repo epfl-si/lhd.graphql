@@ -9,6 +9,7 @@ import { Room as roomStruct, Unit } from '@prisma/client';
 import { enumType, objectType, extendType } from 'nexus';
 import { Room, RoomKind, cad_lab } from 'nexus-prisma';
 import { debug as debug_ } from 'debug';
+import {UnitStruct} from "../roomdetails/units";
 const debug = debug_('lhd:rooms');
 
 const catalyseSpecialLocations = {
@@ -113,6 +114,19 @@ export const RoomStruct = objectType({
 					where: { id_lab: parent.id },
 					include: { bio_org_lab: { include: { bio_org: true } } },
 				});
+			},
+		});
+
+		t.nonNull.list.nonNull.field('lhd_units', {
+			type: UnitStruct,
+			resolve: async (parent, _, context) => {
+				const unitsAndRooms = await context.prisma.unit_has_room.findMany({
+					where: { id_lab: parent.id }
+				});
+				const unitIDs = new Set(unitsAndRooms.map((unitAndRoom) => unitAndRoom.id_unit));
+				return await context.prisma.Unit.findMany({
+					where: { id: { in: [...unitIDs] }}
+				})
 			},
 		});
 
