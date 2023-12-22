@@ -1,4 +1,4 @@
-import { objectType } from 'nexus';
+import {extendType, objectType} from 'nexus';
 import { Unit } from 'nexus-prisma';
 import { InstituteStruct } from './institutes';
 import {PersonStruct} from "../global/people";
@@ -46,5 +46,12 @@ is each lowest-level administrative division within central services.`,
 				})
 			},
 		});
+	},
+});
+
+export const UnitQuery = extendType({
+	type: 'Query',
+	definition(t) {
+		t.crud.units({ filtering: true });
 	},
 });
