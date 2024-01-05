@@ -4,12 +4,13 @@
 
 import { HazLevelStruct } from '../hazards/hazlevel';
 import { BioStruct } from '../bio/biohazard';
-import { DispensationStruct } from '../dispensations';
+import {DispensationHolder, DispensationRoom, DispensationStruct} from '../dispensations';
 import { Room as roomStruct, Unit } from '@prisma/client';
-import { enumType, objectType, extendType } from 'nexus';
+import {enumType, objectType, extendType, nonNull, stringArg, intArg, list, inputObjectType} from 'nexus';
 import { Room, RoomKind, cad_lab } from 'nexus-prisma';
 import { debug as debug_ } from 'debug';
 import {UnitStruct} from "../roomdetails/units";
+import {mutationStatusType} from "../statuses";
 const debug = debug_('lhd:rooms');
 
 const catalyseSpecialLocations = {
@@ -187,4 +188,67 @@ export const RoomKindQuery = extendType({
 	definition(t) {
 		t.crud.roomKinds({ filtering: true });
 	},
+});
+
+export const UnitRoom = inputObjectType({
+	name: "UnitRoom",
+	definition(t) {
+		t.nonNull.int('id');
+	}
+})
+
+const roomFieldsType = {
+	name: stringArg(),
+	vol: intArg(),
+	vent: stringArg(),
+	units: list(nonNull(UnitRoom))
+};
+
+export const RoomStatus = mutationStatusType({
+	name: "RoomStatus",
+	definition(t) {
+		t.string('name', { description: `A string representation of the new Room's object identity; may be thereafter passed to e.g. \`updateRoom\``});
+	}
+});
+
+export const RoomMutations = extendType({
+	type: 'Mutation',
+	definition(t) {
+		t.nonNull.field('updateRoom', {
+			description: `Update room details.`,
+			args: {
+				...roomFieldsType
+			},
+			type: "RoomStatus",
+			async resolve(root, args, context) {
+				const prisma = context.prisma;
+				return await prisma.$transaction(async (tx) => {
+					const room = await tx.Room.findFirst({ where: { name: args.name }});
+
+					if (room) {
+						await tx.Room.update(
+							{ where: { id: room.id },
+								data: {
+									vol: args.vol,
+									vent: args.vent
+								}
+							});
+
+						for (const addUnit of args.units) {
+							await tx.unit_has_room.create({
+								data: {
+									room: { connect: { id: room.id}},
+									unit: { connect: { id: addUnit.id}}
+								}
+							});
+						}
+					}
+
+					return {
+						...mutationStatusType.success()
+					};
+				});
+			}
+		});
+	}
 });
