@@ -190,18 +190,12 @@ export const RoomKindQuery = extendType({
 	},
 });
 
-export const UnitRoom = inputObjectType({
-	name: "UnitRoom",
-	definition(t) {
-		t.nonNull.int('id');
-	}
-})
-
 const roomFieldsType = {
 	name: stringArg(),
+	kind: stringArg(),
 	vol: intArg(),
 	vent: stringArg(),
-	units: list(nonNull(UnitRoom))
+	units: list(intArg())
 };
 
 export const RoomStatus = mutationStatusType({
@@ -226,27 +220,47 @@ export const RoomMutations = extendType({
 					const room = await tx.Room.findFirst({ where: { name: args.name }});
 
 					if (room) {
-						await tx.Room.update(
+						const kindDesignation = await tx.RoomKind.findFirst({where: {name: args.kind}})
+						const updatedRoom = await tx.Room.update(
 							{ where: { id: room.id },
 								data: {
 									vol: args.vol,
-									vent: args.vent
+									vent: args.vent,
+									kind: { connect: { id_labType: kindDesignation.id_labType}},
 								}
 							});
 
-						for (const addUnit of args.units) {
-							await tx.unit_has_room.create({
-								data: {
-									room: { connect: { id: room.id}},
-									unit: { connect: { id: addUnit.id}}
+						if (updatedRoom) {
+							if (args.units.length>0) {
+								await tx.unit_has_room.deleteMany({
+									where: {
+										id_lab: room.id
+									},
+								});
+								const unitsArray = [];
+								for (const addUnit of args.units) {
+									unitsArray.push(await tx.unit_has_room.create({
+											data: {
+												id_lab: room.id,
+												id_unit: addUnit
+											}
+										})
+									);
 								}
-							});
+
+								if ( unitsArray.length > 0 ) {
+									return mutationStatusType.success();
+								} else {
+									return mutationStatusType.error(`Units not updated!!`)
+								}
+							}
+							return mutationStatusType.success();
+						} else {
+							return mutationStatusType.error(`Room ${args.name} not updated!!`)
 						}
+					} else {
+						return mutationStatusType.error(`Room ${args.name} not found!!`)
 					}
-
-					return {
-						...mutationStatusType.success()
-					};
 				});
 			}
 		});
