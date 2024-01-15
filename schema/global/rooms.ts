@@ -231,12 +231,12 @@ export const RoomMutations = extendType({
 							});
 
 						if (updatedRoom) {
+							await tx.unit_has_room.deleteMany({
+								where: {
+									id_lab: room.id
+								},
+							});
 							if (args.units.length>0) {
-								await tx.unit_has_room.deleteMany({
-									where: {
-										id_lab: room.id
-									},
-								});
 								const unitsArray = [];
 								for (const addUnit of args.units) {
 									unitsArray.push(await tx.unit_has_room.create({
