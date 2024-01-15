@@ -1,8 +1,9 @@
-import {extendType, objectType} from 'nexus';
+import {extendType, inputObjectType, intArg, list, objectType, stringArg} from 'nexus';
 import { Unit } from 'nexus-prisma';
 import { InstituteStruct } from './institutes';
 import {PersonStruct} from "../global/people";
-import {Person} from "@prisma/client";
+import {Person, personType} from "@prisma/client";
+import {mutationStatusType} from "../statuses";
 
 export const UnitStruct = objectType({
 	name: Unit.$name,
@@ -56,3 +57,118 @@ export const UnitQuery = extendType({
 		t.crud.units({ filtering: true });
 	},
 });
+
+export const PersonStatus = mutationStatusType({
+	name: "PersonStatus",
+	definition(t) {
+		t.string('name', { description: `A string representation of the new Unit and Person relation; may be thereafter passed to e.g. \`updateProfsInUnit\``});
+	}
+});
+
+export const PersonType = inputObjectType({
+	name: "PersonType",
+	definition(t) {
+		t.nonNull.int('sciper');
+		t.nonNull.string('name');
+		t.nonNull.string('surname');
+		t.nonNull.string('status');
+	}
+})
+
+const unitDetailsType = {
+	profs: list(PersonType),
+	cosecs: list(PersonType),
+	unit: stringArg()
+};
+
+async function findOrCreatePerson(tx, person): Promise<Person> {
+	let p = await tx.Person.findUnique({ where: { sciper: person.sciper }});
+
+	if (!p) {
+		p = await tx.Person.create({
+			data: {}  //TODO from LDAP
+		});
+	}
+	return p;
+}
+export const UnitMutations = extendType({
+	type: 'Mutation',
+	definition(t) {
+		t.nonNull.field('updateUnit', {
+			description: `Update unit details (profs, cosecs, sub-units).`,
+			args: {
+				...unitDetailsType
+			},
+			type: "PersonStatus",
+			async resolve(root, args, context) {
+				const prisma = context.prisma;
+				return await prisma.$transaction(async (tx) => {
+					const unit = await tx.Unit.findFirst({ where: { name: args.unit }});
+
+					if (unit) {
+						await tx.subunpro.delete({
+							where: {
+								id_unit: unit.id,
+							},
+						});
+
+						await tx.unit_has_cosec.delete({
+							where: {
+								id_unit: unit.id,
+							}
+						});
+
+						const errors: string[] = [];
+
+						if (args.profs.length>0) {
+							for (const person of args.profs) {
+								const p: Person = await findOrCreatePerson(tx, person);
+								if (p) {
+									const subunpro = await tx.subunpro.create({
+										data: {
+											id_person: p.id_person,
+											id_unit: unit.id
+										}
+									});
+									if (!subunpro) {
+										errors.push(`Relation not update between ${unit.name} and ${person.sciper}.`)
+									}
+								} else {
+									errors.push(`Person ${person.sciper} not found.`)
+								}
+							}
+						}
+
+						if (args.cosecs.length>0) {
+							for (const person of args.cosecs) {
+								const p: Person = await findOrCreatePerson(tx, person);
+								if (p) {
+									const unitHasCosec = await tx.unit_has_cosec.create({
+										data: {
+											id_person: p.id_person,
+											id_unit: unit.id
+										}
+									});
+									if ( !unitHasCosec ) {
+										errors.push(`Relation not update between ${unit.name} and ${person.sciper}.`)
+									}
+								} else {
+									errors.push(`Person ${person.sciper} not found.`)
+								}
+							}
+						}
+
+						if (errors.length > 0) {
+							return mutationStatusType.error(`Errors during saving profs: ${errors}`);
+						} else {
+							return mutationStatusType.success();
+						}
+					} else {
+						return mutationStatusType.error(`Unit ${args.unit} not found.`)
+					}
+				});
+			}
+		});
+	}
+});
+
