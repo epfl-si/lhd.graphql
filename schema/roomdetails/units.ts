@@ -91,6 +91,7 @@ async function findOrCreatePerson(tx, person): Promise<Person> {
 	}
 	return p;
 }
+
 export const UnitMutations = extendType({
 	type: 'Mutation',
 	definition(t) {
@@ -106,13 +107,13 @@ export const UnitMutations = extendType({
 					const unit = await tx.Unit.findFirst({ where: { name: args.unit }});
 
 					if (unit) {
-						await tx.subunpro.delete({
+						await tx.subunpro.deleteMany({
 							where: {
 								id_unit: unit.id,
 							},
 						});
 
-						await tx.unit_has_cosec.delete({
+						await tx.unit_has_cosec.deleteMany({
 							where: {
 								id_unit: unit.id,
 							}
