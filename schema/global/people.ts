@@ -1,4 +1,4 @@
-import { objectType, extendType } from 'nexus';
+import { objectType, extendType, stringArg, booleanArg, list, unionType } from 'nexus';
 import { Person } from 'nexus-prisma';
 
 export const PersonStruct = objectType({
@@ -24,6 +24,7 @@ they are still built out of a growing sequence, meaning that no two
 guests will ever have the same SCIPER regardless of the time they were
 created or destroyed.`});
 		t.field(Person.email);
+		t.string("type");
 	},
 });
 
@@ -36,3 +37,88 @@ export const PersonQuery = extendType({
   }
   // TODO: filter out nilPersonId
 })
+
+export const DirectoryPerson = objectType({
+	name: "DirectoryPerson",
+	definition(t) {
+		t.string("name")
+		t.string("surname")
+		t.string("email")
+		t.string("sciper")
+		t.string("type")
+	}
+})
+
+export const DirectoryOrLhdPerson = unionType({
+	name: "DirectoryOrLhdPerson",
+	definition(t) {
+		t.members("Person", "DirectoryPerson");
+	},
+	resolveType(item) { return "id_person" in item ? "Person" : "DirectoryPerson"}
+});
+
+export const PersonFullTextQuery = extendType({
+	type: 'Query',
+	definition(t) {
+		t.field("personFullText", {
+			type: list("DirectoryOrLhdPerson"),
+			args: {
+				search: stringArg(),
+				lhdOnly: booleanArg()
+			},
+			async resolve(parent, args, context) {
+				let ldapUsers = [];
+				if (!args.lhdOnly) {
+					ldapUsers = await getUsers(args.search).then(users => {
+						const result = [];
+						users.forEach(u => {
+							result.push({
+								type: 'DirectoryPerson',
+								surname: u.name,
+								name: u.firstname,
+								email: u.email,
+								sciper: u.sciper
+							})
+						});
+						return result;
+					});
+				}
+				const lhdPeople = await context.prisma.Person.findMany({
+					where: {
+						OR: [
+							{ name: { contains: args.search }},
+							{ surname : { contains: args.search }},
+						]
+					}
+				})
+				const lhdPeopleTyped = lhdPeople.map(p => {
+					return {
+						type: 'Person',
+						name: p.name,
+						surname: p.surname,
+						email: p.email,
+						sciper: p.sciper
+					}
+				});
+				return ldapUsers.concat(lhdPeopleTyped);
+			}
+		})
+	},
+})
+
+function getUsers(search: string): Promise<any[]> {
+	const headers: Headers = new Headers()
+	headers.set('Content-Type', 'application/json')
+	headers.set('Accept', 'application/json')
+
+	const request: RequestInfo = new Request(`https://search-api.epfl.ch/api/ldap?q=${search}`, {
+		method: 'GET',
+		headers: headers
+	})
+
+	return fetch(request)
+		.then(res => res.json())
+		.then(res => {
+			return res;
+		})
+}
