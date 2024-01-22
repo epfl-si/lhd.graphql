@@ -100,7 +100,7 @@ export const PersonFullTextQuery = extendType({
 						sciper: p.sciper
 					}
 				});
-				return ldapUsers.concat(lhdPeopleTyped);
+				return lhdPeopleTyped.concat(ldapUsers);
 			}
 		})
 	},
