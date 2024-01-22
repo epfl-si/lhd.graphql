@@ -72,6 +72,8 @@ export const PersonType = inputObjectType({
 		t.nonNull.string('name');
 		t.nonNull.string('surname');
 		t.nonNull.string('status');
+		t.string('type');
+		t.string('email');
 	}
 })
 
@@ -86,7 +88,12 @@ async function findOrCreatePerson(tx, person): Promise<Person> {
 
 	if (!p) {
 		p = await tx.Person.create({
-			data: {}  //TODO from LDAP
+			data: {
+				name: person.name,
+				surname: person.surname,
+				sciper: person.sciper,
+				email: person.email
+			}
 		});
 	}
 	return p;
@@ -105,7 +112,6 @@ export const UnitMutations = extendType({
 				const prisma = context.prisma;
 				return await prisma.$transaction(async (tx) => {
 					const unit = await tx.Unit.findFirst({ where: { name: args.unit }});
-
 					if (unit) {
 						await tx.subunpro.deleteMany({
 							where: {
