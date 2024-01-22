@@ -44,7 +44,7 @@ export const DirectoryPerson = objectType({
 		t.string("name")
 		t.string("surname")
 		t.string("email")
-		t.string("sciper")
+		t.int("sciper")
 		t.string("type")
 	}
 })
