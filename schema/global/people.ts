@@ -67,22 +67,7 @@ export const PersonFullTextQuery = extendType({
 				lhdOnly: booleanArg()
 			},
 			async resolve(parent, args, context) {
-				let ldapUsers = [];
-				if (!args.lhdOnly) {
-					ldapUsers = await getUsers(args.search).then(users => {
-						const result = [];
-						users.forEach(u => {
-							result.push({
-								type: 'DirectoryPerson',
-								surname: u.name,
-								name: u.firstname,
-								email: u.email,
-								sciper: u.sciper
-							})
-						});
-						return result;
-					});
-				}
+
 				const lhdPeople = await context.prisma.Person.findMany({
 					where: {
 						OR: [
@@ -90,7 +75,7 @@ export const PersonFullTextQuery = extendType({
 							{ surname : { contains: args.search }},
 						]
 					}
-				})
+				});
 				const lhdPeopleTyped = lhdPeople.map(p => {
 					return {
 						type: 'Person',
@@ -100,6 +85,26 @@ export const PersonFullTextQuery = extendType({
 						sciper: p.sciper
 					}
 				});
+
+
+				let ldapUsers = [];
+				if (!args.lhdOnly) {
+					ldapUsers = await getUsers(args.search).then(users => {
+						const result = [];
+						users.forEach(u => {
+							if (!lhdPeopleTyped.find(p => p.sciper == u.sciper)) {
+								result.push({
+									type: 'DirectoryPerson',
+									surname: u.name,
+									name: u.firstname,
+									email: u.email,
+									sciper: u.sciper
+								});
+							}
+						});
+						return result;
+					});
+				}
 				return lhdPeopleTyped.concat(ldapUsers);
 			}
 		})
