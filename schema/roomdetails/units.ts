@@ -48,6 +48,18 @@ is each lowest-level administrative division within central services.`,
 				})
 			},
 		});
+		t.nonNull.list.nonNull.field('subUnits', {
+			type: UnitStruct,
+			resolve: async (parent, _, context) => {
+				return await context.prisma.unit.findMany({
+					where: {
+						unitId: null,
+						name: {
+							startsWith: parent.name.concat(' ('),
+						},
+					}});
+			},
+		});
 	},
 });
 
@@ -77,9 +89,18 @@ export const PersonType = inputObjectType({
 	}
 })
 
+export const UnitType = inputObjectType({
+	name: "UnitType",
+	definition(t) {
+		t.nonNull.string('name');
+		t.nonNull.string('status');
+	}
+})
+
 const unitDetailsType = {
 	profs: list(PersonType),
 	cosecs: list(PersonType),
+	subUnits: list(UnitType),
 	unit: stringArg()
 };
 
@@ -162,6 +183,23 @@ export const UnitMutations = extendType({
 								} else {
 									errors.push(`Person ${person.sciper} not found.`)
 								}
+							}
+						}
+
+						if (args.subUnits.length>0) {
+							for (const subunit of args.subUnits) {
+								if (subunit.status == 'New') {
+									const u = await tx.Unit.create({
+										data: {
+											name: subunit.name,
+											id_institute: unit.id_institute
+										}
+									});
+									if ( !u ) {
+										errors.push(`Error creating sub-unit ${subunit.name}.`)
+									}
+								}
+
 							}
 						}
 
