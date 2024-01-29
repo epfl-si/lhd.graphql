@@ -70,10 +70,10 @@ export const UnitQuery = extendType({
 	},
 });
 
-export const PersonStatus = mutationStatusType({
-	name: "PersonStatus",
+export const UnitStatus = mutationStatusType({
+	name: "UnitStatus",
 	definition(t) {
-		t.string('name', { description: `A string representation of the new Unit and Person relation; may be thereafter passed to e.g. \`updateProfsInUnit\``});
+		t.string('name', { description: `A string representation of the Unit mutation.`});
 	}
 });
 
@@ -100,6 +100,10 @@ const unitDetailsType = {
 	profs: list(PersonType),
 	cosecs: list(PersonType),
 	subUnits: list(UnitType),
+	unit: stringArg()
+};
+
+const unitDeleteType = {
 	unit: stringArg()
 };
 
@@ -131,7 +135,7 @@ export const UnitMutations = extendType({
 			args: {
 				...unitChangesType
 			},
-			type: "PersonStatus",
+			type: "UnitStatus",
 			async resolve(root, args, context) {
 				const prisma = context.prisma;
 				return await prisma.$transaction(async (tx) => {
@@ -258,6 +262,35 @@ export const UnitMutations = extendType({
 									}
 								}
 							}
+						} catch ( e ) {
+							errors.push(`Error updating unit.`)
+						}
+
+						if (errors.length > 0) {
+							return mutationStatusType.error(`${errors.join('\n')}`);
+						} else {
+							return mutationStatusType.success();
+						}
+					} else {
+						return mutationStatusType.error(`Unit ${args.unit} not found.`)
+					}
+				});
+			}
+		});
+		t.nonNull.field('deleteUnit', {
+			description: `Delete unit details by unit name (profs, cosecs, sub-units).`,
+			args: {
+				...unitDeleteType
+			},
+			type: "UnitStatus",
+			async resolve(root, args, context) {
+				const prisma = context.prisma;
+				return await prisma.$transaction(async (tx) => {
+					const unit = await tx.Unit.findFirst({ where: { name: args.unit }});
+					if (unit) {
+						const errors: string[] = [];
+						try {
+							errors.concat(await deleteUnit(tx, unit));
 						} catch ( e ) {
 							errors.push(`Error updating unit.`)
 						}
