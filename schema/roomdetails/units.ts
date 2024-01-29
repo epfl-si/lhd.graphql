@@ -96,10 +96,18 @@ export const UnitMutationType = inputObjectType({
 	}
 })
 
-const unitDetailsType = {
-	profs: list(PersonType),
-	cosecs: list(PersonType),
-	subUnits: list(UnitType),
+const PersonMutationType = inputObjectType({
+	name: "PersonMutationType",
+	definition(t) {
+		t.nonNull.string('status');
+		t.nonNull.field('person', {type: "PersonType"});
+	}
+})
+
+const unitChangesType = {
+	profs: list(PersonMutationType),
+	cosecs: list(PersonMutationType),
+	subUnits: list(UnitMutationType),
 	unit: stringArg()
 };
 
