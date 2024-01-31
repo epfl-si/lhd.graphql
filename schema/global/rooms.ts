@@ -9,7 +9,7 @@ import { Room as roomStruct, Unit } from '@prisma/client';
 import {enumType, objectType, extendType, nonNull, stringArg, intArg, list, inputObjectType} from 'nexus';
 import { Room, RoomKind, cad_lab } from 'nexus-prisma';
 import { debug as debug_ } from 'debug';
-import {UnitStruct} from "../roomdetails/units";
+import {UnitMutationType, UnitStruct} from "../roomdetails/units";
 import {mutationStatusType} from "../statuses";
 const debug = debug_('lhd:rooms');
 
@@ -195,7 +195,7 @@ const roomFieldsType = {
 	kind: stringArg(),
 	vol: intArg(),
 	vent: stringArg(),
-	units: list(intArg())
+	units: list(UnitMutationType)
 };
 
 export const RoomStatus = mutationStatusType({
@@ -221,45 +221,73 @@ export const RoomMutations = extendType({
 
 					if (room) {
 						const kindDesignation = await tx.RoomKind.findFirst({where: {name: args.kind}})
-						const updatedRoom = await tx.Room.update(
-							{ where: { id: room.id },
-								data: {
-									vol: args.vol,
-									vent: args.vent,
-									kind: { connect: { id_labType: kindDesignation.id_labType}},
-								}
-							});
+						try {
+							const updatedRoom = await tx.Room.update(
+								{ where: { id: room.id },
+									data: {
+										vol: args.vol,
+										vent: args.vent,
+										kind: { connect: { id_labType: kindDesignation.id_labType}},
+									}
+								});
 
-						if (updatedRoom) {
-							await tx.unit_has_room.deleteMany({
-								where: {
-									id_lab: room.id
-								},
-							});
-							if (args.units.length>0) {
-								const unitsArray = [];
-								for (const addUnit of args.units) {
-									unitsArray.push(await tx.unit_has_room.create({
-											data: {
-												id_lab: room.id,
-												id_unit: addUnit
+							if (updatedRoom) {
+								if (args.units.length>0) {
+									const errors: string[] = [];
+									for (const addUnit of args.units) {
+
+										const unit = await tx.Unit.findFirst({ where: { name: addUnit.name }});
+
+										if (unit) {
+											if (addUnit.status == 'New') {
+												try {
+													const u = await tx.unit_has_room.create({
+														data: {
+															id_lab: room.id,
+															id_unit: unit.id
+														}
+													})
+													if ( !u ) {
+														errors.push(`Error creating unit ${unit.name}.`);
+													}
+												} catch ( e ) {
+													errors.push(`Error creating unit ${unit.name}.`);
+												}
 											}
-										})
-									);
-								}
+											else if (addUnit.status == 'Deleted') {
+												try {
+													const u = await tx.unit_has_room.deleteMany({
+														where: {
+															id_lab: room.id,
+															id_unit: unit.id
+														},
+													});
+													if (!u) {
+														errors.push(`Error deleting ${unit.name}.`);
+													}
+												} catch ( e ) {
+													errors.push(`Error creating unit ${unit.name}.`);
+												}
+											}
+										} else {
+											errors.push(`Unit ${addUnit.name} not found.`);
+										}
+									}
 
-								if ( unitsArray.length > 0 ) {
-									return mutationStatusType.success();
-								} else {
-									return mutationStatusType.error(`Units not updated!!`)
+									if (errors.length > 0) {
+										return mutationStatusType.error(`${errors.join('\n')}`);
+									} else {
+										return mutationStatusType.success();
+									}
 								}
+							} else {
+								return mutationStatusType.error(`Room ${args.name} not updated.`)
 							}
-							return mutationStatusType.success();
-						} else {
-							return mutationStatusType.error(`Room ${args.name} not updated!!`)
+						} catch ( e ) {
+							return mutationStatusType.error(`Error updating room ${args.name}.`)
 						}
 					} else {
-						return mutationStatusType.error(`Room ${args.name} not found!!`)
+						return mutationStatusType.error(`Room ${args.name} not found.`)
 					}
 				});
 			}
