@@ -1,4 +1,4 @@
-import {extendType, inputObjectType, intArg, list, objectType, stringArg} from 'nexus';
+import {booleanArg, extendType, inputObjectType, intArg, list, objectType, stringArg} from 'nexus';
 import { Unit } from 'nexus-prisma';
 import { InstituteStruct } from './institutes';
 import {PersonStruct} from "../global/people";
@@ -369,3 +369,27 @@ async function deleteUnit(tx, u:Unit) {
 	}
 	return errors;
 }
+
+export const UnitFullTextQuery = extendType({
+	type: 'Query',
+	definition(t) {
+		t.field("unitsFromFullText", {
+			type: list("Unit"),
+			args: {
+				search: stringArg(),
+			},
+			async resolve(parent, args, context) {
+
+				return await context.prisma.Unit.findMany({
+					where: {
+						OR: [
+							{ name: { contains: args.search }},
+							{ institute : { name: { contains: args.search } }},
+							{ institute : { school: { name: { contains: args.search } } }},
+						]
+					}
+				});
+			}
+		})
+	},
+})
