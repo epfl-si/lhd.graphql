@@ -1,12 +1,9 @@
-// Prisma schema for the LHD MySQL database
-// Run `yarn` after each change
-
 generator client {
   provider = "prisma-client-js"
 }
 
 generator nexusPrisma {
-   provider = "nexus-prisma"
+  provider = "nexus-prisma"
 }
 
 datasource db {
@@ -26,29 +23,29 @@ model aa {
   updated                    String   @db.VarChar(100)
   who_when                   String?  @db.VarChar(100)
   flag                       Boolean?
-  person_aa_id_cosecToperson Person   @relation("aa_id_cosecToperson", fields: [id_cosec], references: [id_person])
-  person_aa_id_headToperson  Person   @relation("aa_id_headToperson", fields: [id_head], references: [id_person])
-  room                        Room      @relation(fields: [id_lab], references: [id])
-  unit                       Unit     @relation(fields: [id_unit], references: [id])
+  room                       Room     @relation(fields: [id_lab], references: [id], onDelete: Cascade, map: "aa_ibfk_1")
+  unit                       Unit     @relation(fields: [id_unit], references: [id], onUpdate: Restrict, map: "aa_ibfk_2")
+  person_aa_id_cosecToperson Person   @relation("aa_id_cosecToperson", fields: [id_cosec], references: [id_person], onUpdate: Restrict, map: "aa_ibfk_3")
+  person_aa_id_headToperson  Person   @relation("aa_id_headToperson", fields: [id_head], references: [id_person], onUpdate: Restrict, map: "aa_ibfk_4")
 
-  @@index([id_cosec], name: "id_cosec")
-  @@index([id_head], name: "id_head")
-  @@index([id_lab], name: "id_lab")
-  @@index([id_unit], name: "id_unit")
+  @@index([id_cosec], map: "id_cosec")
+  @@index([id_head], map: "id_head")
+  @@index([id_lab], map: "id_lab")
+  @@index([id_unit], map: "id_unit")
 }
 
 model audits {
   id_audit   Int      @id @default(autoincrement())
-  id_unit    Int      @unique
+  id_unit    Int      @unique(map: "id_unit")
   date_audit DateTime @db.Date
 
-  @@unique([id_unit, date_audit], name: "unique_audit")
+  @@unique([id_unit, date_audit], name: "unique_audit", map: "unique_audit")
 }
 
 model auth_chem {
   id_auth_chem   Int             @id @default(autoincrement())
-  cas_auth_chem  String          @unique @db.VarChar(100)
-  auth_chem_en   String          @unique @db.VarChar(500)
+  cas_auth_chem  String          @unique(map: "cas_auth_chem") @db.VarChar(100)
+  auth_chem_en   String          @unique(map: "auth_chem_en") @db.VarChar(500)
   auth_chem_fr   String?         @db.VarChar(500)
   flag_auth_chem Boolean
   auth_chem_log  auth_chem_log[]
@@ -62,76 +59,76 @@ model auth_chem_log {
   author           String    @db.VarChar(100)
   action           String    @db.VarChar(10)
   date             DateTime  @db.DateTime(0)
-  auth_chem        auth_chem @relation(fields: [id_auth_chem], references: [id_auth_chem])
+  auth_chem        auth_chem @relation(fields: [id_auth_chem], references: [id_auth_chem], onUpdate: Restrict, map: "auth_chem_log_ibfk_1")
 
-  @@index([id_auth_chem], name: "auth_chem_log_ibfk_1")
+  @@index([id_auth_chem], map: "auth_chem_log_ibfk_1")
 }
 
 model auth_chem_old {
   id_auth_chem  Int     @id @default(autoincrement())
-  cas_auth_chem String? @unique @db.VarChar(100)
-  auth_chem_en  String? @unique @db.VarChar(100)
+  cas_auth_chem String? @unique(map: "cas_auth_chem") @db.VarChar(100)
+  auth_chem_en  String? @unique(map: "auth_chem_en") @db.VarChar(100)
   auth_chem_fr  String? @db.VarChar(100)
 }
 
 model Dispensation {
-  @@map("auth_dsps")
-  id      Int                 @id @default(autoincrement()) @map("id_auth_dsps")
-  slug         String              @unique @db.VarChar(10)  @map("auth_dsps")
-  // log_in            Int?                                  -- Always NULL
-  // log_in_time       DateTime?           @db.DateTime(0)   -- Only 5 data points, all before 2019
-  versions DispensationVersion[]
+  id          Int                   @id @default(autoincrement()) @map("id_auth_dsps")
+  slug        String                @unique(map: "auth_dsps") @map("auth_dsps") @db.VarChar(10)
+  log_in      Int?
+  log_in_time DateTime?             @db.DateTime(0)
+  versions    DispensationVersion[]
 
-  @@unique([slug, id], name: "auth_dsps_id_auth_dsps")
-  // @@unique([log_in, id_auth_dsps], name: "log_in_auth_dsps")
-  // @@unique([log_in_time, id_auth_dsps], name: "log_in_time_auth_dsps")
+  @@unique([slug, id], name: "auth_dsps_id_auth_dsps", map: "auth_dsps_id_auth_dsps")
+  @@unique([log_in, id], map: "log_in_auth_dsps")
+  @@unique([log_in_time, id], map: "log_in_time_auth_dsps")
+  @@map("auth_dsps")
 }
 
 model DispensationHeldRelation {
-  @@map("auth_dsps_holder")
-  // id_auth_dsps_holder  Int               @id @default(autoincrement())  -- Unused
-  id_dispensation_version Int               @map("id_auth_dsps_version")
-  id_person            Int
-  dispensation_version    DispensationVersion @relation(fields: [id_dispensation_version], references: [id])
-  person               Person            @relation(fields: [id_person], references: [id_person])
+  id_auth_dsps_holder     Int                 @id @default(autoincrement())
+  id_dispensation_version Int                 @map("id_auth_dsps_version")
+  id_person               Int
+  person                  Person              @relation(fields: [id_person], references: [id_person], onUpdate: Restrict, map: "auth_dsps_holder_ibfk_1")
+  dispensation_version    DispensationVersion @relation(fields: [id_dispensation_version], references: [id], onUpdate: Restrict, map: "auth_dsps_holder_ibfk_2")
 
-  @@unique([id_person, id_dispensation_version], name: "authholder")
-  @@index([id_dispensation_version], name: "id_auth_dsps_version")
+  @@unique([id_person, id_dispensation_version], name: "authholder", map: "authholder")
+  @@index([id_dispensation_version], map: "id_auth_dsps_version")
+  @@map("auth_dsps_holder")
 }
 
 model DispensationInRoomRelation {
-  @@map("auth_dsps_lab")
-  //  id_auth_dsps_lab     Int               @id @default(autoincrement())   -- Unused
-  id_dispensation_version Int                @map("id_auth_dsps_version")
-  id_room                 Int                @map("id_lab")
-  dispensation_version   DispensationVersion @relation(fields: [id_dispensation_version], references: [id])
-  room                   Room                @relation(fields: [id_room], references: [id])
+  id_auth_dsps_lab        Int                 @id @default(autoincrement())
+  id_dispensation_version Int                 @map("id_auth_dsps_version")
+  id_room                 Int                 @map("id_lab")
+  room                    Room                @relation(fields: [id_room], references: [id], onUpdate: Restrict, map: "auth_dsps_lab_ibfk_1")
+  dispensation_version    DispensationVersion @relation(fields: [id_dispensation_version], references: [id], onUpdate: Restrict, map: "auth_dsps_lab_ibfk_2")
 
-  @@unique([id_room, id_dispensation_version], name: "authlab")
-  @@index([id_dispensation_version], name: "id_auth_dsps_version")
+  @@unique([id_room, id_dispensation_version], name: "authlab", map: "authlab")
+  @@index([id_dispensation_version], map: "id_auth_dsps_version")
+  @@map("auth_dsps_lab")
 }
 
 model DispensationVersion {
-  @@map("auth_dsps_version")
-  id                   Int                @id @default(autoincrement())   @map("id_auth_dsps_version")
-  id_dispensation      Int                @map("id_auth_dsps")
-  author               String             @db.VarChar(50)
-  sciper_author        Int
-  subject              String             @db.VarChar(50)
-  description          String?            @db.VarChar(2000)   @map("requires")
-  comment              String?            @db.VarChar(2000)
-  status               String             @db.VarChar(10)     // One of "Active", "Canceled", "Expired" or "Pending"
-  date_start           DateTime           @db.Date
-  date_end             DateTime           @db.Date
-  date_created         DateTime           @db.DateTime(0)     @map("date")
-  draft_status         String             @db.Char(5)       @map("version")  // Either "draft" or "final"
-  modified_by          String?            @db.VarChar(50)  @map("notifier")
-  date_modified        DateTime?          @db.DateTime(0)  @map("notification_date")
-  dispensation         Dispensation       @relation(fields: [id_dispensation], references: [id])
-  held                 DispensationHeldRelation[]
-  in_room              DispensationInRoomRelation[]
+  id              Int                          @id @default(autoincrement()) @map("id_auth_dsps_version")
+  id_dispensation Int                          @map("id_auth_dsps")
+  author          String                       @db.VarChar(50)
+  sciper_author   Int
+  subject         String                       @db.VarChar(50)
+  description     String?                      @map("requires") @db.VarChar(2000)
+  comment         String?                      @db.VarChar(2000)
+  status          String                       @db.VarChar(10)
+  date_start      DateTime                     @db.Date
+  date_end        DateTime                     @db.Date
+  date_created    DateTime                     @map("date") @db.DateTime(0)
+  draft_status    String                       @map("version") @db.Char(5)
+  modified_by     String?                      @map("notifier") @db.VarChar(50)
+  date_modified   DateTime?                    @map("notification_date") @db.DateTime(0)
+  held            DispensationHeldRelation[]
+  in_room         DispensationInRoomRelation[]
+  dispensation    Dispensation                 @relation(fields: [id_dispensation], references: [id], onUpdate: Restrict, map: "auth_dsps_version_ibfk_1")
 
-  @@index([id], name: "id_auth_dsps")
+  @@index([id_dispensation], map: "id_auth_dsps")
+  @@map("auth_dsps_version")
 }
 
 model auth_holder {
@@ -139,9 +136,9 @@ model auth_holder {
   id_auth_sst    Int
   sciper         Int
   holder_name    String   @db.VarChar(100)
-  auth_sst       auth_sst @relation(fields: [id_auth_sst], references: [id_auth_sst])
+  auth_sst       auth_sst @relation(fields: [id_auth_sst], references: [id_auth_sst], onUpdate: Restrict, map: "auth_holder_ibfk_1")
 
-  @@unique([id_auth_sst, sciper, holder_name], name: "id_auth_sst_sciper_holder")
+  @@unique([id_auth_sst, sciper, holder_name], name: "id_auth_sst_sciper_holder", map: "id_auth_sst_sciper_holder")
 }
 
 model auth_lab {
@@ -149,29 +146,29 @@ model auth_lab {
   id_auth_req Int
   id_lab      Int?
   id_storage  Int?
-  auth_req    auth_req @relation(fields: [id_auth_req], references: [id_auth_req])
-  Room         Room?     @relation(fields: [id_lab], references: [id])
-  storage     storage? @relation(fields: [id_storage], references: [id_storage])
+  storage     storage? @relation(fields: [id_storage], references: [id_storage], onDelete: Restrict, onUpdate: Restrict, map: "auth_lab_ibfk_3")
+  Room        Room?    @relation(fields: [id_lab], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "auth_lab_ibfk_4")
+  auth_req    auth_req @relation(fields: [id_auth_req], references: [id_auth_req], onUpdate: Restrict, map: "auth_lab_ibfk_5")
 
-  @@index([id_auth_req], name: "id_auth_req")
-  @@index([id_lab], name: "id_lab")
-  @@index([id_storage], name: "id_storage")
+  @@index([id_auth_req], map: "id_auth_req")
+  @@index([id_lab], map: "id_lab")
+  @@index([id_storage], map: "id_storage")
 }
 
 model auth_rchem {
   id_auth_rchem Int        @id @default(autoincrement())
   id_auth_req   Int?
   id_auth_chem  Int?
-  auth_chem     auth_chem? @relation(fields: [id_auth_chem], references: [id_auth_chem])
-  auth_req      auth_req?  @relation(fields: [id_auth_req], references: [id_auth_req])
+  auth_chem     auth_chem? @relation(fields: [id_auth_chem], references: [id_auth_chem], onDelete: Restrict, onUpdate: Restrict, map: "auth_rchem_ibfk_1")
+  auth_req      auth_req?  @relation(fields: [id_auth_req], references: [id_auth_req], onDelete: Restrict, onUpdate: Restrict, map: "auth_rchem_ibfk_2")
 
-  @@index([id_auth_chem], name: "id_auth_chem")
-  @@index([id_auth_req], name: "id_auth_req")
+  @@index([id_auth_chem], map: "id_auth_chem")
+  @@index([id_auth_req], map: "id_auth_req")
 }
 
 model auth_req {
   id_auth_req   Int          @id @default(autoincrement())
-  auth_req      String?      @unique @db.VarChar(16)
+  auth_req      String?      @unique(map: "auth_req") @db.VarChar(16)
   date_auth_req DateTime?    @db.Date
   auth_lab      auth_lab[]
   auth_rchem    auth_rchem[]
@@ -181,7 +178,7 @@ model auth_req {
 model auth_sst {
   id_auth_sst      Int           @id @default(autoincrement())
   id_auth_req      Int
-  auth_sst         String?       @unique @db.VarChar(50)
+  auth_sst         String?       @unique(map: "auth_sst") @db.VarChar(50)
   id_unit_auth_sst Int?
   date_auth_sst    DateTime?     @db.Date
   qstock_auth_sst  String?       @db.VarChar(80)
@@ -190,41 +187,43 @@ model auth_sst {
   status_auth_sst  String?       @db.VarChar(30)
   com_auth_sst     String?       @db.VarChar(500)
   created_at       DateTime?     @db.Date
-  auth_req         auth_req      @relation(fields: [id_auth_req], references: [id_auth_req])
   auth_holder      auth_holder[]
+  auth_req         auth_req      @relation(fields: [id_auth_req], references: [id_auth_req], onUpdate: Restrict, map: "auth_sst_ibfk_1")
 
-  @@index([id_auth_req], name: "id_auth_req")
+  @@index([id_auth_req], map: "id_auth_req")
 }
 
 model bio {
   id_bio      Int           @id @default(autoincrement())
-  id_lab      Int           @unique
+  id_lab      Int           @unique(map: "id_lab_2")
   bio_level   Int
   comment     String?       @db.VarChar(2000)
-  Room         Room           @relation(fields: [id_lab], references: [id])
+  Room        Room          @relation(fields: [id_lab], references: [id], onUpdate: Restrict, map: "bio_ibfk_1")
   bio_org_lab bio_org_lab[]
 
-  @@index([id_lab], name: "id_lab")
+  @@index([id_lab], map: "id_lab")
 }
 
 model bio_org {
   id_bio_org  Int           @id @default(autoincrement())
   organism    String        @db.VarChar(100)
   risk_group  Int
+  updated_on  DateTime?     @db.Date
+  updated_by  String?       @db.VarChar(50)
   bio_org_lab bio_org_lab[]
 
-  @@unique([organism, risk_group], name: "org_risk")
+  @@unique([organism, risk_group], name: "org_risk", map: "org_risk")
 }
 
 model bio_org_lab {
   id_bio_org_lab Int      @id @default(autoincrement())
   id_bio         Int
   id_bio_org     Int?
-  bio            bio      @relation(fields: [id_bio], references: [id_bio])
-  bio_org        bio_org? @relation(fields: [id_bio_org], references: [id_bio_org])
+  bio            bio      @relation(fields: [id_bio], references: [id_bio], onUpdate: Restrict, map: "bio_org_lab_ibfk_1")
+  bio_org        bio_org? @relation(fields: [id_bio_org], references: [id_bio_org], onDelete: Restrict, onUpdate: Restrict, map: "bio_org_lab_ibfk_2")
 
-  @@unique([id_bio, id_bio_org], name: "org_lab")
-  @@index([id_bio_org], name: "id_bio_org")
+  @@unique([id_bio, id_bio_org], name: "org_lab", map: "org_lab")
+  @@index([id_bio_org], map: "id_bio_org")
 }
 
 model cad_corr {
@@ -233,24 +232,24 @@ model cad_corr {
   id_storage Int?
   id_haz     Int?
   score      Int?
-  Room        Room?     @relation(fields: [id_lab], references: [id])
-  storage    storage? @relation(fields: [id_storage], references: [id_storage])
+  storage    storage? @relation(fields: [id_storage], references: [id_storage], onDelete: Restrict, onUpdate: Restrict, map: "cad_corr_ibfk_1")
+  Room       Room?    @relation(fields: [id_lab], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "cad_corr_ibfk_2")
 
-  @@index([id_haz], name: "id_haz")
-  @@index([id_lab], name: "id_lab")
-  @@index([id_storage], name: "id_storage")
+  @@index([id_haz], map: "id_haz")
+  @@index([id_lab], map: "id_lab")
+  @@index([id_storage], map: "id_storage")
 }
 
 model cad_lab {
-  id_cad Int  @id @default(autoincrement())
+  id_cad Int   @id @default(autoincrement())
   id_lab Int?
   id_haz Int?
   score  Int?
-  haz    haz? @relation(fields: [id_haz], references: [id_haz])
-  Room    Room? @relation(fields: [id_lab], references: [id])
+  Room   Room? @relation(fields: [id_lab], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "cad_lab_ibfk_1")
+  haz    haz?  @relation(fields: [id_haz], references: [id_haz], onDelete: Restrict, onUpdate: Restrict, map: "cad_lab_ibfk_2")
 
-  @@index([id_haz], name: "id_haz")
-  @@index([id_lab], name: "id_lab")
+  @@index([id_haz], map: "id_haz")
+  @@index([id_lab], map: "id_lab")
 }
 
 model cryo {
@@ -258,9 +257,9 @@ model cryo {
   id_dewar Int
   liquid   String? @db.VarChar(3)
   liters   Float?
-  dewar    dewar   @relation(fields: [id_dewar], references: [id_dewar])
+  dewar    dewar   @relation(fields: [id_dewar], references: [id_dewar], onUpdate: Restrict, map: "cryo_ibfk_1")
 
-  @@index([id_dewar], name: "id_dewar")
+  @@index([id_dewar], map: "id_dewar")
 }
 
 model cut {
@@ -271,9 +270,9 @@ model cut {
   cut_hazard   String? @db.VarChar(500)
   cut_measure  String? @db.VarChar(500)
   cut_priority Int?
-  Room          Room?    @relation(fields: [id_lab], references: [id])
+  Room         Room?   @relation(fields: [id_lab], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "cut_ibfk_1")
 
-  @@index([id_lab], name: "id_lab")
+  @@index([id_lab], map: "id_lab")
 }
 
 model cuts {
@@ -297,10 +296,10 @@ model dewar {
   id_dewar Int     @id @default(autoincrement())
   id_lab   Int?
   comment  String? @db.VarChar(500)
-  Room      Room?    @relation(fields: [id_lab], references: [id])
   cryo     cryo[]
+  Room     Room?   @relation(fields: [id_lab], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "dewar_ibfk_1")
 
-  @@index([id_lab], name: "id_lab")
+  @@index([id_lab], map: "id_lab")
 }
 
 model elec {
@@ -313,16 +312,17 @@ model elec {
   i_battery Float?
   state     Int?
   access    Int?
-  Room       Room?    @relation(fields: [id_lab], references: [id])
+  Room      Room?   @relation(fields: [id_lab], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "elec_ibfk_1")
 
-  @@index([id_lab], name: "id_lab")
+  @@index([id_lab], map: "id_lab")
 }
 
 model School {
+  id        Int         @id @default(autoincrement()) @map("id_faculty")
+  name      String?     @unique(map: "unique_faculty") @map("name_faculty") @db.VarChar(20)
+  institute Institute[]
+
   @@map("faculty")
-  id   Int        @id @default(autoincrement()) @map("id_faculty")
-  name String?    @unique @db.VarChar(20) @map("name_faculty")
-  institute     Institute[]
 }
 
 model gas {
@@ -349,22 +349,22 @@ model gaschem {
   id_storage Int?
   id_haz     Int
   score      Int?
-  haz        haz      @relation(fields: [id_haz], references: [id_haz])
-  Room        Room?     @relation(fields: [id_lab], references: [id])
-  storage    storage? @relation(fields: [id_storage], references: [id_storage])
+  Room       Room?    @relation(fields: [id_lab], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "gaschem_ibfk_1")
+  haz        haz      @relation(fields: [id_haz], references: [id_haz], onUpdate: Restrict, map: "gaschem_ibfk_2")
+  storage    storage? @relation(fields: [id_storage], references: [id_storage], onDelete: Restrict, onUpdate: Restrict, map: "gaschem_ibfk_3")
 
-  @@unique([id_lab, id_haz], name: "labhaz")
-  @@unique([id_storage, id_haz], name: "stohaz")
-  @@index([id_haz], name: "id_haz")
+  @@unique([id_lab, id_haz], name: "labhaz", map: "labhaz")
+  @@unique([id_storage, id_haz], name: "stohaz", map: "stohaz")
+  @@index([id_haz], map: "id_haz")
 }
 
 model gashazard {
   id_gashazard Int     @id @default(autoincrement())
   id_gas       Int?
   id_hazard    String? @db.VarChar(2)
-  gas          gas?    @relation(fields: [id_gas], references: [id_gas])
+  gas          gas?    @relation(fields: [id_gas], references: [id_gas], onDelete: Restrict, onUpdate: Restrict, map: "gashazard_ibfk_1")
 
-  @@index([id_gas], name: "id_gas")
+  @@index([id_gas], map: "id_gas")
 }
 
 model gnb {
@@ -372,10 +372,10 @@ model gnb {
   id_gas     Int?
   gnb_q      Float?
   gnb_p      Int?
-  gas        gas?         @relation(fields: [id_gas], references: [id_gas])
+  gas        gas?         @relation(fields: [id_gas], references: [id_gas], onDelete: Restrict, onUpdate: Restrict, map: "gnb_ibfk_1")
   gnb_labsto gnb_labsto[]
 
-  @@index([id_gas], name: "id_gas")
+  @@index([id_gas], map: "id_gas")
 }
 
 model gnb_labsto {
@@ -383,13 +383,13 @@ model gnb_labsto {
   id_gnb     Int?
   id_storage Int?
   id_lab     Int?
-  gnb        gnb?     @relation(fields: [id_gnb], references: [id_gnb])
-  Room        Room?     @relation(fields: [id_lab], references: [id])
-  storage    storage? @relation(fields: [id_storage], references: [id_storage])
+  gnb        gnb?     @relation(fields: [id_gnb], references: [id_gnb], onDelete: Restrict, onUpdate: Restrict, map: "gnb_labsto_ibfk_1")
+  storage    storage? @relation(fields: [id_storage], references: [id_storage], onDelete: Restrict, onUpdate: Restrict, map: "gnb_labsto_ibfk_2")
+  Room       Room?    @relation(fields: [id_lab], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "gnb_labsto_ibfk_3")
 
-  @@index([id_gnb], name: "id_gnb")
-  @@index([id_lab], name: "id_lab")
-  @@index([id_storage], name: "id_storage")
+  @@index([id_gnb], map: "id_gnb")
+  @@index([id_lab], map: "id_lab")
+  @@index([id_storage], map: "id_storage")
 }
 
 model haz {
@@ -405,7 +405,7 @@ model haz {
 
 model haz_category {
   id_haz_category Int        @id @default(autoincrement())
-  haz_category    String     @unique @db.VarChar(60)
+  haz_category    String     @unique(map: "haz_category") @db.VarChar(60)
   haz_date        haz_date[]
 }
 
@@ -418,25 +418,25 @@ model haz_date {
   editor          String       @db.VarChar(50)
   log_in          Int?
   log_in_time     DateTime?    @db.DateTime(0)
-  haz             haz?         @relation(fields: [id_haz], references: [id_haz])
-  haz_category    haz_category @relation(fields: [id_haz_category], references: [id_haz_category])
-  Room             Room          @relation(fields: [id_lab], references: [id])
+  Room            Room         @relation(fields: [id_lab], references: [id], onUpdate: Restrict, map: "haz_date_ibfk_1")
+  haz_category    haz_category @relation(fields: [id_haz_category], references: [id_haz_category], onUpdate: Restrict, map: "haz_date_ibfk_2")
+  haz             haz?         @relation(fields: [id_haz], references: [id_haz], onDelete: Restrict, onUpdate: Restrict, map: "haz_date_ibfk_3")
 
-  @@index([id_haz], name: "id_haz")
-  @@index([id_haz_category], name: "id_haz_category")
-  @@index([id_lab], name: "id_lab")
+  @@index([id_haz], map: "id_haz")
+  @@index([id_haz_category], map: "id_haz_category")
+  @@index([id_lab], map: "id_lab")
 }
 
 model Institute {
-  @@map("institut")
-  id  Int     @id @default(autoincrement())   @map("id_institut")
-  name String? @db.VarChar(60)   @map("name_institut")
-  id_school    Int @map("id_faculty")
-  school       School @relation(fields: [id_school], references: [id])
-  unit          Unit[]
+  id        Int     @id @default(autoincrement()) @map("id_institut")
+  name      String? @map("name_institut") @db.VarChar(60)
+  id_school Int     @map("id_faculty")
+  school    School  @relation(fields: [id_school], references: [id], onUpdate: Restrict, map: "institut_ibfk_1")
+  unit      Unit[]
 
-  @@unique([name, id_school], name: "unique_institut")
-  @@index([id_school], name: "id_faculty")
+  @@unique([name, id_school], name: "unique_institut", map: "unique_institut")
+  @@index([id_school], map: "id_faculty")
+  @@map("institut")
 }
 
 model irad {
@@ -457,117 +457,85 @@ model irad {
   irad_state_authorisation  String?   @db.VarChar(20)
   irad_exdate_authorisation DateTime? @db.Date
   irad_comment              String?   @db.VarChar(200)
-  Room                       Room?      @relation(fields: [id_lab], references: [id])
-  person                    Person?   @relation(fields: [id_person], references: [id_person])
+  Room                      Room?     @relation(fields: [id_lab], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "irad_ibfk_1")
+  person                    Person?   @relation(fields: [id_person], references: [id_person], onDelete: Restrict, onUpdate: Restrict, map: "irad_ibfk_2")
 
-  @@index([id_lab], name: "id_lab")
-  @@index([id_person], name: "id_person")
-}
-
-model irad_resp {
-  id_irad_resp             Int     @id @default(autoincrement())
-  id_person                Int?
-  irad_resp_training       String? @db.VarChar(30)
-  irad_resp_training_place String? @db.VarChar(10)
-  irad_resp_training_year  Int?    @db.Year
-  person                   Person? @relation(fields: [id_person], references: [id_person])
-
-  @@index([id_person], name: "id_person")
+  @@index([id_lab], map: "id_lab")
+  @@index([id_person], map: "id_person")
 }
 
 model Room {
+  id                        Int                          @id @default(autoincrement()) @map("id_lab")
+  sciper_lab                Int?                         @unique(map: "unique_sciper_lab")
+  building                  String                       @db.VarChar(5)
+  sector                    String?                      @db.VarChar(5)
+  floor                     String?                      @db.VarChar(5)
+  roomNo                    String                       @map("lab") @db.VarChar(10)
+  id_labType                Int?
+  description               String?                      @db.VarChar(200)
+  location                  String?                      @db.VarChar(10)
+  vol                       Float?
+  vent                      String?                      @db.Char(1)
+  name                      String?                      @map("lab_display") @db.VarChar(20)
+  aa                        aa[]
+  dispensations             DispensationInRoomRelation[]
+  auth_lab                  auth_lab[]
+  bio                       bio?
+  cad_corr                  cad_corr[]
+  cad_lab                   cad_lab[]
+  cut                       cut[]
+  dewar                     dewar[]
+  elec                      elec[]
+  gaschem                   gaschem[]
+  gnb_labsto                gnb_labsto[]
+  haz_date                  haz_date[]
+  irad                      irad[]
+  kind                      RoomKind?                    @relation(fields: [id_labType], references: [id_labType], onDelete: Restrict, onUpdate: Restrict, map: "lab_ibfk_1")
+  laser                     laser[]
+  mag                       mag[]
+  mag_f                     mag_f[]
+  nano                      nano[]
+  naudits                   naudits[]
+  nirad                     nirad[]
+  noise                     noise?
+  tdegree                   tdegree[]
+  unit_has_room             unit_has_room[]
+  unit_has_storage_for_room unit_has_storage_for_room[]
+
+  @@unique([building, sector, floor, roomNo], name: "unique_lab", map: "unique_lab")
+  @@unique([sciper_lab, building, sector, floor, roomNo], name: "unique_labo", map: "unique_labo")
+  @@index([id_labType], map: "id_labType")
   @@map("lab")
-
-  id            Int             @id @default(autoincrement()) @map("id_lab")
-  name          String?         @db.VarChar(20) @map("lab_display")
-  sciper_lab    Int?            @unique
-  building      String          @db.VarChar(5)
-  sector        String?         @db.VarChar(5)
-  floor         String?         @db.VarChar(5)
-  roomNo        String          @db.VarChar(10) @map("lab")
-  id_labType    Int?
-  description   String?         @db.VarChar(200)
-  location      String?         @db.VarChar(10)
-  vol           Float?
-  vent          String?         @db.Char(1)
-  kind          RoomKind?        @relation(fields: [id_labType], references: [id_labType])
-  aa            aa[]
-  dispensations DispensationInRoomRelation[]
-  auth_lab      auth_lab[]
-  bio           bio?
-  cad_corr      cad_corr[]
-  cad_lab       cad_lab[]
-  cut           cut[]
-  dewar         dewar[]
-  elec          elec[]
-  gaschem       gaschem[]
-  gnb_labsto    gnb_labsto[]
-  haz_date      haz_date[]
-  irad          irad[]
-  labunpe       labunpe[]
-  laser         laser[]
-  mag           mag[]
-  mag_f         mag_f[]
-  nano          nano[]
-  naudits       naudits[]
-  nirad         nirad[]
-  noise         noise?
-  stolabunpe    stolabunpe[]
-  tdegree       tdegree[]
-  unit_has_room unit_has_room[]
-
-  @@unique([building, sector, floor, roomNo], name: "unique_lab")
-  @@unique([sciper_lab, building, sector, floor, roomNo], name: "unique_labo")
-  @@index([id_labType], name: "id_labType")
 }
 
 model RoomKind {
+  id_labType Int     @id @default(autoincrement())
+  name       String? @map("labType") @db.VarChar(100)
+  Room       Room[]
+
   @@map("labType")
-
-  id_labType Int      @id @default(autoincrement())
-  name        String? @db.VarChar(100) @map("labType")
-  Room        Room[]
-}
-
-model labunpe {
-  id_labunpe Int     @id @default(autoincrement())
-  id_lab     Int?
-  id_unit    Int?
-  id_person  Int?
-  room       Room?    @relation(fields: [id_lab], references: [id])
-  cosec      Person? @relation(fields: [id_person], references: [id_person])
-  unit       Unit?   @relation(fields: [id_unit], references: [id])
-
-  @@unique([id_lab, id_unit, id_person], name: "unique_labunpe")
-  @@index([id_lab], name: "id_lab")
-  @@index([id_person], name: "id_person")
-  @@index([id_unit], name: "id_unit")
 }
 
 model unit_has_room {
+  id_unit Int
+  id_lab  Int
+  unit    Unit @relation(fields: [id_unit], references: [id], onUpdate: Restrict, map: "unit_has_room_ibfk_1")
+  room    Room @relation(fields: [id_lab], references: [id], onUpdate: Restrict, map: "unit_has_room_ibfk_2")
+
+  @@unique([id_unit, id_lab], name: "unique_unit_has_room", map: "unique_unit_has_room")
+  @@index([id_lab], map: "id_lab")
   @@map("unit_has_room")
-
-  id_lab     Int
-  id_unit    Int
-  room       Room    @relation(fields: [id_lab], references: [id])
-  unit       Unit   @relation(fields: [id_unit], references: [id])
-
-  @@unique([id_lab, id_unit], name: "unique_unit_has_room")
-  @@index([id_lab], name: "id_lab")
-  @@index([id_unit], name: "id_unit")
 }
 
 model unit_has_cosec {
+  id_unit   Int
+  id_person Int
+  unit      Unit   @relation(fields: [id_unit], references: [id], onUpdate: Restrict, map: "unit_has_cosec_ibfk_1")
+  cosec     Person @relation(fields: [id_person], references: [id_person], onUpdate: Restrict, map: "unit_has_cosec_ibfk_2")
+
+  @@unique([id_unit, id_person], name: "unique_unit_has_person", map: "unique_unit_has_person")
+  @@index([id_person], map: "id_person")
   @@map("unit_has_cosec")
-
-  id_person     Int
-  id_unit    Int
-  cosec      Person    @relation(fields: [id_person], references: [id_person])
-  unit       Unit   @relation(fields: [id_unit], references: [id])
-
-  @@unique([id_person, id_unit], name: "unique_unit_has_person")
-  @@index([id_person], name: "id_person")
-  @@index([id_unit], name: "id_unit")
 }
 
 model laser {
@@ -581,53 +549,9 @@ model laser {
   laser_pulse     Float?
   laser_frequency Float?
   comment         String? @db.VarChar(300)
-  Room             Room?    @relation(fields: [id_lab], references: [id])
+  Room            Room?   @relation(fields: [id_lab], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "laser_ibfk_1")
 
-  @@index([id_lab], name: "id_lab")
-}
-
-model log_manif {
-  id_log_manif Int      @id @default(autoincrement())
-  id_nature    Int
-  id_author    Int
-  id_editor    Int
-  id_shared    Int?
-  title        String   @db.VarChar(100)
-  place        String   @db.VarChar(100)
-  description  String   @db.VarChar(1000)
-  date_event   DateTime @db.DateTime(0)
-  date_created DateTime @db.DateTime(0)
-  date_edited  DateTime @db.DateTime(0)
-
-  @@index([id_author], name: "id_author")
-  @@index([id_editor], name: "id_editor")
-  @@index([id_nature], name: "id_nature")
-  @@index([id_shared], name: "id_shared")
-}
-
-model log_manif_entity {
-  id_entity   Int     @id @default(autoincrement())
-  entity      String  @db.VarChar(20)
-  file_entity String? @db.VarChar(50)
-
-  @@unique([entity, file_entity], name: "unique_entity")
-}
-
-model log_manif_nature {
-  id_nature   Int     @id @default(autoincrement())
-  nature      String  @unique @db.VarChar(20)
-  file_nature String? @db.VarChar(50)
-}
-
-model log_manif_user {
-  id_user    Int     @id @default(autoincrement())
-  name_user  String  @unique @db.VarChar(100)
-  user_role  String  @db.VarChar(10)
-  id_entity  Int
-  ip_address String? @db.VarChar(16)
-
-  @@unique([name_user, user_role, id_entity], name: "unique_user_role_entity")
-  @@index([id_entity], name: "id_entity")
+  @@index([id_lab], map: "id_lab")
 }
 
 model mag {
@@ -636,12 +560,12 @@ model mag {
   id_person   Int?
   bmax        Float?
   mag_comment String? @db.VarChar(500)
-  Room         Room?    @relation(fields: [id_lab], references: [id])
-  person      Person? @relation(fields: [id_person], references: [id_person])
+  Room        Room?   @relation(fields: [id_lab], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "mag_ibfk_1")
+  person      Person? @relation(fields: [id_person], references: [id_person], onDelete: Restrict, onUpdate: Restrict, map: "mag_ibfk_2")
   mag_f       mag_f[]
 
-  @@index([id_lab], name: "id_lab")
-  @@index([id_person], name: "id_person")
+  @@index([id_lab], map: "id_lab")
+  @@index([id_person], map: "id_person")
 }
 
 model mag_f {
@@ -650,12 +574,12 @@ model mag_f {
   id_lab     Int
   line       Float
   line_place String? @db.Char(1)
-  Room        Room     @relation(fields: [id_lab], references: [id])
-  mag        mag     @relation(fields: [id_mag], references: [id_mag])
+  Room       Room    @relation(fields: [id_lab], references: [id], onUpdate: Restrict, map: "mag_f_ibfk_1")
+  mag        mag     @relation(fields: [id_mag], references: [id_mag], onUpdate: Restrict, map: "mag_f_ibfk_2")
 
-  @@unique([id_mag, id_lab, line], name: "magf_unique")
-  @@index([id_lab], name: "id_lab")
-  @@index([id_mag], name: "id_mag")
+  @@unique([id_mag, id_lab, line], name: "magf_unique", map: "magf_unique")
+  @@index([id_lab], map: "id_lab")
+  @@index([id_mag], map: "id_mag")
 }
 
 model migrations {
@@ -672,9 +596,9 @@ model nano {
   nano_state    String? @db.VarChar(20)
   nano_quantity Float?
   nano_activity String? @db.VarChar(500)
-  Room           Room?    @relation(fields: [id_lab], references: [id])
+  Room          Room?   @relation(fields: [id_lab], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "nano_ibfk_1")
 
-  @@index([id_lab], name: "id_lab")
+  @@index([id_lab], map: "id_lab")
 }
 
 model naudits {
@@ -689,9 +613,9 @@ model naudits {
   score7     Float?
   score8     Float?
   naudits    Float?
-  Room        Room?   @relation(fields: [id_lab], references: [id])
+  Room       Room?  @relation(fields: [id_lab], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "naudits_ibfk_1")
 
-  @@index([id_lab], name: "id_lab")
+  @@index([id_lab], map: "id_lab")
 }
 
 model nirad {
@@ -704,46 +628,38 @@ model nirad {
   h_field    Float?
   b_field    Float?
   power      Float?
-  Room        Room?    @relation(fields: [id_lab], references: [id])
+  Room       Room?   @relation(fields: [id_lab], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "nirad_ibfk_1")
 
-  @@index([id_lab], name: "id_lab")
+  @@index([id_lab], map: "id_lab")
 }
 
 model noise {
   id_noise Int    @id @default(autoincrement())
-  id_lab   Int?   @unique
+  id_lab   Int?   @unique(map: "id_lab_2")
   lex      Float?
   lpeak    Float?
-  Room      Room?   @relation(fields: [id_lab], references: [id])
+  Room     Room?  @relation(fields: [id_lab], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "noise_ibfk_1")
 
-  @@index([id_lab], name: "id_lab")
+  @@index([id_lab], map: "id_lab")
 }
 
 model Person {
-  @@map("person")
-  id_person              Int                @id @default(autoincrement())
-  sciper                 Int?               @unique
-  name                   String?            @db.VarChar(60) @map("name_person")
-  surname                String?            @db.VarChar(60) @map("surname_person")
-  email                  String?            @db.VarChar(60) @map("email_person")
-  aa_aa_id_cosecToperson aa[]               @relation("aa_id_cosecToperson")
-  aa_aa_id_headToperson  aa[]               @relation("aa_id_headToperson")
-  dispensations_held       DispensationHeldRelation[]
+  id_person              Int                        @id @default(autoincrement())
+  sciper                 Int?                       @unique(map: "unique_sciper")
+  name                   String?                    @map("name_person") @db.VarChar(60)
+  surname                String?                    @map("surname_person") @db.VarChar(60)
+  email                  String?                    @map("email_person") @db.VarChar(60)
+  aa_aa_id_cosecToperson aa[]                       @relation("aa_id_cosecToperson")
+  aa_aa_id_headToperson  aa[]                       @relation("aa_id_headToperson")
+  dispensations_held     DispensationHeldRelation[]
   irad                   irad[]
-  irad_resp              irad_resp[]
-  labunpe                labunpe[]
   mag                    mag[]
-  stolabunpe             stolabunpe[]
   subunpro               subunpro[]
   unit_has_cosec         unit_has_cosec[]
 
-  @@unique([name, surname, email], name: "unique_per")
-  @@unique([sciper, name, surname, email], name: "unique_person")
-}
-
-model personType {
-  id_personType Int     @id @default(autoincrement())
-  personType    String? @db.VarChar(50)
+  @@unique([name, surname, email], name: "unique_per", map: "unique_per")
+  @@unique([sciper, name, surname, email], name: "unique_person", map: "unique_person")
+  @@map("person")
 }
 
 model stoPlace {
@@ -779,43 +695,25 @@ model stoType_catalyse {
   stoType    String @db.VarChar(20)
 }
 
-model stolabunpe {
-  id_stolabunpe Int      @id @default(autoincrement())
-  id_storage    Int?
-  id_lab        Int?
-  id_unit       Int?
-  id_person     Int?
-  Room           Room?     @relation(fields: [id_lab], references: [id])
-  person        Person?  @relation(fields: [id_person], references: [id_person])
-  storage       storage? @relation(fields: [id_storage], references: [id_storage])
-  unit          Unit?    @relation(fields: [id_unit], references: [id])
-
-  @@unique([id_storage, id_lab, id_unit, id_person], name: "unique_stolabunpe")
-  @@index([id_lab], name: "id_lab")
-  @@index([id_person], name: "id_person")
-  @@index([id_storage], name: "id_storage")
-  @@index([id_unit], name: "id_unit")
-}
-
 model storage {
-  id_storage     Int          @id @default(autoincrement())
-  id_stoType     Int?
-  id_stoProperty Int?
-  barcode        String?      @db.VarChar(80)
-  id_place       Int?
-  content        String?      @db.Char(2)
-  stoPlace       stoPlace?    @relation(fields: [id_place], references: [id_place])
-  stoProperty    stoProperty? @relation(fields: [id_stoProperty], references: [id_stoProperty])
-  stoType        stoType?     @relation(fields: [id_stoType], references: [id_stoType])
-  auth_lab       auth_lab[]
-  cad_corr       cad_corr[]
-  gaschem        gaschem[]
-  gnb_labsto     gnb_labsto[]
-  stolabunpe     stolabunpe[]
+  id_storage                Int                         @id @default(autoincrement())
+  id_stoType                Int?
+  id_stoProperty            Int?
+  barcode                   String?                     @db.VarChar(80)
+  id_place                  Int?
+  content                   String?                     @db.Char(2)
+  auth_lab                  auth_lab[]
+  cad_corr                  cad_corr[]
+  gaschem                   gaschem[]
+  gnb_labsto                gnb_labsto[]
+  stoType                   stoType?                    @relation(fields: [id_stoType], references: [id_stoType], onDelete: Restrict, onUpdate: Restrict, map: "storage_ibfk_4")
+  stoProperty               stoProperty?                @relation(fields: [id_stoProperty], references: [id_stoProperty], onDelete: Restrict, onUpdate: Restrict, map: "storage_ibfk_5")
+  stoPlace                  stoPlace?                   @relation(fields: [id_place], references: [id_place], onDelete: Restrict, onUpdate: Restrict, map: "storage_ibfk_6")
+  unit_has_storage_for_room unit_has_storage_for_room[]
 
-  @@index([id_place], name: "id_place")
-  @@index([id_stoProperty], name: "id_stoProperty")
-  @@index([id_stoType], name: "id_stoType")
+  @@index([id_place], map: "id_place")
+  @@index([id_stoProperty], map: "id_stoProperty")
+  @@index([id_stoType], map: "id_stoType")
 }
 
 model storage_catalyse {
@@ -824,24 +722,24 @@ model storage_catalyse {
   id_stoProperty Int
   id_stoPlace    Int
   content        String   @db.Char(2)
-  barcode        String   @unique @db.VarChar(80)
+  barcode        String   @unique(map: "barcode") @db.VarChar(80)
   lab_display    String   @db.VarChar(20)
   sciper         Int
   author         String   @db.VarChar(50)
   date           DateTime @db.DateTime(0)
 
-  @@unique([barcode, lab_display], name: "unique_barcode")
-  @@index([id_stoPlace], name: "id_stoPlace")
-  @@index([id_stoProperty], name: "id_stoProperty")
-  @@index([id_stoType], name: "id_stoType")
+  @@unique([barcode, lab_display], name: "unique_barcode", map: "unique_barcode")
+  @@index([id_stoPlace], map: "id_stoPlace")
+  @@index([id_stoProperty], map: "id_stoProperty")
+  @@index([id_stoType], map: "id_stoType")
 }
 
 model sub_storage_catalyse {
   id_sub_storage      Int    @id @default(autoincrement())
   id_storage          Int
-  sub_storage_barcode String @unique @db.VarChar(80)
+  sub_storage_barcode String @unique(map: "sub_storage_barcode") @db.VarChar(80)
 
-  @@unique([id_storage, sub_storage_barcode], name: "unique_sub_storage_barcode")
+  @@unique([id_storage, sub_storage_barcode], name: "unique_sub_storage_barcode", map: "unique_sub_storage_barcode")
 }
 
 model subunpro {
@@ -849,12 +747,12 @@ model subunpro {
   id_unit     Int?
   id_person   Int?
   id_subject  String? @db.Char(2)
-  person      Person? @relation(fields: [id_person], references: [id_person])
-  unit        Unit?   @relation(fields: [id_unit], references: [id])
+  unit        Unit?   @relation(fields: [id_unit], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "subunpro_ibfk_1")
+  person      Person? @relation(fields: [id_person], references: [id_person], onDelete: Restrict, onUpdate: Restrict, map: "subunpro_ibfk_2")
 
-  @@unique([id_unit, id_person], name: "unique_subunpro")
-  @@index([id_person], name: "id_person")
-  @@index([id_unit], name: "id_unit")
+  @@unique([id_unit, id_person], name: "unique_subunpro", map: "unique_subunpro")
+  @@index([id_person], map: "id_person")
+  @@index([id_unit], map: "id_unit")
 }
 
 model tdegree {
@@ -863,34 +761,38 @@ model tdegree {
   tdegree       Float?
   tdegree_type  String? @db.Char(2)
   tdegree_place String? @db.Char(1)
-  Room           Room?    @relation(fields: [id_lab], references: [id])
+  Room          Room?   @relation(fields: [id_lab], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "tdegree_ibfk_1")
 
-  @@index([id_lab], name: "id_lab")
+  @@index([id_lab], map: "id_lab")
 }
 
 model Unit {
-  @@map("unit")
-  id      Int               @id @default(autoincrement()) @map("id_unit")
-  unitId  Int?         @unique  @map("sciper_unit")
-  name   String?      @db.VarChar(60)   @map("name_unit")
-  id_institute Int?   @map("id_institut")
-  institute    Institute?    @relation(fields: [id_institute], references: [id])
-  aa          aa[]
-  labunpe     labunpe[]
-  stolabunpe  stolabunpe[]
-  subunpro    subunpro[]
-  unit_has_cosec  unit_has_cosec[]
-  unit_has_room   unit_has_room[]
+  id                        Int                         @id @default(autoincrement()) @map("id_unit")
+  unitId                    Int?                        @unique(map: "unique_sciper_unit") @map("sciper_unit")
+  name                      String?                     @map("name_unit") @db.VarChar(60)
+  id_institute              Int?                        @map("id_institut")
+  aa                        aa[]
+  subunpro                  subunpro[]
+  institute                 Institute?                  @relation(fields: [id_institute], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "unit_ibfk_1")
+  unit_has_cosec            unit_has_cosec[]
+  unit_has_room             unit_has_room[]
+  unit_has_storage_for_room unit_has_storage_for_room[]
 
-  @@unique([name, id_institute], name: "unique_un")
-  @@unique([unitId, name, id], name: "unique_unit")
-  @@index([id], name: "id_institut")
+  @@unique([name, id_institute], name: "unique_un", map: "unique_un")
+  @@unique([unitId, name, id_institute], name: "unique_unit", map: "unique_unit")
+  @@index([id_institute], map: "id_institut")
+  @@map("unit")
 }
 
-model user_catalyse {
-  id_user Int    @id @default(autoincrement())
-  sciper  Int    @unique
-  role    String @db.VarChar(15)
+model unit_has_storage_for_room {
+  id_unit    Int
+  id_lab     Int
+  id_storage Int
+  unit       Unit    @relation(fields: [id_unit], references: [id], onUpdate: Restrict, map: "unit_has_storage_for_room_ibfk_1")
+  lab        Room    @relation(fields: [id_lab], references: [id], onUpdate: Restrict, map: "unit_has_storage_for_room_ibfk_2")
+  storage    storage @relation(fields: [id_storage], references: [id_storage], onUpdate: Restrict, map: "unit_has_storage_for_room_ibfk_3")
 
-  @@unique([sciper, role], name: "unique_role")
+  @@unique([id_unit, id_lab, id_storage], map: "unique_unit_has_storage_for_room")
+  @@index([id_lab], map: "id_lab")
+  @@index([id_storage], map: "id_storage")
 }
