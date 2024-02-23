@@ -2,7 +2,7 @@ import {booleanArg, extendType, inputObjectType, intArg, list, objectType, strin
 import { Unit } from 'nexus-prisma';
 import { InstituteStruct } from './institutes';
 import {PersonStruct} from "../global/people";
-import {Person, personType} from "@prisma/client";
+import {Person } from "@prisma/client";
 import {mutationStatusType} from "../statuses";
 
 export const UnitStruct = objectType({
