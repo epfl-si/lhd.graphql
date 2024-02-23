@@ -501,6 +501,7 @@ model Room {
   tdegree                   tdegree[]
   unit_has_room             unit_has_room[]
   unit_has_storage_for_room unit_has_storage_for_room[]
+  lab_has_hazards           lab_has_hazards[]
 
   @@unique([building, sector, floor, roomNo], name: "unique_lab", map: "unique_lab")
   @@unique([sciper_lab, building, sector, floor, roomNo], name: "unique_labo", map: "unique_labo")
@@ -796,3 +797,48 @@ model unit_has_storage_for_room {
   @@index([id_lab], map: "id_lab")
   @@index([id_storage], map: "id_storage")
 }
+
+model hazard_category {
+  id_hazard_category     Int        @id @default(autoincrement())
+  hazard_category_name   String    @db.VarChar(60)
+  hazard_form            hazard_form?
+
+  @@unique([hazard_category_name], map: "unique_hazard_category_name")
+}
+
+model hazard_form {
+  id_hazard_form       Int                  @id @default(autoincrement())
+  id_hazard_category   Int
+  form                 String               @db.LongText
+  hazard_category      hazard_category      @relation(fields: [id_hazard_category], references: [id_hazard_category])
+  hazard_form_history  hazard_form_history[]
+
+  @@index([id_hazard_category], name: "id_hazard_category")
+  @@unique([id_hazard_category], name: "unique_hazard_category")
+}
+
+model hazard_form_history {
+  id_hazard_form_history       Int              @id @default(autoincrement())
+  id_hazard_form               Int
+  form                         String           @db.LongText
+  version                      String
+  modified_by                  String
+  modified_on                  DateTime
+  hazard_form                  hazard_form      @relation(fields: [id_hazard_form], references: [id_hazard_form])
+  lab_has_hazards              lab_has_hazards[]
+
+  @@index([id_hazard_form], name: "id_hazard_form")
+}
+
+model lab_has_hazards {
+  id_lab_has_hazards        Int               @id @default(autoincrement())
+  id_lab                    Int
+  id_hazard_form_history    Int
+  submission                String            @db.LongText
+  Room                      Room              @relation(fields: [id_lab], references: [id])
+  hazard_form_history       hazard_form_history @relation(fields: [id_hazard_form_history], references: [id_hazard_form_history])
+
+  @@index([id_lab], name: "id_lab")
+  @@index([id_hazard_form_history], name: "id_hazard_form_history")
+}
+
