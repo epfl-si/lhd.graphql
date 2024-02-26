@@ -190,7 +190,7 @@ export const RoomKindQuery = extendType({
 	},
 });
 
-const roomFieldsType = {
+const roomType = {
 	name: stringArg(),
 	kind: stringArg(),
 	vol: intArg(),
@@ -211,7 +211,7 @@ export const RoomMutations = extendType({
 		t.nonNull.field('updateRoom', {
 			description: `Update room details.`,
 			args: {
-				...roomFieldsType
+				...roomType
 			},
 			type: "RoomStatus",
 			async resolve(root, args, context) {
