@@ -231,58 +231,57 @@ export const RoomMutations = extendType({
 									}
 								});
 
-							if (updatedRoom) {
-								if (args.units.length>0) {
-									const errors: string[] = [];
-									for (const addUnit of args.units) {
-
-										const unit = await tx.Unit.findFirst({ where: { name: addUnit.name }});
-
-										if (unit) {
-											if (addUnit.status == 'New') {
-												try {
-													const u = await tx.unit_has_room.create({
-														data: {
-															id_lab: room.id,
-															id_unit: unit.id
-														}
-													})
-													if ( !u ) {
-														errors.push(`Error creating unit ${unit.name}.`);
-													}
-												} catch ( e ) {
-													errors.push(`Error creating unit ${unit.name}.`);
-												}
-											}
-											else if (addUnit.status == 'Deleted') {
-												try {
-													const u = await tx.unit_has_room.deleteMany({
-														where: {
-															id_lab: room.id,
-															id_unit: unit.id
-														},
-													});
-													if (!u) {
-														errors.push(`Error deleting ${unit.name}.`);
-													}
-												} catch ( e ) {
-													errors.push(`Error creating unit ${unit.name}.`);
-												}
-											}
-										} else {
-											errors.push(`Unit ${addUnit.name} not found.`);
-										}
-									}
-
-									if (errors.length > 0) {
-										return mutationStatusType.error(`${errors.join('\n')}`);
-									} else {
-										return mutationStatusType.success();
-									}
-								}
-							} else {
+							if (! updatedRoom) {
 								return mutationStatusType.error(`Room ${args.name} not updated.`)
 							}
+
+							const errors: string[] = [];
+							for (const addUnit of args.units) {
+
+								const unit = await tx.Unit.findFirst({ where: { name: addUnit.name }});
+
+								if (unit) {
+									if (addUnit.status == 'New') {
+										try {
+											const u = await tx.unit_has_room.create({
+												data: {
+													id_lab: room.id,
+													id_unit: unit.id
+												}
+											})
+											if ( !u ) {
+												errors.push(`Error creating unit ${unit.name}.`);
+											}
+										} catch ( e ) {
+											errors.push(`Error creating unit ${unit.name}.`);
+										}
+									}
+									else if (addUnit.status == 'Deleted') {
+										try {
+											const u = await tx.unit_has_room.deleteMany({
+												where: {
+													id_lab: room.id,
+													id_unit: unit.id
+												},
+											});
+											if (!u) {
+												errors.push(`Error deleting ${unit.name}.`);
+											}
+										} catch ( e ) {
+											errors.push(`Error creating unit ${unit.name}.`);
+										}
+									}
+								} else {
+									errors.push(`Unit ${addUnit.name} not found.`);
+								}
+							}
+
+							if (errors.length > 0) {
+								return mutationStatusType.error(`${errors.join('\n')}`);
+							} else {
+								return mutationStatusType.success();
+							}
+							
 						} catch ( e ) {
 							return mutationStatusType.error(`Error updating room ${args.name}.`)
 						}
