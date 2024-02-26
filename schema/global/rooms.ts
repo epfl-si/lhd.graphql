@@ -220,14 +220,14 @@ export const RoomMutations = extendType({
 					const room = await tx.Room.findFirst({ where: { name: args.name }});
 
 					if (room) {
-						const kindDesignation = await tx.RoomKind.findFirst({where: {name: args.kind}})
+						const roomKind = await tx.RoomKind.findFirst({where: {name: args.kind}})
 						try {
 							const updatedRoom = await tx.Room.update(
 								{ where: { id: room.id },
 									data: {
 										vol: args.vol,
 										vent: args.vent,
-										kind: { connect: { id_labType: kindDesignation.id_labType}},
+										kind: { connect: { id_labType: roomKind.id_labType}},
 									}
 								});
 
