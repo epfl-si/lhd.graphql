@@ -86,7 +86,7 @@ export const PersonFullTextQuery = extendType({
 
 				const filteredLdapUsers = [];
 				if (!args.lhdOnly) {
-					const ldapUsers = await getUsers(args.search);
+					const ldapUsers = await getUsersSearchApi(args.search);
 					ldapUsers.forEach(u => {
 						if (!lhdPeopleTyped.find(p => p.sciper == u.sciper)) {
 							filteredLdapUsers.push({
@@ -105,7 +105,7 @@ export const PersonFullTextQuery = extendType({
 	},
 })
 
-async function getUsers(search: string): Promise<any[]> {
+async function getUsersSearchApi(search: string): Promise<any[]> {
 	const headers: Headers = new Headers()
 	headers.set('Content-Type', 'application/json')
 	headers.set('Accept', 'application/json')
