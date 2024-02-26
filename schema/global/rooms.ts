@@ -237,12 +237,12 @@ export const RoomMutations = extendType({
 						}
 
 						const errors: string[] = [];
-						for (const addUnit of args.units) {
+						for (const unitToChange of args.units) {
 
-							const unit = await tx.Unit.findFirst({ where: { name: addUnit.name }});
+							const unit = await tx.Unit.findFirst({ where: { name: unitToChange.name }});
 
 							if (unit) {
-								if (addUnit.status == 'New') {
+								if (unitToChange.status == 'New') {
 									try {
 										const u = await tx.unit_has_room.create({
 											data: {
@@ -257,7 +257,7 @@ export const RoomMutations = extendType({
 										errors.push(`Error creating unit ${unit.name}.`);
 									}
 								}
-								else if (addUnit.status == 'Deleted') {
+								else if (unitToChange.status == 'Deleted') {
 									try {
 										const u = await tx.unit_has_room.deleteMany({
 											where: {
@@ -273,7 +273,7 @@ export const RoomMutations = extendType({
 									}
 								}
 							} else {
-								errors.push(`Unit ${addUnit.name} not found.`);
+								errors.push(`Unit ${unitToChange.name} not found.`);
 							}
 						}
 
