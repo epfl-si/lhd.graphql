@@ -215,8 +215,7 @@ export const RoomMutations = extendType({
 			},
 			type: "RoomStatus",
 			async resolve(root, args, context) {
-				const prisma = context.prisma;
-				return await prisma.$transaction(async (tx) => {
+				return await context.prisma.$transaction(async (tx) => {
 					const room = await tx.Room.findFirst({ where: { name: args.name }});
 
 					if (room) {
