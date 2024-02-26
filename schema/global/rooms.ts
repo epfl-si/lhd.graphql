@@ -213,14 +213,14 @@ export const RoomMutations = extendType({
 			args: roomType,
 			type: "RoomStatus",
 			async resolve(root, args, context) {
-				return await context.prisma.$transaction(async (tx) => {
-					const room = await tx.Room.findFirst({ where: { name: args.name }});
+				try {
+					return await context.prisma.$transaction(async (tx) => {
+						const room = await tx.Room.findFirst({ where: { name: args.name }});
+						if (! room) {
+							throw new Error(`Room ${args.name} not found.`);
+						}
 
-					if (! room) {
-						return mutationStatusType.error(`Room ${args.name} not found.`)
-					}
-					const roomKind = await tx.RoomKind.findFirst({where: {name: args.kind}})
-					try {
+						const roomKind = await tx.RoomKind.findFirst({where: {name: args.kind}})
 						const updatedRoom = await tx.Room.update(
 							{ where: { id: room.id },
 								data: {
@@ -231,7 +231,7 @@ export const RoomMutations = extendType({
 							});
 
 						if (!updatedRoom) {
-							return mutationStatusType.error(`Room ${args.name} not updated.`)
+							throw new Error(`Room ${args.name} not updated.`);
 						}
 
 						const errors: string[] = [];
@@ -276,15 +276,14 @@ export const RoomMutations = extendType({
 						}
 
 						if (errors.length > 0) {
-							return mutationStatusType.error(`${errors.join('\n')}`);
+							throw new Error(`${errors.join('\n')}`);
 						} else {
 							return mutationStatusType.success();
 						}
-
-					} catch ( e ) {
-						return mutationStatusType.error(`Error updating room ${args.name}.`)
-					}
-				});
+					});
+				} catch ( e ) {
+					return mutationStatusType.error(e.message);
+				}
 			}
 		});
 	}
