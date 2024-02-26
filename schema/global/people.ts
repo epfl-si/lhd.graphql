@@ -84,32 +84,28 @@ export const PersonFullTextQuery = extendType({
 						sciper: p.sciper
 					}));
 
-
-				let ldapUsers = [];
+				const filteredLdapUsers = [];
 				if (!args.lhdOnly) {
-					ldapUsers = await getUsers(args.search).then(users => {
-						const result = [];
-						users.forEach(u => {
-							if (!lhdPeopleTyped.find(p => p.sciper == u.sciper)) {
-								result.push({
-									type: 'DirectoryPerson',
-									surname: u.name,
-									name: u.firstname,
-									email: u.email,
-									sciper: u.sciper
-								});
-							}
-						});
-						return result;
+					const ldapUsers = await getUsers(args.search);
+					ldapUsers.forEach(u => {
+						if (!lhdPeopleTyped.find(p => p.sciper == u.sciper)) {
+							filteredLdapUsers.push({
+								type: 'DirectoryPerson',
+								surname: u.name,
+								name: u.firstname,
+								email: u.email,
+								sciper: u.sciper
+							});
+						}
 					});
 				}
-				return lhdPeopleTyped.concat(ldapUsers);
+				return lhdPeopleTyped.concat(filteredLdapUsers);
 			}
 		})
 	},
 })
 
-function getUsers(search: string): Promise<any[]> {
+async function getUsers(search: string): Promise<any[]> {
 	const headers: Headers = new Headers()
 	headers.set('Content-Type', 'application/json')
 	headers.set('Accept', 'application/json')
@@ -119,9 +115,6 @@ function getUsers(search: string): Promise<any[]> {
 		headers: headers
 	})
 
-	return fetch(request)
-		.then(res => res.json())
-		.then(res => {
-			return res;
-		})
+	const result = await fetch(request);
+	return result.json();
 }
