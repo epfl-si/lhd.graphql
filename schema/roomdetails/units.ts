@@ -143,128 +143,123 @@ export const UnitMutations = extendType({
 			args: unitChangesType,
 			type: "UnitStatus",
 			async resolve(root, args, context) {
-				const prisma = context.prisma;
-				return await prisma.$transaction(async (tx) => {
+				try {
+					return await context.prisma.$transaction(async (tx) => {
+						const unit = await tx.Unit.findFirst({ where: { name: args.unit }});
+						if (!unit) {
+							throw new Error(`Unit ${args.unit} not found.`);
+						}
 
-					const unit = await tx.Unit.findFirst({ where: { name: args.unit }});
-
-					if (unit) {
 						const errors: string[] = [];
 						try {
-							if (args.profs.length>0) {
-								for (const person of args.profs) {
-									if (person.status == 'New') {
-										const p: Person = await findOrCreatePerson(tx, person.person);
-										if (p) {
-											try {
-												const subunpro = await tx.subunpro.create({
-													data: {
-														id_person: p.id_person,
-														id_unit: unit.id
-													}
-												});
-												if (!subunpro) {
-													errors.push(`Relation not updated between ${unit.name} and ${person.person.sciper}.`)
-												}
-											} catch ( e ) {
-												errors.push(`DB error: relation not updated between ${unit.name} and ${person.person.sciper}.`)
-											}
-										} else {
-											errors.push(`Person ${person.person.sciper} not found.`)
-										}
+							for (const person of args.profs) {
+								if (person.status == 'New') {
+									const p: Person = await findOrCreatePerson(tx, person.person);
+									if (!p) {
+										errors.push(`Person ${person.person.sciper} not found.`);
+										continue;
 									}
-									else if (person.status == 'Deleted') {
-										let p = await tx.Person.findUnique({ where: { sciper: person.person.sciper }});
-										if (p) {
-											try {
-												const del = await tx.subunpro.deleteMany({
-													where: {
-														id_unit: unit.id,
-														id_person: p.id_person
-													}
-												});
-												if (!del) {
-													errors.push(`Relation unit-prof not deleted between ${unit.name} and ${person.person.sciper}.`)
-												}
-											} catch ( e ) {
-												errors.push(`DB error: relation unit-prof not deleted between ${unit.name} and ${person.person.sciper}.`)
+									try {
+										const subunpro = await tx.subunpro.create({
+											data: {
+												id_person: p.id_person,
+												id_unit: unit.id
 											}
-										} else {
-											errors.push(`Person ${person.person.sciper} not found.`)
+										});
+										if (!subunpro) {
+											errors.push(`Relation not updated between ${unit.name} and ${person.person.sciper}.`)
 										}
+									} catch ( e ) {
+										errors.push(`DB error: relation not updated between ${unit.name} and ${person.person.sciper}.`)
+									}
+								}
+								else if (person.status == 'Deleted') {
+									let p = await tx.Person.findUnique({ where: { sciper: person.person.sciper }});
+									if (!p) {
+										errors.push(`Person ${person.person.sciper} not found.`);
+										continue;
+									}
+									try {
+										const del = await tx.subunpro.deleteMany({
+											where: {
+												id_unit: unit.id,
+												id_person: p.id_person
+											}
+										});
+										if (!del) {
+											errors.push(`Relation unit-prof not deleted between ${unit.name} and ${person.person.sciper}.`)
+										}
+									} catch ( e ) {
+										errors.push(`DB error: relation unit-prof not deleted between ${unit.name} and ${person.person.sciper}.`)
 									}
 								}
 							}
 
-							if (args.cosecs.length>0) {
-								for (const person of args.cosecs) {
-									if (person.status == 'New') {
-										const p: Person = await findOrCreatePerson(tx, person.person);
-										if (p) {
-											try {
-												const unitHasCosec = await tx.unit_has_cosec.create({
-													data: {
-														id_person: p.id_person,
-														id_unit: unit.id
-													}
-												});
-												if ( !unitHasCosec ) {
-													errors.push(`Relation not update between ${unit.name} and ${person.person.sciper}.`)
-												}
-											} catch ( e ) {
-												errors.push(`DB error: relation not update between ${unit.name} and ${person.person.sciper}.`)
-											}
-										} else {
-											errors.push(`Person ${person.person.sciper} not found.`)
-										}
+							for (const person of args.cosecs) {
+								if (person.status == 'New') {
+									const p: Person = await findOrCreatePerson(tx, person.person);
+									if (!p) {
+										errors.push(`Person ${person.person.sciper} not found.`);
+										continue;
 									}
-									else if (person.status == 'Deleted') {
-										let p = await tx.Person.findUnique({ where: { sciper: person.person.sciper }});
-										if (p) {
-											try {
-												const del = await tx.unit_has_cosec.deleteMany({
-													where: {
-														id_unit: unit.id,
-														id_person: p.id_person
-													}
-												});
-												if (!del) {
-													errors.push(`Relation unit-cosec not deleted between ${unit.name} and ${person.person.sciper}.`)
-												}
-											} catch ( e ) {
-												errors.push(`DB error: relation unit-cosec not deleted between ${unit.name} and ${person.person.sciper}.`)
+									try {
+										const unitHasCosec = await tx.unit_has_cosec.create({
+											data: {
+												id_person: p.id_person,
+												id_unit: unit.id
 											}
-										} else {
-											errors.push(`Person ${person.person.sciper} not found.`)
+										});
+										if ( !unitHasCosec ) {
+											errors.push(`Relation not update between ${unit.name} and ${person.person.sciper}.`)
 										}
+									} catch ( e ) {
+										errors.push(`DB error: relation not update between ${unit.name} and ${person.person.sciper}.`)
+									}
+								}
+								else if (person.status == 'Deleted') {
+									let p = await tx.Person.findUnique({ where: { sciper: person.person.sciper }});
+									if (!p) {
+										errors.push(`Person ${person.person.sciper} not found.`);
+										continue;
+									}
+									try {
+										const del = await tx.unit_has_cosec.deleteMany({
+											where: {
+												id_unit: unit.id,
+												id_person: p.id_person
+											}
+										});
+										if (!del) {
+											errors.push(`Relation unit-cosec not deleted between ${unit.name} and ${person.person.sciper}.`)
+										}
+									} catch ( e ) {
+										errors.push(`DB error: relation unit-cosec not deleted between ${unit.name} and ${person.person.sciper}.`)
 									}
 								}
 							}
 
-							if (args.subUnits.length>0) {
-								for (const subunit of args.subUnits) {
-									if (subunit.status == 'New') {
-										try {
-											const u = await tx.Unit.create({
-												data: {
-													name: subunit.name,
-													id_institute: unit.id_institute
-												}
-											});
-											if ( !u ) {
-												errors.push(`Error creating sub-unit ${subunit.name}.`);
+							for (const subunit of args.subUnits) {
+								if (subunit.status == 'New') {
+									try {
+										const u = await tx.Unit.create({
+											data: {
+												name: subunit.name,
+												id_institute: unit.id_institute
 											}
-										} catch ( e ) {
+										});
+										if ( !u ) {
 											errors.push(`Error creating sub-unit ${subunit.name}.`);
 										}
+									} catch ( e ) {
+										errors.push(`Error creating sub-unit ${subunit.name}.`);
 									}
-									else if (subunit.status == 'Deleted') {
-										const u = await tx.Unit.findFirst({ where: { name: subunit.name }});
-										if (u) {
-											errors.concat(await deleteUnit(tx, u));
-										} else {
-											errors.push(`Error deleting sub-unit ${subunit.name}.`)
-										}
+								}
+								else if (subunit.status == 'Deleted') {
+									const u = await tx.Unit.findFirst({ where: { name: subunit.name }});
+									if (u) {
+										errors.concat(await deleteUnit(tx, u));
+									} else {
+										errors.push(`Error deleting sub-unit ${subunit.name}.`)
 									}
 								}
 							}
@@ -273,27 +268,28 @@ export const UnitMutations = extendType({
 						}
 
 						if (errors.length > 0) {
-							return mutationStatusType.error(`${errors.join('\n')}`);
+							throw new Error(`${errors.join('\n')}`);
 						} else {
 							return mutationStatusType.success();
 						}
-					} else {
-						return mutationStatusType.error(`Unit ${args.unit} not found.`)
-					}
-				});
+					});
+				} catch ( e ) {
+					return mutationStatusType.error(e.message);
+				}
 			}
 		});
 		t.nonNull.field('deleteUnit', {
 			description: `Delete unit details by unit name (profs, cosecs, sub-units).`,
-			args: {
-				...unitDeleteType
-			},
+			args: unitDeleteType,
 			type: "UnitStatus",
 			async resolve(root, args, context) {
-				const prisma = context.prisma;
-				return await prisma.$transaction(async (tx) => {
-					const unit = await tx.Unit.findFirst({ where: { name: args.unit }});
-					if (unit) {
+				try {
+					return await context.prisma.$transaction(async (tx) => {
+						const unit = await tx.Unit.findFirst({ where: { name: args.unit }});
+						if (!unit) {
+							throw new Error(`Unit ${args.unit} not found.`);
+						}
+
 						const errors: string[] = [];
 						try {
 							errors.concat(await deleteUnit(tx, unit));
@@ -302,14 +298,14 @@ export const UnitMutations = extendType({
 						}
 
 						if (errors.length > 0) {
-							return mutationStatusType.error(`${errors.join('\n')}`);
+							throw new Error(`${errors.join('\n')}`);
 						} else {
 							return mutationStatusType.success();
 						}
-					} else {
-						return mutationStatusType.error(`Unit ${args.unit} not found.`)
-					}
-				});
+					});
+				} catch ( e ) {
+					return mutationStatusType.error(e.message);
+				}
 			}
 		});
 	}
