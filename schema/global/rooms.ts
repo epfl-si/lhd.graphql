@@ -242,39 +242,39 @@ export const RoomMutations = extendType({
 							const unit = await tx.Unit.findFirst({ where: { name: unitToChange.name }});
 
 							if (unit) {
-								if (unitToChange.status == 'New') {
-									try {
-										const u = await tx.unit_has_room.create({
-											data: {
-												id_lab: room.id,
-												id_unit: unit.id
-											}
-										})
-										if ( !u ) {
-											errors.push(`Error creating unit ${unit.name}.`);
-										}
-									} catch ( e ) {
-										errors.push(`Error creating unit ${unit.name}.`);
-									}
-								}
-								else if (unitToChange.status == 'Deleted') {
-									try {
-										const u = await tx.unit_has_room.deleteMany({
-											where: {
-												id_lab: room.id,
-												id_unit: unit.id
-											},
-										});
-										if (!u) {
-											errors.push(`Error deleting ${unit.name}.`);
-										}
-									} catch ( e ) {
-										errors.push(`Error creating unit ${unit.name}.`);
-									}
-								}
-							} else {
 								errors.push(`Unit ${unitToChange.name} not found.`);
+								continue;
 							}
+							if (unitToChange.status == 'New') {
+								try {
+									const u = await tx.unit_has_room.create({
+										data: {
+											id_lab: room.id,
+											id_unit: unit.id
+										}
+									})
+									if ( !u ) {
+										errors.push(`Error creating unit ${unit.name}.`);
+									}
+								} catch ( e ) {
+									errors.push(`Error creating unit ${unit.name}.`);
+								}
+							}
+							else if (unitToChange.status == 'Deleted') {
+								try {
+									const u = await tx.unit_has_room.deleteMany({
+										where: {
+											id_lab: room.id,
+											id_unit: unit.id
+										},
+									});
+									if (!u) {
+										errors.push(`Error deleting ${unit.name}.`);
+									}
+								} catch ( e ) {
+									errors.push(`Error creating unit ${unit.name}.`);
+								}
+							}  // Else do nothing (client should not transmit these, but oh well)
 						}
 
 						if (errors.length > 0) {
