@@ -230,7 +230,7 @@ export const RoomMutations = extendType({
 								}
 							});
 
-						if (! updatedRoom) {
+						if (!updatedRoom) {
 							return mutationStatusType.error(`Room ${args.name} not updated.`)
 						}
 
@@ -239,7 +239,7 @@ export const RoomMutations = extendType({
 
 							const unit = await tx.Unit.findFirst({ where: { name: unitToChange.name }});
 
-							if (unit) {
+							if (!unit) {
 								errors.push(`Unit ${unitToChange.name} not found.`);
 								continue;
 							}
