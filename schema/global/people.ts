@@ -76,15 +76,13 @@ export const PersonFullTextQuery = extendType({
 						]
 					}
 				});
-				const lhdPeopleTyped = lhdPeople.map(p => {
-					return {
+				const lhdPeopleTyped = lhdPeople.map(p => ({
 						type: 'Person',
 						name: p.name,
 						surname: p.surname,
 						email: p.email,
 						sciper: p.sciper
-					}
-				});
+					}));
 
 
 				let ldapUsers = [];
