@@ -218,74 +218,73 @@ export const RoomMutations = extendType({
 				return await context.prisma.$transaction(async (tx) => {
 					const room = await tx.Room.findFirst({ where: { name: args.name }});
 
-					if (room) {
-						const roomKind = await tx.RoomKind.findFirst({where: {name: args.kind}})
-						try {
-							const updatedRoom = await tx.Room.update(
-								{ where: { id: room.id },
-									data: {
-										vol: args.vol,
-										vent: args.vent,
-										kind: { connect: { id_labType: roomKind.id_labType}},
-									}
-								});
-
-							if (! updatedRoom) {
-								return mutationStatusType.error(`Room ${args.name} not updated.`)
-							}
-
-							const errors: string[] = [];
-							for (const addUnit of args.units) {
-
-								const unit = await tx.Unit.findFirst({ where: { name: addUnit.name }});
-
-								if (unit) {
-									if (addUnit.status == 'New') {
-										try {
-											const u = await tx.unit_has_room.create({
-												data: {
-													id_lab: room.id,
-													id_unit: unit.id
-												}
-											})
-											if ( !u ) {
-												errors.push(`Error creating unit ${unit.name}.`);
-											}
-										} catch ( e ) {
-											errors.push(`Error creating unit ${unit.name}.`);
-										}
-									}
-									else if (addUnit.status == 'Deleted') {
-										try {
-											const u = await tx.unit_has_room.deleteMany({
-												where: {
-													id_lab: room.id,
-													id_unit: unit.id
-												},
-											});
-											if (!u) {
-												errors.push(`Error deleting ${unit.name}.`);
-											}
-										} catch ( e ) {
-											errors.push(`Error creating unit ${unit.name}.`);
-										}
-									}
-								} else {
-									errors.push(`Unit ${addUnit.name} not found.`);
-								}
-							}
-
-							if (errors.length > 0) {
-								return mutationStatusType.error(`${errors.join('\n')}`);
-							} else {
-								return mutationStatusType.success();
-							}
-							
-						} catch ( e ) {
-							return mutationStatusType.error(`Error updating room ${args.name}.`)
-						}
-					} else {
+					if (! room) {
 						return mutationStatusType.error(`Room ${args.name} not found.`)
+					}
+					const roomKind = await tx.RoomKind.findFirst({where: {name: args.kind}})
+					try {
+						const updatedRoom = await tx.Room.update(
+							{ where: { id: room.id },
+								data: {
+									vol: args.vol,
+									vent: args.vent,
+									kind: { connect: { id_labType: roomKind.id_labType}},
+								}
+							});
+
+						if (! updatedRoom) {
+							return mutationStatusType.error(`Room ${args.name} not updated.`)
+						}
+
+						const errors: string[] = [];
+						for (const addUnit of args.units) {
+
+							const unit = await tx.Unit.findFirst({ where: { name: addUnit.name }});
+
+							if (unit) {
+								if (addUnit.status == 'New') {
+									try {
+										const u = await tx.unit_has_room.create({
+											data: {
+												id_lab: room.id,
+												id_unit: unit.id
+											}
+										})
+										if ( !u ) {
+											errors.push(`Error creating unit ${unit.name}.`);
+										}
+									} catch ( e ) {
+										errors.push(`Error creating unit ${unit.name}.`);
+									}
+								}
+								else if (addUnit.status == 'Deleted') {
+									try {
+										const u = await tx.unit_has_room.deleteMany({
+											where: {
+												id_lab: room.id,
+												id_unit: unit.id
+											},
+										});
+										if (!u) {
+											errors.push(`Error deleting ${unit.name}.`);
+										}
+									} catch ( e ) {
+										errors.push(`Error creating unit ${unit.name}.`);
+									}
+								}
+							} else {
+								errors.push(`Unit ${addUnit.name} not found.`);
+							}
+						}
+
+						if (errors.length > 0) {
+							return mutationStatusType.error(`${errors.join('\n')}`);
+						} else {
+							return mutationStatusType.success();
+						}
+
+					} catch ( e ) {
+						return mutationStatusType.error(`Error updating room ${args.name}.`)
 					}
 				});
 			}
