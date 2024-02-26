@@ -140,9 +140,7 @@ export const UnitMutations = extendType({
 	definition(t) {
 		t.nonNull.field('updateUnit', {
 			description: `Update unit details (profs, cosecs, sub-units).`,
-			args: {
-				...unitChangesType
-			},
+			args: unitChangesType,
 			type: "UnitStatus",
 			async resolve(root, args, context) {
 				const prisma = context.prisma;

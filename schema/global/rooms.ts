@@ -210,9 +210,7 @@ export const RoomMutations = extendType({
 	definition(t) {
 		t.nonNull.field('updateRoom', {
 			description: `Update room details.`,
-			args: {
-				...roomType
-			},
+			args: roomType,
 			type: "RoomStatus",
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
