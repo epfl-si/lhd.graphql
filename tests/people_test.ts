@@ -8,6 +8,7 @@ type Person = {
   surname: string
   sciper: string
   email: string
+  type: string
 }
 
 describe("End-to-end tests", () => {
@@ -29,7 +30,35 @@ describe("End-to-end tests", () => {
       assert(scipers > 0)
       assert(emails > 0)
     })
+  })
 
+  describe("search people", () => {
+    it("has at least one person in LDAP and one person in LHD", async () => {
+      const everybody = `query FullTextTest {
+        personFullText(search:"urno") {
+          ... on DirectoryPerson { name surname email type}
+          ... on Person { name surname email type}
+        }
+      }`;
+
+      const c = client();
+      const result = await c.query(everybody);
+      assert(result.filter(r => r.type == 'DirectoryPerson').length > 0)
+      assert(result.filter(r => r.type == 'Person').length > 0)
+    })
+    it("has at least one person in LHD and no LDAP", async () => {
+      const everybody = `query FullTextTest {
+        personFullText(search:"urno", lhdOnly: true) {
+          ... on DirectoryPerson { name surname email type}
+          ... on Person { name surname email type}
+        }
+      }`;
+
+      const c = client();
+      const result = await c.query(everybody);
+      assert(result.filter(r => r.type == 'DirectoryPerson').length == 0)
+      assert(result.filter(r => r.type == 'Person').length > 0)
+    })
   })
 })
 

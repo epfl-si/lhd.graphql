@@ -514,6 +514,7 @@ model Room {
   noise         noise?
   stolabunpe    stolabunpe[]
   tdegree       tdegree[]
+  unit_has_room unit_has_room[]
 
   @@unique([building, sector, floor, roomNo], name: "unique_lab")
   @@unique([sciper_lab, building, sector, floor, roomNo], name: "unique_labo")
@@ -539,6 +540,32 @@ model labunpe {
 
   @@unique([id_lab, id_unit, id_person], name: "unique_labunpe")
   @@index([id_lab], name: "id_lab")
+  @@index([id_person], name: "id_person")
+  @@index([id_unit], name: "id_unit")
+}
+
+model unit_has_room {
+  @@map("unit_has_room")
+
+  id_lab     Int
+  id_unit    Int
+  room       Room    @relation(fields: [id_lab], references: [id])
+  unit       Unit   @relation(fields: [id_unit], references: [id])
+
+  @@unique([id_lab, id_unit], name: "unique_unit_has_room")
+  @@index([id_lab], name: "id_lab")
+  @@index([id_unit], name: "id_unit")
+}
+
+model unit_has_cosec {
+  @@map("unit_has_cosec")
+
+  id_person     Int
+  id_unit    Int
+  cosec      Person    @relation(fields: [id_person], references: [id_person])
+  unit       Unit   @relation(fields: [id_unit], references: [id])
+
+  @@unique([id_person, id_unit], name: "unique_unit_has_person")
   @@index([id_person], name: "id_person")
   @@index([id_unit], name: "id_unit")
 }
@@ -708,6 +735,7 @@ model Person {
   mag                    mag[]
   stolabunpe             stolabunpe[]
   subunpro               subunpro[]
+  unit_has_cosec         unit_has_cosec[]
 
   @@unique([name, surname, email], name: "unique_per")
   @@unique([sciper, name, surname, email], name: "unique_person")
@@ -851,6 +879,8 @@ model Unit {
   labunpe     labunpe[]
   stolabunpe  stolabunpe[]
   subunpro    subunpro[]
+  unit_has_cosec  unit_has_cosec[]
+  unit_has_room   unit_has_room[]
 
   @@unique([name, id_institute], name: "unique_un")
   @@unique([unitId, name, id], name: "unique_unit")

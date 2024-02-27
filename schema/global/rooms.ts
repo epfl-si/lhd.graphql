@@ -4,11 +4,13 @@
 
 import { HazLevelStruct } from '../hazards/hazlevel';
 import { BioStruct } from '../bio/biohazard';
-import { DispensationStruct } from '../dispensations';
+import {DispensationHolder, DispensationRoom, DispensationStruct} from '../dispensations';
 import { Room as roomStruct, Unit } from '@prisma/client';
-import { enumType, objectType, extendType } from 'nexus';
+import {enumType, objectType, extendType, nonNull, stringArg, intArg, list, inputObjectType} from 'nexus';
 import { Room, RoomKind, cad_lab } from 'nexus-prisma';
 import { debug as debug_ } from 'debug';
+import {UnitMutationType, UnitStruct} from "../roomdetails/units";
+import {mutationStatusType} from "../statuses";
 const debug = debug_('lhd:rooms');
 
 const catalyseSpecialLocations = {
@@ -46,6 +48,8 @@ export const RoomStruct = objectType({
 			'floor',
 			'roomNo',
 			'kind',
+			'vol',
+			'vent'
 		]) {
 			t.field(Room[f]);
 		}
@@ -114,6 +118,19 @@ export const RoomStruct = objectType({
 			},
 		});
 
+		t.nonNull.list.nonNull.field('lhd_units', {
+			type: UnitStruct,
+			resolve: async (parent, _, context) => {
+				const unitsAndRooms = await context.prisma.unit_has_room.findMany({
+					where: { id_lab: parent.id }
+				});
+				const unitIDs = new Set(unitsAndRooms.map((unitAndRoom) => unitAndRoom.id_unit));
+				return await context.prisma.Unit.findMany({
+					where: { id: { in: [...unitIDs] }}
+				})
+			},
+		});
+
 		t.list.field('haz_levels', {
 			type: HazLevelStruct,
 			resolve: async (parent, _, context) => {
@@ -171,4 +188,103 @@ export const RoomKindQuery = extendType({
 	definition(t) {
 		t.crud.roomKinds({ filtering: true });
 	},
+});
+
+const roomType = {
+	name: stringArg(),
+	kind: stringArg(),
+	vol: intArg(),
+	vent: stringArg(),
+	units: list(UnitMutationType)
+};
+
+export const RoomStatus = mutationStatusType({
+	name: "RoomStatus",
+	definition(t) {
+		t.string('name', { description: `A string representation of the new Room's object identity; may be thereafter passed to e.g. \`updateRoom\``});
+	}
+});
+
+export const RoomMutations = extendType({
+	type: 'Mutation',
+	definition(t) {
+		t.nonNull.field('updateRoom', {
+			description: `Update room details.`,
+			args: roomType,
+			type: "RoomStatus",
+			async resolve(root, args, context) {
+				try {
+					return await context.prisma.$transaction(async (tx) => {
+						const room = await tx.Room.findFirst({ where: { name: args.name }});
+						if (! room) {
+							throw new Error(`Room ${args.name} not found.`);
+						}
+
+						const roomKind = await tx.RoomKind.findFirst({where: {name: args.kind}})
+						const updatedRoom = await tx.Room.update(
+							{ where: { id: room.id },
+								data: {
+									vol: args.vol,
+									vent: args.vent,
+									kind: { connect: { id_labType: roomKind.id_labType}},
+								}
+							});
+
+						if (!updatedRoom) {
+							throw new Error(`Room ${args.name} not updated.`);
+						}
+
+						const errors: string[] = [];
+						for (const unitToChange of args.units) {
+
+							const unit = await tx.Unit.findFirst({ where: { name: unitToChange.name }});
+
+							if (!unit) {
+								errors.push(`Unit ${unitToChange.name} not found.`);
+								continue;
+							}
+							if (unitToChange.status == 'New') {
+								try {
+									const u = await tx.unit_has_room.create({
+										data: {
+											id_lab: room.id,
+											id_unit: unit.id
+										}
+									})
+									if ( !u ) {
+										errors.push(`Error creating unit ${unit.name}.`);
+									}
+								} catch ( e ) {
+									errors.push(`Error creating unit ${unit.name}.`);
+								}
+							}
+							else if (unitToChange.status == 'Deleted') {
+								try {
+									const u = await tx.unit_has_room.deleteMany({
+										where: {
+											id_lab: room.id,
+											id_unit: unit.id
+										},
+									});
+									if (!u) {
+										errors.push(`Error deleting ${unit.name}.`);
+									}
+								} catch ( e ) {
+									errors.push(`Error creating unit ${unit.name}.`);
+								}
+							}  // Else do nothing (client should not transmit these, but oh well)
+						}
+
+						if (errors.length > 0) {
+							throw new Error(`${errors.join('\n')}`);
+						} else {
+							return mutationStatusType.success();
+						}
+					});
+				} catch ( e ) {
+					return mutationStatusType.error(e.message);
+				}
+			}
+		});
+	}
 });
