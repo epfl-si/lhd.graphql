@@ -83,28 +83,7 @@ export const RoomStruct = objectType({
 		t.nonNull.list.nonNull.field('occupancies', {
 			type: 'Occupancy',
 			async resolve(parent, _, context) {
-				interface Occupancy {
-					room: roomStruct;
-					unit: Unit;
-				}
-				const occupancies: { [unitID: string]: Occupancy } = {};
-
-				const room = await context.prisma.Room.findUnique({
-					where: { id: parent.id },
-					include: { labunpe: { include: { unit: true } } },
-				});
-				for (const labunpe of room.labunpe) {
-					const unit = labunpe.unit;
-					if (unit) {
-						occupancies[labunpe.unit.id] = { room, unit };
-					}
-				}
-
-				const occupanciesList = Object.values(occupancies).sort((a: any, b: any) =>
-					a.room.name.localeCompare(b.room.name)
-				);
-				debug(occupanciesList);
-				return occupanciesList;
+				return [];
 			},
 		});
 
