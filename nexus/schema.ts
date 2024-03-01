@@ -71,6 +71,8 @@ import * as roomTypes from '../schema/global/rooms';
 import * as unitTypes from '../schema/roomdetails/units';
 import * as dispensationTypes from '../schema/dispensations';
 import * as statusTypes from '../schema/statuses';
+import * as hazardCategoryTypes from '../schema/hazards/hazardCategory'
+import * as hazardFormTypes from '../schema/hazards/hazardForm'
 
 const types = [
 	schoolTypes,
@@ -81,6 +83,8 @@ const types = [
 	unitTypes,
 	dispensationTypes,
 	statusTypes,
+	hazardCategoryTypes,
+	hazardFormTypes
 ];
 
 // No user-serviceable parts below /////////////////////////////////////////////////
