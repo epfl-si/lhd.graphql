@@ -810,6 +810,7 @@ model hazard_form {
   id_hazard_form       Int                  @id @default(autoincrement())
   id_hazard_category   Int
   form                 String               @db.LongText
+  version              String               @default("1.0.0")
   hazard_category      hazard_category      @relation(fields: [id_hazard_category], references: [id_hazard_category])
   hazard_form_history  hazard_form_history[]
 
