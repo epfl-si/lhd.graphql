@@ -1,4 +1,4 @@
-import {booleanArg, extendType, inputObjectType, intArg, list, objectType, stringArg} from 'nexus';
+import {booleanArg, extendType, list, objectType, stringArg} from 'nexus';
 import { hazard_category } from 'nexus-prisma';
 
 export const HazardCategoryStruct = objectType({
@@ -10,9 +10,9 @@ export const HazardCategoryStruct = objectType({
 	},
 });
 
-/*export const HazardCategoryQuery = extendType({
+export const HazardCategoryQuery = extendType({
 	type: 'Query',
 	definition(t) {
-		t.crud.hazardCategories({	filtering: true });
+		t.crud.hazardCategories({	filtering: true, ordering: true });
 	},
-});*/
+});
