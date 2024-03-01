@@ -822,9 +822,9 @@ model hazard_form_history {
   id_hazard_form_history       Int              @id @default(autoincrement())
   id_hazard_form               Int
   form                         String           @db.LongText
-  version                      String
+  version                      String           @default("1.0.0")
   modified_by                  String
-  modified_on                  DateTime
+  modified_on                  DateTime         @default(now())
   hazard_form                  hazard_form      @relation(fields: [id_hazard_form], references: [id_hazard_form])
   lab_has_hazards              lab_has_hazards[]
 
