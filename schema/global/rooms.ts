@@ -11,6 +11,8 @@ import { Room, RoomKind, cad_lab } from 'nexus-prisma';
 import { debug as debug_ } from 'debug';
 import {UnitMutationType, UnitStruct} from "../roomdetails/units";
 import {mutationStatusType} from "../statuses";
+import {PersonStruct} from "./people";
+import {LabHazardStruct} from "../hazards/labHazard";
 const debug = debug_('lhd:rooms');
 
 const catalyseSpecialLocations = {
@@ -118,6 +120,16 @@ export const RoomStruct = objectType({
 					include: { haz: true },
 				});
 			},
+		});
+
+		t.nonNull.list.nonNull.field('hazards', {
+			type: LabHazardStruct,
+			resolve: async (parent, _, context) => {
+				return await context.prisma.lab_has_hazards.findMany({//submission
+					where: { id_lab: (parent as any).id },
+					include: { hazard_form_history: true }
+				});
+			}
 		});
 
 		t.float('yearly_audits', {
