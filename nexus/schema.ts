@@ -73,6 +73,7 @@ import * as dispensationTypes from '../schema/dispensations';
 import * as statusTypes from '../schema/statuses';
 import * as hazardCategoryTypes from '../schema/hazards/hazardCategory'
 import * as hazardFormTypes from '../schema/hazards/hazardForm'
+import * as labHazardTypes from '../schema/hazards/labHazard'
 
 const types = [
 	schoolTypes,
@@ -84,7 +85,8 @@ const types = [
 	dispensationTypes,
 	statusTypes,
 	hazardCategoryTypes,
-	hazardFormTypes
+	hazardFormTypes,
+	labHazardTypes
 ];
 
 // No user-serviceable parts below /////////////////////////////////////////////////
