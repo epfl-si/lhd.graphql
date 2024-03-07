@@ -1,9 +1,12 @@
-import {booleanArg, extendType, list, objectType, stringArg} from 'nexus';
+import {booleanArg, extendType, inputObjectType, list, objectType, stringArg} from 'nexus';
 import {lab_has_hazards, Unit} from 'nexus-prisma';
 import {HazardFormHistoryStruct} from "./hazardFormHistory";
 import {Person} from "@prisma/client";
 import {mutationStatusType} from "../statuses";
 import {UnitMutationType} from "../roomdetails/units";
+import {decrypt, encrypt, getSHA256} from "../../utils/HashingTools";
+import {IDObfuscator} from "../../utils/IDObfuscator";
+import {objValues} from "nexus/dist-esm/utils";
 
 export const LabHazardStruct = objectType({
 	name: lab_has_hazards.$name,
@@ -20,8 +23,24 @@ export const LabHazardStruct = objectType({
 				});
 			},
 		});
+		t.string('id',  {
+			resolve: async (parent, _, context) => {
+				const encryptedID = IDObfuscator.obfuscate({id: parent.id_lab_has_hazards, obj: getLabHasHazardToString(parent)});
+				console.log('encryptedID', encryptedID);
+				return JSON.stringify(encryptedID);
+			},
+		});
 	},
 });
+
+function getLabHasHazardToString(parent) {
+	return {
+		id_lab_has_hazards: parent.id_lab_has_hazards,
+		id_lab: parent.id_lab,
+		id_hazard_form_history: parent.id_hazard_form_history,
+		submission: parent.submission
+	};
+}
 
 export const RoomHazardStatus = mutationStatusType({
 	name: "RoomHazardStatus",
@@ -50,7 +69,6 @@ export const RoomHazardMutations = extendType({
 						if (! room) {
 							throw new Error(`Room ${args.room} not found.`);
 						}
-						console.log("room", room);
 
 						const category = await tx.hazard_category.findFirst({ where: { hazard_category_name: args.category }});
 
