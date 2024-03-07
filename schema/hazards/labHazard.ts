@@ -81,12 +81,45 @@ export const RoomHazardMutations = extendType({
 							}
 						});
 
-						const hazardsInRoom = await tx.lab_has_hazards.findFirst({
-							where: {
-								id_lab: room.id,
-								id_hazard_form_history: historyLastVersion.id_hazard_form_history
+						const submissionsHazards: {id: { salt: string, eph_id: string }, submission: {data: object} }[] = JSON.parse(args.submission);
+						for ( const h of submissionsHazards ) {
+							if(h.id == undefined || h.id.eph_id == undefined || h.id.eph_id == '' || h.id.salt == undefined || h.id.salt == '') {
+								throw new Error(`Not allowed to update hazards`);
 							}
-						});
+							const salt = h.id.salt;
+							const firstPart = h.id.eph_id.substring(0,h.id.eph_id.indexOf('-'));
+							const data = h.id.eph_id.substring(h.id.eph_id.indexOf('-')+1);
+							const decrypted = decrypt(firstPart);
+							const decryptedSalt = decrypted.substring(0,decrypted.indexOf(':'));
+							if(salt != decryptedSalt) {
+								throw new Error(`Bad descrypted request`);
+							}
+							const id = parseInt(decrypted.substring(decrypted.indexOf(':')+1));
+							const hazardsInRoom = await tx.lab_has_hazards.findUnique({
+								where: {
+									id_lab_has_hazards: id
+								}
+							});
+							if (! hazardsInRoom) {
+								throw new Error(`Hazard not found.`);
+							}
+							const labHasHazardObject =  getSHA256(JSON.stringify(getLabHasHazardToString(hazardsInRoom)));
+							console.log('getSHA256', labHasHazardObject, data);
+							if (data !== labHasHazardObject) {
+								throw new Error(`Hazard has been changed from another user. Please reload the page to make modifications`);
+							}
+							const hazard = await tx.lab_has_hazards.update(
+								{ where: { id_lab_has_hazards: id },
+									data: {
+										submission: JSON.stringify(h.submission)
+									}
+								});
+							if ( !hazard ) {
+								throw new Error(`Hazard not updated for room ${args.room}.`);
+							}
+
+						}
+						/*
 
 						if (hazardsInRoom) {
 							const hazard = await tx.lab_has_hazards.update(
@@ -109,7 +142,7 @@ export const RoomHazardMutations = extendType({
 							if ( !hazard ) {
 								throw new Error(`Hazard not updated for room ${args.room}.`);
 							}
-						}
+						}*/
 
 
 						return mutationStatusType.success();
