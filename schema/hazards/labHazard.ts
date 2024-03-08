@@ -1,12 +1,9 @@
-import {booleanArg, extendType, inputObjectType, list, objectType, stringArg} from 'nexus';
-import {lab_has_hazards, Unit} from 'nexus-prisma';
+import {extendType, objectType, stringArg} from 'nexus';
+import {lab_has_hazards} from 'nexus-prisma';
 import {HazardFormHistoryStruct} from "./hazardFormHistory";
-import {Person} from "@prisma/client";
 import {mutationStatusType} from "../statuses";
-import {UnitMutationType} from "../roomdetails/units";
-import {decrypt, encrypt, getSHA256} from "../../utils/HashingTools";
-import {IDObfuscator} from "../../utils/IDObfuscator";
-import {objValues} from "nexus/dist-esm/utils";
+import {getSHA256} from "../../utils/HashingTools";
+import {IDObfuscator, submission} from "../../utils/IDObfuscator";
 
 export const LabHazardStruct = objectType({
 	name: lab_has_hazards.$name,
@@ -65,86 +62,63 @@ export const RoomHazardMutations = extendType({
 			async resolve(root, args, context) {
 				try {
 					return await context.prisma.$transaction(async (tx) => {
-						const room = await tx.Room.findFirst({ where: { name: args.room }});
-						if (! room) {
-							throw new Error(`Room ${args.room} not found.`);
-						}
-
-						const category = await tx.hazard_category.findFirst({ where: { hazard_category_name: args.category }});
-
-						const form = await tx.hazard_form.findFirst({ where: { id_hazard_category: category.id_hazard_category}});
-
-						const historyLastVersion = await tx.hazard_form_history.findFirst({
-							where: {
-								id_hazard_form: form.id_hazard_form,
-								version: form.version
-							}
-						});
-
-						const submissionsHazards: {id: { salt: string, eph_id: string }, submission: {data: object} }[] = JSON.parse(args.submission);
+						const submissionsHazards: submission[] = JSON.parse(args.submission);
 						for ( const h of submissionsHazards ) {
 							if(h.id == undefined || h.id.eph_id == undefined || h.id.eph_id == '' || h.id.salt == undefined || h.id.salt == '') {
 								throw new Error(`Not allowed to update hazards`);
 							}
-							const salt = h.id.salt;
-							const firstPart = h.id.eph_id.substring(0,h.id.eph_id.indexOf('-'));
-							const data = h.id.eph_id.substring(h.id.eph_id.indexOf('-')+1);
-							const decrypted = decrypt(firstPart);
-							const decryptedSalt = decrypted.substring(0,decrypted.indexOf(':'));
-							if(salt != decryptedSalt) {
-								throw new Error(`Bad descrypted request`);
-							}
-							const id = parseInt(decrypted.substring(decrypted.indexOf(':')+1));
-							const hazardsInRoom = await tx.lab_has_hazards.findUnique({
+
+							const category = await tx.hazard_category.findFirst({ where: { hazard_category_name: args.category }});
+
+							const form = await tx.hazard_form.findFirst({ where: { id_hazard_category: category.id_hazard_category}});
+
+							const historyLastVersion = await tx.hazard_form_history.findFirst({
 								where: {
-									id_lab_has_hazards: id
+									id_hazard_form: form.id_hazard_form,
+									version: form.version
 								}
 							});
-							if (! hazardsInRoom) {
-								throw new Error(`Hazard not found.`);
-							}
-							const labHasHazardObject =  getSHA256(JSON.stringify(getLabHasHazardToString(hazardsInRoom)));
-							console.log('getSHA256', labHasHazardObject, data);
-							if (data !== labHasHazardObject) {
-								throw new Error(`Hazard has been changed from another user. Please reload the page to make modifications`);
-							}
-							const hazard = await tx.lab_has_hazards.update(
-								{ where: { id_lab_has_hazards: id },
+
+							if (h.id.eph_id == 'newHazard') {
+								const room = await tx.Room.findFirst({ where: { name: args.room }});
+								if (! room) {
+									throw new Error(`Room ${args.room} not found.`);
+								}
+								const hazard = await tx.lab_has_hazards.create({
 									data: {
+										id_lab: room.id,
+										id_hazard_form_history: historyLastVersion.id_hazard_form_history,
 										submission: JSON.stringify(h.submission)
 									}
-								});
-							if ( !hazard ) {
-								throw new Error(`Hazard not updated for room ${args.room}.`);
-							}
-
-						}
-						/*
-
-						if (hazardsInRoom) {
-							const hazard = await tx.lab_has_hazards.update(
-								{ where: { id_lab_has_hazards: hazardsInRoom.id_lab_has_hazards },
-									data: {
-										submission: args.submission
-									}
-								});
-							if ( !hazard ) {
-								throw new Error(`Hazard not created for room ${args.room}.`);
-							}
-						} else {
-							const hazard = await tx.lab_has_hazards.create({
-								data: {
-									id_lab: room.id,
-									id_hazard_form_history: historyLastVersion.id_hazard_form_history,
-									submission: args.submission
+								})
+								if ( !hazard ) {
+									throw new Error(`Hazard not created for room ${args.room}.`);
 								}
-							})
-							if ( !hazard ) {
-								throw new Error(`Hazard not updated for room ${args.room}.`);
+							} else {
+								if(!IDObfuscator.checkSalt(h)) {
+									throw new Error(`Bad descrypted request`);
+								}
+								const id = IDObfuscator.deobfuscateId(h);
+								const hazardsInRoom = await tx.lab_has_hazards.findUnique({where: {id_lab_has_hazards: id}});
+								if (! hazardsInRoom) {
+									throw new Error(`Hazard not found.`);
+								}
+								const labHasHazardObject =  getSHA256(JSON.stringify(getLabHasHazardToString(hazardsInRoom)), h.id.salt);
+								if (IDObfuscator.getDataSHA256(h) !== labHasHazardObject) {
+									throw new Error(`Hazard has been changed from another user. Please reload the page to make modifications`);
+								}
+								const hazard = await tx.lab_has_hazards.update(
+									{ where: { id_lab_has_hazards: id },
+										data: {
+											id_hazard_form_history: historyLastVersion.id_hazard_form_history,
+											submission: JSON.stringify(h.submission)
+										}
+									});
+								if ( !hazard ) {
+									throw new Error(`Hazard not updated for room ${args.room}.`);
+								}
 							}
-						}*/
-
-
+						}
 						return mutationStatusType.success();
 					});
 				} catch ( e ) {
