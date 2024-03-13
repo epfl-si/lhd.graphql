@@ -31,9 +31,9 @@ export class IDObfuscator {
 		return encrypt(salt + ':' + id) + '-' + getSHA256(parentString, salt);
 	}
 
-	static checkSalt(s: submission) {
-		const salt = s.id.salt;
-		const firstPart = s.id.eph_id.substring(0,s.id.eph_id.indexOf('-'));
+	static checkSalt(s: id) {
+		const salt = s.salt;
+		const firstPart = s.eph_id.substring(0,s.eph_id.indexOf('-'));
 		const decrypted = decrypt(firstPart);
 		const decryptedSalt = decrypted.substring(0,decrypted.indexOf(':'));
 		if(salt != decryptedSalt) {
@@ -42,13 +42,13 @@ export class IDObfuscator {
 		return true;
 	}
 	
-	static deobfuscateId(s: submission) {
-		const firstPart = s.id.eph_id.substring(0,s.id.eph_id.indexOf('-'));
+	static deobfuscateId(s: id) {
+		const firstPart = s.eph_id.substring(0,s.eph_id.indexOf('-'));
 		const decrypted = decrypt(firstPart);
 		return parseInt(decrypted.substring(decrypted.indexOf(':')+1));
 	}
 
-	static getDataSHA256(s: submission) {
-		return s.id.eph_id.substring(s.id.eph_id.indexOf('-')+1);
+	static getDataSHA256(s: id) {
+		return s.eph_id.substring(s.eph_id.indexOf('-')+1);
 	}
 }

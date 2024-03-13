@@ -23,7 +23,6 @@ export const LabHazardStruct = objectType({
 		t.string('id',  {
 			resolve: async (parent, _, context) => {
 				const encryptedID = IDObfuscator.obfuscate({id: parent.id_lab_has_hazards, obj: getLabHasHazardToString(parent)});
-				console.log('encryptedID', encryptedID);
 				return JSON.stringify(encryptedID);
 			},
 		});
@@ -95,16 +94,16 @@ export const RoomHazardMutations = extendType({
 									throw new Error(`Hazard not created for room ${args.room}.`);
 								}
 							} else {
-								if(!IDObfuscator.checkSalt(h)) {
+								if(!IDObfuscator.checkSalt(h.id)) {
 									throw new Error(`Bad descrypted request`);
 								}
-								const id = IDObfuscator.deobfuscateId(h);
+								const id = IDObfuscator.deobfuscateId(h.id);
 								const hazardsInRoom = await tx.lab_has_hazards.findUnique({where: {id_lab_has_hazards: id}});
 								if (! hazardsInRoom) {
 									throw new Error(`Hazard not found.`);
 								}
 								const labHasHazardObject =  getSHA256(JSON.stringify(getLabHasHazardToString(hazardsInRoom)), h.id.salt);
-								if (IDObfuscator.getDataSHA256(h) !== labHasHazardObject) {
+								if (IDObfuscator.getDataSHA256(h.id) !== labHasHazardObject) {
 									throw new Error(`Hazard has been changed from another user. Please reload the page to make modifications`);
 								}
 								const hazard = await tx.lab_has_hazards.update(
