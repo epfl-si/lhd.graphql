@@ -69,6 +69,9 @@ export const HazardFormMutations = extendType({
 			async resolve(root, args, context) {
 				try {
 					return await context.prisma.$transaction(async (tx) => {
+						if (!args.id) {
+							throw new Error(`Not allowed to update hazard form`);
+						}
 						const id: id = JSON.parse(args.id);
 						if(id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
 							throw new Error(`Not allowed to update hazard form`);
@@ -144,6 +147,9 @@ export const HazardFormMutations = extendType({
 			async resolve(root, args, context) {
 				try {
 					return await context.prisma.$transaction(async (tx) => {
+						if (!args.id) {
+							throw new Error(`Not allowed to update hazard form`);
+						}
 						const id: id = JSON.parse(args.id);
 						if(id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
 							throw new Error(`Not allowed to update hazard form`);

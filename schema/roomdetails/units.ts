@@ -162,8 +162,11 @@ export const UnitMutations = extendType({
 			async resolve(root, args, context) {
 				try {
 					return await context.prisma.$transaction(async (tx) => {
+						if (!args.id) {
+							throw new Error(`Not allowed to update unit`);
+						}
 						const id: id = JSON.parse(args.id);
-						if(id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
+						if (id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
 							throw new Error(`Not allowed to update unit`);
 						}
 
@@ -315,6 +318,9 @@ export const UnitMutations = extendType({
 			async resolve(root, args, context) {
 				try {
 					return await context.prisma.$transaction(async (tx) => {
+						if (!args.id) {
+							throw new Error(`Not allowed to update unit`);
+						}
 						const id: id = JSON.parse(args.id);
 						if(id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
 							throw new Error(`Not allowed to delete unit`);
