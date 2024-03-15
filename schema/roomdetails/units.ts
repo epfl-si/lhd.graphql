@@ -4,6 +4,8 @@ import { InstituteStruct } from './institutes';
 import {PersonStruct} from "../global/people";
 import {Person } from "@prisma/client";
 import {mutationStatusType} from "../statuses";
+import {id, IDObfuscator} from "../../utils/IDObfuscator";
+import {getSHA256} from "../../utils/HashingTools";
 
 export const UnitStruct = objectType({
 	name: Unit.$name,
@@ -13,7 +15,6 @@ Each EPFL lab (with exactly one Principal Investigator, or PI) is a Unit, as
 is each lowest-level administrative division within central services.`,
 	definition(t) {
 		t.field(Unit.name);
-		t.nonNull.field(Unit.id);
 		t.field({
 			...Unit.unitId,
 			description: `The unit's 5-digit primary identifier in EPFL's information system (units.epfl.ch)`,
@@ -60,8 +61,23 @@ is each lowest-level administrative division within central services.`,
 					}});
 			},
 		});
+		t.string('id',  {
+			resolve: async (parent, _, context) => {
+				const encryptedID = IDObfuscator.obfuscate({id: parent.id, obj: getUnitToString(parent)});
+				return JSON.stringify(encryptedID);
+			},
+		});
 	},
 });
+
+function getUnitToString(parent) {
+	return {
+		id: parent.id,
+		unitId: parent.unitId,
+		name: parent.name,
+		id_institute: parent.id_institute
+	};
+}
 
 export const UnitQuery = extendType({
 	type: 'Query',
@@ -105,6 +121,7 @@ const PersonMutationType = inputObjectType({
 })
 
 const unitChangesType = {
+	id: stringArg(),
 	profs: list(PersonMutationType),
 	cosecs: list(PersonMutationType),
 	subUnits: list(UnitMutationType),
@@ -112,7 +129,7 @@ const unitChangesType = {
 };
 
 const unitDeleteType = {
-	unit: stringArg()
+	id: stringArg()
 };
 
 async function findOrCreatePerson(tx, person): Promise<Person> {
@@ -145,9 +162,22 @@ export const UnitMutations = extendType({
 			async resolve(root, args, context) {
 				try {
 					return await context.prisma.$transaction(async (tx) => {
-						const unit = await tx.Unit.findFirst({ where: { name: args.unit }});
-						if (!unit) {
+						const id: id = JSON.parse(args.id);
+						if(id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
+							throw new Error(`Not allowed to update unit`);
+						}
+
+						if(!IDObfuscator.checkSalt(id)) {
+							throw new Error(`Bad descrypted request`);
+						}
+						const idDeobfuscated = IDObfuscator.deobfuscateId(id);
+						const unit = await tx.Unit.findUnique({where: {id: idDeobfuscated}});
+						if (! unit) {
 							throw new Error(`Unit ${args.unit} not found.`);
+						}
+						const unitObject =  getSHA256(JSON.stringify(getUnitToString(unit)), id.salt);
+						if (IDObfuscator.getDataSHA256(id) !== unitObject) {
+							throw new Error(`Unit ${args.unit} has been changed from another user. Please reload the page to make modifications`);
 						}
 
 						const errors: string[] = [];
@@ -285,9 +315,22 @@ export const UnitMutations = extendType({
 			async resolve(root, args, context) {
 				try {
 					return await context.prisma.$transaction(async (tx) => {
-						const unit = await tx.Unit.findFirst({ where: { name: args.unit }});
-						if (!unit) {
-							throw new Error(`Unit ${args.unit} not found.`);
+						const id: id = JSON.parse(args.id);
+						if(id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
+							throw new Error(`Not allowed to delete unit`);
+						}
+
+						if(!IDObfuscator.checkSalt(id)) {
+							throw new Error(`Bad descrypted request`);
+						}
+						const idDeobfuscated = IDObfuscator.deobfuscateId(id);
+						const unit = await tx.Unit.findUnique({where: {id: idDeobfuscated}});
+						if (! unit) {
+							throw new Error(`Unit not found.`);
+						}
+						const unitObject =  getSHA256(JSON.stringify(getUnitToString(unit)), id.salt);
+						if (IDObfuscator.getDataSHA256(id) !== unitObject) {
+							throw new Error(`Unit has been changed from another user. Please reload the page to make modifications`);
 						}
 
 						const errors: string[] = [];
