@@ -13,6 +13,8 @@ import {UnitMutationType, UnitStruct} from "../roomdetails/units";
 import {mutationStatusType} from "../statuses";
 import {PersonStruct} from "./people";
 import {LabHazardStruct} from "../hazards/labHazard";
+import {id, IDObfuscator} from "../../utils/IDObfuscator";
+import {getSHA256} from "../../utils/HashingTools";
 const debug = debug_('lhd:rooms');
 
 const catalyseSpecialLocations = {
@@ -55,6 +57,13 @@ export const RoomStruct = objectType({
 		]) {
 			t.field(Room[f]);
 		}
+
+		t.string('id',  {
+			resolve: async (parent, _, context) => {
+				const encryptedID = IDObfuscator.obfuscate({id: parent.id, obj: getRoomToString(parent)});
+				return JSON.stringify(encryptedID);
+			},
+		});
 
 		t.field('site', {
 			type: 'Location',
@@ -160,6 +169,23 @@ export const RoomStruct = objectType({
 	},
 });
 
+function getRoomToString(parent) {
+	return {
+		id: parent.id,
+		sciper_lab: parent.sciper_lab,
+		building: parent.building,
+		sector: parent.sector,
+		floor: parent.floor,
+		roomNo:	parent.roomNo,
+		id_labType:	parent.id_labType,
+		description: parent.description,
+		location: parent.location,
+		vol: parent.vol,
+		vent:	parent.vent,
+		name:	parent.name
+	};
+}
+
 export const RoomKindStruct = objectType({
 	name: RoomKind.$name,
 	definition(t) {
@@ -182,6 +208,7 @@ export const RoomKindQuery = extendType({
 });
 
 const roomType = {
+	id: stringArg(),
 	name: stringArg(),
 	kind: stringArg(),
 	vol: intArg(),
@@ -206,9 +233,25 @@ export const RoomMutations = extendType({
 			async resolve(root, args, context) {
 				try {
 					return await context.prisma.$transaction(async (tx) => {
-						const room = await tx.Room.findFirst({ where: { name: args.name }});
+						if (!args.id) {
+							throw new Error(`Not allowed to update room`);
+						}
+						const id: id = JSON.parse(args.id);
+						if(id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
+							throw new Error(`Not allowed to update room`);
+						}
+
+						if(!IDObfuscator.checkSalt(id)) {
+							throw new Error(`Bad descrypted request`);
+						}
+						const idDeobfuscated = IDObfuscator.deobfuscateId(id);
+						const room = await tx.Room.findUnique({where: {id: idDeobfuscated}});
 						if (! room) {
 							throw new Error(`Room ${args.name} not found.`);
+						}
+						const roomObject =  getSHA256(JSON.stringify(getRoomToString(room)), id.salt);
+						if (IDObfuscator.getDataSHA256(id) !== roomObject) {
+							throw new Error(`Room ${args.name} has been changed from another user. Please reload the page to make modifications`);
 						}
 
 						const roomKind = await tx.RoomKind.findFirst({where: {name: args.kind}})
