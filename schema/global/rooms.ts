@@ -200,6 +200,46 @@ export const RoomQuery = extendType({
 	},
 });
 
+export const RoomsWithPaginationStruct = objectType({
+	name: 'RoomsWithPagination',
+	definition(t) {
+		t.list.field('rooms', { type: 'Room' });
+		t.int('totalCount');
+	},
+});
+
+export const RoomsWithPaginationQuery = extendType({
+	type: 'Query',
+	definition(t) {
+		t.field("roomsWithPagination", {
+			type: "RoomsWithPagination",
+			args: {
+				skip: intArg({ default: 0 }),
+				take: intArg({ default: 20 }),
+				search: stringArg(),
+			},
+			async resolve(parent, args, context) {
+				const roomsList = await context.prisma.Room.findMany({
+					where: {
+						OR: [
+							{ name: { contains: args.search }},
+							{ building: { contains: args.search }},
+							{ sector: { contains: args.search }},
+							{ floor: { contains: args.search }},
+							//{ lab_has_hazards : { hazard_form_history: { hazard_form : { hazard_category : { contains: args.search } } } }},
+						]
+					}
+				});
+
+				const rooms = roomsList.slice(args.skip, args.skip + args.take);
+				const totalCount = roomsList.length;
+
+				return { rooms, totalCount };
+			}
+		});
+	},
+});
+
 export const RoomKindQuery = extendType({
 	type: 'Query',
 	definition(t) {

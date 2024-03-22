@@ -413,17 +413,27 @@ async function deleteUnit(tx, u:Unit) {
 	return errors;
 }
 
+export const UnitsWithPaginationStruct = objectType({
+	name: 'UnitsWithPagination',
+	definition(t) {
+		t.list.field('units', { type: 'Unit' });
+		t.int('totalCount');
+	},
+});
+
 export const UnitFullTextQuery = extendType({
 	type: 'Query',
 	definition(t) {
 		t.field("unitsFromFullText", {
-			type: list("Unit"),
+			type: "UnitsWithPagination",
 			args: {
+				skip: intArg({ default: 0 }),
+				take: intArg({ default: 20 }),
 				search: stringArg(),
 			},
 			async resolve(parent, args, context) {
 
-				return await context.prisma.Unit.findMany({
+				const unitList = await context.prisma.Unit.findMany({
 					where: {
 						OR: [
 							{ name: { contains: args.search }},
@@ -432,6 +442,11 @@ export const UnitFullTextQuery = extendType({
 						]
 					}
 				});
+
+				const units = unitList.slice(args.skip, args.skip + args.take);
+				const totalCount = unitList.length;
+
+				return { units, totalCount };
 			}
 		})
 	},
