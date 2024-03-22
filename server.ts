@@ -1,25 +1,24 @@
-import { Prisma, PrismaClient } from '@prisma/client';
-import { ApolloServer } from 'apollo-server-express';
-import {
-	PluginDefinition,
-	ApolloServerPluginDrainHttpServer,
-} from 'apollo-server-core';
-import { debug } from 'debug';
+import {Prisma, PrismaClient} from '@prisma/client';
+import {ApolloServer} from 'apollo-server-express';
+import {ApolloServerPluginDrainHttpServer, PluginDefinition,} from 'apollo-server-core';
+import {debug} from 'debug';
 
 import * as dotenv from 'dotenv';
 import * as express from 'express';
 import * as http from 'http';
 import * as cors from 'cors';
-import * as fs  from 'fs/promises'
-import { schema } from './nexus/schema';
+import * as fs from 'fs/promises'
+import {schema} from './nexus/schema';
 
-import { Issuer, errors } from 'openid-client';
-import { UserInfo, loginResponse } from './serverTypes';
+import {errors, Issuer} from 'openid-client';
+import {loginResponse, UserInfo} from './serverTypes';
 
 type TestInjections = {
 	insecure?: boolean;
 	onQuery?: (q: Prisma.QueryEvent) => void;
 };
+
+var user = {};
 
 export async function makeServer(
 	config: BackendConfig,
@@ -48,7 +47,7 @@ export async function makeServer(
 	const httpServer = http.createServer(app);
 
 	const server = new ApolloServer({
-		context: () => ({ prisma }),
+		context: () => ({ prisma, user }),
 		schema,
 		plugins: [
 			onServerStop(() => prisma.$disconnect()),
@@ -138,6 +137,7 @@ async function isLoggedIn(req): Promise<loginResponse> {
 
 		try {
 			const userinfo: UserInfo = await client.userinfo(access_token);
+			user = userinfo;
 			const allowedGroups = process.env.ALLOWED_GROUPS.split(',');
 			console.log('Logged in', userinfo);
 			console.log('Allowed groups', allowedGroups);
