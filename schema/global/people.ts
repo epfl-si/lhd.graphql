@@ -118,3 +118,22 @@ async function getUsersSearchApi(search: string): Promise<any[]> {
 	const result = await fetch(request);
 	return result.json();
 }
+
+export const ConnectedUserInfoStruct = objectType({
+	name: 'ConnectedUserInfo',
+	definition(t) {
+		t.list.string('groups');
+	},
+});
+
+export const ConnectedUserInfoQuery = extendType({
+	type: 'Query',
+	definition(t) {
+		t.field("connectedUserInfo", {
+			type: "ConnectedUserInfo",
+			async resolve(parent, args, context) {
+				return context.user;
+			}
+		})
+	},
+})
