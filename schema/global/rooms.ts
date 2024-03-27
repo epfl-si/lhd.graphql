@@ -226,9 +226,9 @@ export const RoomsWithPaginationQuery = extendType({
 							{ building: { contains: args.search }},
 							{ sector: { contains: args.search }},
 							{ floor: { contains: args.search }},
-							//{ lab_has_hazards : { hazard_form_history: { hazard_form : { hazard_category : { contains: args.search } } } }},
+							{ lab_has_hazards : {some: {hazard_form_history: { is: {hazard_form: { is: {hazard_category: { is: {hazard_category_name: { contains: args.search }}}}}}}}}},
 						]
-					}
+					},
 				});
 
 				const rooms = roomsList.slice(args.skip, args.skip + args.take);
