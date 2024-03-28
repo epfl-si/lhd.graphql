@@ -74,7 +74,6 @@ import * as statusTypes from '../schema/statuses';
 import * as hazardCategoryTypes from '../schema/hazards/hazardCategory'
 import * as hazardFormTypes from '../schema/hazards/hazardForm'
 import * as labHazardTypes from '../schema/hazards/labHazard'
-import * as searchHistory from '../schema/global/searchHistory';
 
 const types = [
 	schoolTypes,
@@ -87,8 +86,7 @@ const types = [
 	statusTypes,
 	hazardCategoryTypes,
 	hazardFormTypes,
-	labHazardTypes,
-	searchHistory
+	labHazardTypes
 ];
 
 // No user-serviceable parts below /////////////////////////////////////////////////

@@ -842,14 +842,3 @@ model lab_has_hazards {
   @@index([id_lab], name: "id_lab")
   @@index([id_hazard_form_history], name: "id_hazard_form_history")
 }
-
-model search_history {
-  sciper                 Int
-  search                 String
-  page                   String
-
-  @@unique([sciper, page], map: "unique_search_for_user_per_page", name: "unique_search_for_user_per_page")
-  @@index([sciper], map: "sciper")
-  @@index([page], map: "page")
-}
-
