@@ -78,7 +78,7 @@ export const RoomHazardMutations = extendType({
 								}
 							});
 
-							if (h.id.eph_id == 'newHazard') {
+							if (h.id.eph_id.startsWith('newHazard')) {
 								const room = await tx.Room.findFirst({ where: { name: args.room }});
 								if (! room) {
 									throw new Error(`Room ${args.room} not found.`);
