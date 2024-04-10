@@ -425,7 +425,7 @@ export const UnitsWithPaginationStruct = objectType({
 export const UnitFullTextQuery = extendType({
 	type: 'Query',
 	definition(t) {
-		t.field("unitsFromFullText", {
+		t.field("unitsFromFullTextAndPagination", {
 			type: "UnitsWithPagination",
 			args: {
 				skip: intArg({ default: 0 }),
@@ -448,6 +448,24 @@ export const UnitFullTextQuery = extendType({
 				const totalCount = unitList.length;
 
 				return { units, totalCount };
+			}
+		});
+		t.field("unitsFromFullText", {
+			type: list("Unit"),
+			args: {
+				search: stringArg(),
+			},
+			async resolve(parent, args, context) {
+
+				return await context.prisma.Unit.findMany({
+					where: {
+						OR: [
+							{ name: { contains: args.search }},
+							{ institute : { name: { contains: args.search } }},
+							{ institute : { school: { name: { contains: args.search } } }},
+						]
+					}
+				});
 			}
 		})
 	},
