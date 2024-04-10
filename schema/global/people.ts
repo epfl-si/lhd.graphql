@@ -1,5 +1,6 @@
 import { objectType, extendType, stringArg, booleanArg, list, unionType } from 'nexus';
 import { Person } from 'nexus-prisma';
+import {getUsersSearchApi} from "../../utils/CallAPI";
 
 export const PersonStruct = objectType({
 	name: Person.$name,
@@ -104,20 +105,6 @@ export const PersonFullTextQuery = extendType({
 		})
 	},
 })
-
-async function getUsersSearchApi(search: string): Promise<any[]> {
-	const headers: Headers = new Headers()
-	headers.set('Content-Type', 'application/json')
-	headers.set('Accept', 'application/json')
-
-	const request: RequestInfo = new Request(`https://search-api.epfl.ch/api/ldap?q=${search}`, {
-		method: 'GET',
-		headers: headers
-	})
-
-	const result = await fetch(request);
-	return result.json();
-}
 
 export const ConnectedUserInfoStruct = objectType({
 	name: 'ConnectedUserInfo',

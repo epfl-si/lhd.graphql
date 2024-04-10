@@ -6,7 +6,7 @@ import {Person } from "@prisma/client";
 import {mutationStatusType} from "../statuses";
 import {id, IDObfuscator} from "../../utils/IDObfuscator";
 import {getSHA256} from "../../utils/HashingTools";
-import * as dotenv from "dotenv";
+import {getNewUnitFromApi} from "../../utils/CallAPI";
 
 export const UnitStruct = objectType({
 	name: Unit.$name,
@@ -502,20 +502,3 @@ export const UnitFromAPIQuery = extendType({
 		})
 	},
 })
-
-async function getNewUnitFromApi(search: string): Promise<any[]> {
-	dotenv.config();
-
-	const headers: Headers = new Headers()
-	headers.set('Content-Type', 'application/json')
-	headers.set('Accept', 'application/json')
-	headers.set('Authorization', 'Basic ' + Buffer.from("lhd:" + process.env.LHD_IMAP_PASSWORD).toString('base64'));
-
-	const request: RequestInfo = new Request(`https://api.epfl.ch/v1/units?query=${search}`, {
-		method: 'GET',
-		headers: headers
-	})
-
-	const result = await fetch(request);
-	return result.json();
-}
