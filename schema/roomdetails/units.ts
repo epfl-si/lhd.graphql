@@ -105,6 +105,16 @@ export const PersonType = inputObjectType({
 	}
 })
 
+export const UnitCreationType = inputObjectType({
+	name: "UnitCreationType",
+	definition(t) {
+		t.nonNull.string('name');
+		t.nonNull.string('path');
+		t.nonNull.int('unitId');
+		t.nonNull.string('status');
+	}
+})
+
 export const UnitMutationType = inputObjectType({
 	name: "UnitType",
 	definition(t) {
@@ -119,7 +129,11 @@ const PersonMutationType = inputObjectType({
 		t.nonNull.string('status');
 		t.nonNull.field('person', {type: "PersonType"});
 	}
-})
+});
+
+const unitCreationType = {
+	units: list(UnitCreationType)
+};
 
 const unitChangesType = {
 	id: stringArg(),
@@ -156,6 +170,60 @@ async function findOrCreatePerson(tx, person): Promise<Person> {
 export const UnitMutations = extendType({
 	type: 'Mutation',
 	definition(t) {
+		t.nonNull.field('createUnit', {
+			description: `Import a new unit from api.epfl.ch.`,
+			args: unitCreationType,
+			type: "UnitStatus",
+			async resolve(root, args, context) {
+				try {
+					return await context.prisma.$transaction(async (tx) => {
+						const errors: string[] = [];
+						for (const unit of args.units) {
+							if (unit.status == 'New') {
+								const newUnit = await tx.Unit.findUnique({ where: { unitId: unit.unitId }});
+
+								if (!newUnit) {
+									const parts: string[] = unit.path.split(' ');
+									const instituteName: string = parts[2];
+									let institute = await tx.Institute.findFirst({where: { name: instituteName}});
+
+									if(!institute) {
+										const facultyName: string = parts[1];
+										let faculty = await tx.School.findFirst({where: { name: facultyName}});
+
+										if(!faculty) {
+											faculty = await tx.School.create({
+												data: {
+													name: facultyName,
+												}
+											});
+										}
+
+										institute = await tx.Institute.create({
+											data: {
+												name: instituteName,
+												id_school: faculty.id
+											}
+										});
+									}
+
+									await tx.Unit.create({
+										data: {
+											name: unit.name,
+											unitId: unit.unitId,
+											id_institute: institute.id
+										}
+									});
+								}
+							}
+						}
+						return mutationStatusType.success();
+					});
+				} catch ( e ) {
+					return mutationStatusType.error(e.message);
+				}
+			}
+		});
 		t.nonNull.field('updateUnit', {
 			description: `Update unit details (profs, cosecs, sub-units).`,
 			args: unitChangesType,
@@ -490,14 +558,16 @@ export const UnitFromAPIQuery = extendType({
 			},
 			async resolve(parent, args, context): Promise<any> {
 				const units = await getNewUnitFromApi(args.search);
-				return units.map(u =>
+				const unitList = [];
+				units["units"].forEach(u =>
 				{
-					return {
+					unitList.push({
 						name: u.name,
 						path: u.path,
 						unitId: u.id
-					}
+					});
 				});
+				return unitList;
 			}
 		})
 	},
