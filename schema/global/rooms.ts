@@ -9,12 +9,13 @@ import { Room as roomStruct, Unit } from '@prisma/client';
 import {enumType, objectType, extendType, nonNull, stringArg, intArg, list, inputObjectType} from 'nexus';
 import { Room, RoomKind, cad_lab } from 'nexus-prisma';
 import { debug as debug_ } from 'debug';
-import {UnitMutationType, UnitStruct} from "../roomdetails/units";
+import {UnitCreationType, UnitMutationType, UnitStruct} from "../roomdetails/units";
 import {mutationStatusType} from "../statuses";
 import {PersonStruct} from "./people";
 import {LabHazardStruct} from "../hazards/labHazard";
 import {id, IDObfuscator} from "../../utils/IDObfuscator";
 import {getSHA256} from "../../utils/HashingTools";
+import {getNewRoomFromApi, getNewUnitFromApi} from "../../utils/CallAPI";
 const debug = debug_('lhd:rooms');
 
 const catalyseSpecialLocations = {
@@ -256,6 +257,22 @@ const roomType = {
 	units: list(UnitMutationType)
 };
 
+const roomCreationType = {
+	rooms: list("RoomCreationType")
+};
+
+export const RoomCreationType = inputObjectType({
+	name: "RoomCreationType",
+	definition(t) {
+		t.nonNull.int('id');
+		t.nonNull.string('name');
+		t.nonNull.string('status');
+		t.string('floor');
+		t.string('building');
+		t.string('sector');
+	}
+})
+
 export const RoomStatus = mutationStatusType({
 	name: "RoomStatus",
 	definition(t) {
@@ -266,6 +283,40 @@ export const RoomStatus = mutationStatusType({
 export const RoomMutations = extendType({
 	type: 'Mutation',
 	definition(t) {
+		t.nonNull.field('createRoom', {
+			description: `Create a new room.`,
+			args: roomCreationType,
+			type: "RoomStatus",
+			async resolve(root, args, context) {
+				try {
+					return await context.prisma.$transaction(async (tx) => {
+						for (const room of args.rooms) {
+							if (room.status == 'New') {
+								const newRoom = await tx.Room.findUnique({ where: { sciper_lab: room.id }});
+
+								if (!newRoom) {
+									const parts: string[] = room.name.split(' ');
+
+									await tx.Room.create({
+										data: {
+											sciper_lab: room.id,
+											building: room.building,
+											sector: room.sector,
+											floor: room.floor,
+											roomNo: parts[parts.length - 1],
+											name: room.name
+										}
+									});
+								}
+							}
+						}
+						return mutationStatusType.success();
+					});
+				} catch ( e ) {
+					return mutationStatusType.error(e.message);
+				}
+			}
+		});
 		t.nonNull.field('updateRoom', {
 			description: `Update room details.`,
 			args: roomType,
@@ -362,3 +413,50 @@ export const RoomMutations = extendType({
 		});
 	}
 });
+
+export const RoomFromAPI = objectType({
+	name: "RoomFromAPI",
+	definition(t) {
+		t.nonNull.string("name");
+		t.string("floor");
+		t.nonNull.int("id");
+		t.string("sector");
+		t.string("building");
+		//t.field("building", {type: BuildingType});
+		//lab et location
+	}
+})
+
+/*export const BuildingType = objectType({
+	name: "BuildingType",
+	definition(t) {
+		t.nonNull.string('name');
+	}
+})*/
+
+export const RoomFromAPIQuery = extendType({
+	type: 'Query',
+	definition(t) {
+		t.field("roomsFromAPI", {
+			type: list("RoomFromAPI"),
+			args: {
+				search: stringArg()
+			},
+			async resolve(parent, args, context): Promise<any> {
+				const rooms = await getNewRoomFromApi(args.search);
+				const roomsList = [];
+				rooms["rooms"].forEach(u =>
+				{
+					roomsList.push({
+						name: u.name,
+						floor: u.floor,
+						id: u.id,
+						building: u.building['name'],
+						sector: u.zone
+					});
+				});
+				return roomsList;
+			}
+		})
+	},
+})
