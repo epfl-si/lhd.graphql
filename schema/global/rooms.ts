@@ -15,7 +15,7 @@ import {PersonStruct} from "./people";
 import {LabHazardStruct} from "../hazards/labHazard";
 import {id, IDObfuscator} from "../../utils/IDObfuscator";
 import {getSHA256} from "../../utils/HashingTools";
-import {getNewRoomFromApi, getNewUnitFromApi} from "../../utils/CallAPI";
+import {getRoomsFromApi} from "../../utils/CallAPI";
 const debug = debug_('lhd:rooms');
 
 const catalyseSpecialLocations = {
@@ -443,7 +443,7 @@ export const RoomFromAPIQuery = extendType({
 				search: stringArg()
 			},
 			async resolve(parent, args, context): Promise<any> {
-				const rooms = await getNewRoomFromApi(args.search);
+				const rooms = await getRoomsFromApi(args.search);
 				const roomsList = [];
 				rooms["rooms"].forEach(u =>
 				{

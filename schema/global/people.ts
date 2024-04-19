@@ -1,6 +1,6 @@
 import { objectType, extendType, stringArg, booleanArg, list, unionType } from 'nexus';
 import { Person } from 'nexus-prisma';
-import {getUsersSearchApi} from "../../utils/CallAPI";
+import {getUsersFromApi} from "../../utils/CallAPI";
 
 export const PersonStruct = objectType({
 	name: Person.$name,
@@ -87,15 +87,15 @@ export const PersonFullTextQuery = extendType({
 
 				const filteredLdapUsers = [];
 				if (!args.lhdOnly) {
-					const ldapUsers = await getUsersSearchApi(args.search);
-					ldapUsers.forEach(u => {
-						if (!lhdPeopleTyped.find(p => p.sciper == u.sciper)) {
+					const ldapUsers = await getUsersFromApi(args.search);
+					ldapUsers["persons"].forEach(u => {
+						if (!lhdPeopleTyped.find(p => p.sciper == u.id)) {
 							filteredLdapUsers.push({
 								type: 'DirectoryPerson',
-								surname: u.name,
+								surname: u.lastname,
 								name: u.firstname,
 								email: u.email,
-								sciper: u.sciper
+								sciper: u.id
 							});
 						}
 					});

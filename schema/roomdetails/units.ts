@@ -6,7 +6,7 @@ import {Person } from "@prisma/client";
 import {mutationStatusType} from "../statuses";
 import {id, IDObfuscator} from "../../utils/IDObfuscator";
 import {getSHA256} from "../../utils/HashingTools";
-import {getNewUnitFromApi} from "../../utils/CallAPI";
+import {getUnitsFromApi} from "../../utils/CallAPI";
 
 export const UnitStruct = objectType({
 	name: Unit.$name,
@@ -557,7 +557,7 @@ export const UnitFromAPIQuery = extendType({
 				search: stringArg()
 			},
 			async resolve(parent, args, context): Promise<any> {
-				const units = await getNewUnitFromApi(args.search);
+				const units = await getUnitsFromApi(args.search);
 				const unitList = [];
 				units["units"].forEach(u =>
 				{
