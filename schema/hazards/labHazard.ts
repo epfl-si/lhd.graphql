@@ -78,7 +78,7 @@ export const RoomHazardMutations = extendType({
 								}
 							});
 
-							if (h.id.eph_id.startsWith('newHazard')) {
+							if (h.id.eph_id.startsWith('newHazard') && h.submission.data['status'] == 'Default') {
 								const room = await tx.Room.findFirst({ where: { name: args.room }});
 								if (! room) {
 									throw new Error(`Room ${args.room} not found.`);
@@ -93,7 +93,7 @@ export const RoomHazardMutations = extendType({
 								if ( !hazard ) {
 									throw new Error(`Hazard not created for room ${args.room}.`);
 								}
-							} else {
+							} else if (!h.id.eph_id.startsWith('newHazard')) {
 								if(!IDObfuscator.checkSalt(h.id)) {
 									throw new Error(`Bad descrypted request`);
 								}
@@ -106,15 +106,27 @@ export const RoomHazardMutations = extendType({
 								if (IDObfuscator.getDataSHA256(h.id) !== labHasHazardObject) {
 									throw new Error(`Hazard has been changed from another user. Please reload the page to make modifications`);
 								}
-								const hazard = await tx.lab_has_hazards.update(
-									{ where: { id_lab_has_hazards: id },
-										data: {
-											id_hazard_form_history: historyLastVersion.id_hazard_form_history,
-											submission: JSON.stringify(h.submission)
-										}
-									});
-								if ( !hazard ) {
-									throw new Error(`Hazard not updated for room ${args.room}.`);
+
+								if (h.submission.data['status'] == 'Default'){
+									const hazard = await tx.lab_has_hazards.update(
+										{ where: { id_lab_has_hazards: id },
+											data: {
+												id_hazard_form_history: historyLastVersion.id_hazard_form_history,
+												submission: JSON.stringify(h.submission)
+											}
+										});
+									if ( !hazard ) {
+										throw new Error(`Hazard not updated for room ${args.room}.`);
+									}
+								} else if (h.submission.data['status'] == 'Deleted') {
+									const hazard = await tx.lab_has_hazards.delete({
+											where: {
+												id_lab_has_hazards: id
+											}
+										});
+									if ( !hazard ) {
+										throw new Error(`Hazard not deleted for room ${args.room}.`);
+									}
 								}
 							}
 						}
