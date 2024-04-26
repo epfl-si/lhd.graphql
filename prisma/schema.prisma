@@ -813,6 +813,7 @@ model hazard_form {
   version              String               @default("1.0.0")
   hazard_category      hazard_category      @relation(fields: [id_hazard_category], references: [id_hazard_category])
   hazard_form_history  hazard_form_history[]
+  hazard_form_child    hazard_form_child[]
 
   @@index([id_hazard_category], name: "id_hazard_category")
   @@unique([id_hazard_category], name: "unique_hazard_category")
@@ -838,7 +839,46 @@ model lab_has_hazards {
   submission                String            @db.LongText
   Room                      Room              @relation(fields: [id_lab], references: [id])
   hazard_form_history       hazard_form_history @relation(fields: [id_hazard_form_history], references: [id_hazard_form_history])
+  lab_has_hazards_child     lab_has_hazards_child[]
 
   @@index([id_lab], name: "id_lab")
   @@index([id_hazard_form_history], name: "id_hazard_form_history")
+}
+
+model hazard_form_child {
+  id_hazard_form_child       Int                  @id @default(autoincrement())
+  id_hazard_form             Int
+  hazard_form_child_name     String               @db.VarChar(200)
+  form                       String               @db.LongText
+  version                    String               @default("1.0.0")
+  hazard_form                hazard_form          @relation(fields: [id_hazard_form], references: [id_hazard_form])
+  hazard_form_child_history  hazard_form_child_history[]
+
+  @@index([id_hazard_form], name: "id_hazard_form")
+  @@unique([hazard_form_child_name], name: "unique_hazard_form_child_name")
+}
+
+model hazard_form_child_history {
+  id_hazard_form_child_history       Int                   @id @default(autoincrement())
+  id_hazard_form_child               Int
+  form                               String                @db.LongText
+  version                            String                @default("1.0.0")
+  modified_by                        String
+  modified_on                        DateTime              @default(now())
+  hazard_form_child                  hazard_form_child     @relation(fields: [id_hazard_form_child], references: [id_hazard_form_child])
+  lab_has_hazards_child              lab_has_hazards_child[]
+
+  @@index([id_hazard_form_child], name: "id_hazard_form_child")
+}
+
+model lab_has_hazards_child {
+  id_lab_has_hazards_child        Int                       @id @default(autoincrement())
+  id_lab_has_hazards              Int
+  id_hazard_form_child_history    Int
+  submission                      String                    @db.LongText
+  lab_has_hazards                 lab_has_hazards           @relation(fields: [id_lab_has_hazards], references: [id_lab_has_hazards])
+  hazard_form_child_history       hazard_form_child_history @relation(fields: [id_hazard_form_child_history], references: [id_hazard_form_child_history])
+
+  @@index([id_lab_has_hazards], name: "id_lab_has_hazards")
+  @@index([id_hazard_form_child_history], name: "id_hazard_form_child_history")
 }
