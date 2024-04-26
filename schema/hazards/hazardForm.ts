@@ -4,6 +4,7 @@ import {HazardCategoryStruct} from "./hazardCategory";
 import {mutationStatusType} from "../statuses";
 import {id, IDObfuscator} from "../../utils/IDObfuscator";
 import {getSHA256} from "../../utils/HashingTools";
+import {HazardFormChildStruct} from "./hazardFormChild";
 
 export const HazardFormStruct = objectType({
 	name: hazard_form.$name,
@@ -18,6 +19,13 @@ export const HazardFormStruct = objectType({
 				return await context.prisma.hazard_category.findUnique({
 					where: { id_hazard_category: parent.id_hazard_category}
 				});
+			},
+		});
+		t.nonNull.list.nonNull.field('children', {
+			type: HazardFormChildStruct,
+			resolve: async (parent, _, context) => {
+				return await context.prisma.hazard_form_child.findMany({
+					where: { id_hazard_form: (parent as any).id_hazard_form }});
 			},
 		});
 		t.string('id',  {
@@ -134,6 +142,7 @@ export const HazardFormMutations = extendType({
 						if ( !newFormHistory ) {
 							throw new Error(`Hazard form not updated.`);
 						}
+						return mutationStatusType.success();
 					});
 				} catch ( e ) {
 					return mutationStatusType.error(e.message);
@@ -183,13 +192,14 @@ export const HazardFormMutations = extendType({
 									form: args.form,
 									version: args.version,
 									id_hazard_form: form.id_hazard_form,
-									modified_by: 'Rosa',
+									modified_by: 'Rosa', //TODO prendre le sciper, nom et prénom de la personne connectée
 									modified_on: new Date()
 								}
 							});
 						if ( !newFormHistory ) {
 							throw new Error(`Hazard form not updated.`);
 						}
+						return mutationStatusType.success();
 					});
 				} catch ( e ) {
 					return mutationStatusType.error(e.message);
