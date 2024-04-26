@@ -4,6 +4,7 @@ import {HazardFormHistoryStruct} from "./hazardFormHistory";
 import {mutationStatusType} from "../statuses";
 import {getSHA256} from "../../utils/HashingTools";
 import {IDObfuscator, submission} from "../../utils/IDObfuscator";
+import {LabHazardChildStruct, updateHazardFormChild} from "./labHazardChild";
 
 export const LabHazardStruct = objectType({
 	name: lab_has_hazards.$name,
@@ -19,6 +20,15 @@ export const LabHazardStruct = objectType({
 					include: { hazard_form: true }
 				});
 			},
+		});
+		t.nonNull.list.nonNull.field('children', {
+			type: LabHazardChildStruct,
+			resolve: async (parent, _, context) => {
+				return await context.prisma.lab_has_hazards_child.findMany({//submission
+					where: { id_lab_has_hazards: (parent as any).id_lab_has_hazards },
+					include: { hazard_form_child_history: true }
+				});
+			}
 		});
 		t.string('id',  {
 			resolve: async (parent, _, context) => {
@@ -61,6 +71,10 @@ export const RoomHazardMutations = extendType({
 			async resolve(root, args, context) {
 				try {
 					return await context.prisma.$transaction(async (tx) => {
+						const room = await tx.Room.findFirst({ where: { name: args.room }});
+						if (! room) {
+							throw new Error(`Room ${args.room} not found.`);
+						}
 						const submissionsHazards: submission[] = JSON.parse(args.submission);
 						for ( const h of submissionsHazards ) {
 							if(h.id == undefined || h.id.eph_id == undefined || h.id.eph_id == '' || h.id.salt == undefined || h.id.salt == '') {
@@ -79,10 +93,6 @@ export const RoomHazardMutations = extendType({
 							});
 
 							if (h.id.eph_id.startsWith('newHazard') && h.submission.data['status'] == 'Default') {
-								const room = await tx.Room.findFirst({ where: { name: args.room }});
-								if (! room) {
-									throw new Error(`Room ${args.room} not found.`);
-								}
 								const hazard = await tx.lab_has_hazards.create({
 									data: {
 										id_lab: room.id,
@@ -93,6 +103,11 @@ export const RoomHazardMutations = extendType({
 								if ( !hazard ) {
 									throw new Error(`Hazard not created for room ${args.room}.`);
 								}
+
+								for await (const child of h.children) {
+									await updateHazardFormChild(child, tx, args.room, hazard.id_lab_has_hazards)
+								}
+
 							} else if (!h.id.eph_id.startsWith('newHazard')) {
 								if(!IDObfuscator.checkSalt(h.id)) {
 									throw new Error(`Bad descrypted request`);
@@ -118,7 +133,21 @@ export const RoomHazardMutations = extendType({
 									if ( !hazard ) {
 										throw new Error(`Hazard not updated for room ${args.room}.`);
 									}
+
+									for await (const child of h.children) {
+										await updateHazardFormChild(child, tx, args.room, hazard.id_lab_has_hazards)
+									}
+
 								} else if (h.submission.data['status'] == 'Deleted') {
+									const hazardChildren = await tx.lab_has_hazards_child.deleteMany({
+										where: {
+											id_lab_has_hazards: id
+										}
+									});
+									if ( !hazardChildren ) {
+										throw new Error(`Hazard not deleted for room ${args.room}.`);
+									}
+
 									const hazard = await tx.lab_has_hazards.delete({
 											where: {
 												id_lab_has_hazards: id

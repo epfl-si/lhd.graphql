@@ -16,7 +16,9 @@ export type data = {
 
 export type submission = {
 	id: id, 
-	submission: data
+	submission: data,
+	formName?: string,
+	children?: submission[]
 }
 
 export class IDObfuscator {
