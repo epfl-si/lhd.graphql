@@ -13,6 +13,14 @@ export const HazardFormChildStruct = objectType({
 		t.nonNull.field(hazard_form_child.form);
 		t.nonNull.field(hazard_form_child.version);
 		t.nonNull.field(hazard_form_child.hazard_form_child_name);
+		t.nonNull.field('parentForm', {
+			type: "hazard_form",
+			resolve: async (parent, _, context) => {
+				return await context.prisma.hazard_form.findUnique({
+					where: { id_hazard_form: parent.id_hazard_form },
+				});
+			},
+		});
 		t.string('id',  {
 			resolve: async (parent, _, context) => {
 				const encryptedID = IDObfuscator.obfuscate({id: parent.id_hazard_form_child, obj: getHazardFormChildToString(parent)});
