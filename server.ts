@@ -18,8 +18,6 @@ type TestInjections = {
 	onQuery?: (q: Prisma.QueryEvent) => void;
 };
 
-var user = {};
-
 export async function makeServer(
 	config: BackendConfig,
 	{ insecure, onQuery }: TestInjections = {}
@@ -47,7 +45,7 @@ export async function makeServer(
 	const httpServer = http.createServer(app);
 
 	const server = new ApolloServer({
-		context: () => ({ prisma, user }),
+		context: (express) => ({ prisma, user: express.req.user}),
 		schema,
 		plugins: [
 			onServerStop(() => prisma.$disconnect()),
@@ -62,7 +60,7 @@ export async function makeServer(
 	if (! insecure) {
 		app.use(async function (req, res, next) {
 			try {
-				var loginResponse = await isLoggedIn(req);
+				var loginResponse = await getLoggedInUserInfos(req);
 				if (req.method === 'POST' && !isHarmless(req) && !loginResponse.loggedIn) {
 					res.status(loginResponse.httpCode);
 					res.send(loginResponse.message);
@@ -130,14 +128,13 @@ async function issuer() {
 	return _issuer;
 }
 
-async function isLoggedIn(req): Promise<loginResponse> {
-	async function verifyToken(access_token: string) {
+async function getLoggedInUserInfos(req): Promise<loginResponse> {
+	async function getUserAuthentication(access_token: string) {
 		const issuer_ = await issuer();
 		const client = new issuer_.Client({ client_id: 'LHDv3 server' });
 
 		try {
 			const userinfo: UserInfo = await client.userinfo(access_token);
-			user = userinfo;
 			const allowedGroups = process.env.ALLOWED_GROUPS.split(',');
 			console.log('Logged in', userinfo);
 			console.log('Allowed groups', allowedGroups);
@@ -145,12 +142,14 @@ async function isLoggedIn(req): Promise<loginResponse> {
 			if (userinfo.groups && userinfo.groups.some(e => allowedGroups.includes(e))) {
 				return {
 					loggedIn: true,
+					user: userinfo,
 					httpCode: 200,
 					message: 'Correct access rights and token are working, user logged in.',
 				};
 			}
 			return {
 				loggedIn: false,
+				user: null,
 				httpCode: 403,
 				message: `Wrong access rights. You are required to have one of the following groups: ${allowedGroups.join(
 					', '
@@ -172,8 +171,14 @@ async function isLoggedIn(req): Promise<loginResponse> {
 	const matched = req.headers.authorization?.match(/^Bearer\s(.*)$/);
 
 	if (!matched) {
-		return undefined;
+		return {
+			loggedIn: false,
+			httpCode: 401,
+			message: `No token, no logged in`,
+		};
 	}
 
-	return await verifyToken(matched[1]);
+	const authenticationResult = await getUserAuthentication(matched[1]);
+	req.user = authenticationResult.user;
+	return authenticationResult;
 }
