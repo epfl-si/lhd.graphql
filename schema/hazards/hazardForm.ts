@@ -135,7 +135,7 @@ export const HazardFormMutations = extendType({
 									form: args.form,
 									version: args.version,
 									id_hazard_form: form.id_hazard_form,
-									modified_by: 'Rosa',
+									modified_by: context.user.preferred_username,
 									modified_on: new Date()
 								}
 							});
@@ -192,7 +192,7 @@ export const HazardFormMutations = extendType({
 									form: args.form,
 									version: args.version,
 									id_hazard_form: form.id_hazard_form,
-									modified_by: 'Rosa', //TODO prendre le sciper, nom et prénom de la personne connectée
+									modified_by: context.user.preferred_username,
 									modified_on: new Date()
 								}
 							});
