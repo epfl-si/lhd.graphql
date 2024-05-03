@@ -882,3 +882,14 @@ model lab_has_hazards_child {
   @@index([id_lab_has_hazards], name: "id_lab_has_hazards")
   @@index([id_hazard_form_child_history], name: "id_hazard_form_child_history")
 }
+
+model mutation_logs {
+  id_mutation_logs                   Int                   @id @default(autoincrement())
+  modified_by                        String
+  modified_on                        DateTime              @default(now())
+  table_name                         String
+  column_name                        String
+  old_value                          String                @db.LongText
+  new_value                          String                @db.LongText
+  action                             String
+}
