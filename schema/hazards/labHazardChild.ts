@@ -40,20 +40,7 @@ export function getLabHasHazardChildToString(parent) {
 	};
 }
 
-export const RoomHazardChildStatus = mutationStatusType({
-	name: "RoomHazardChildStatus",
-	definition(t) {
-		t.string('name', { description: `A string representation of the Hazard child mutation in room.`});
-	}
-});
-
-/*const roomHazardChildChangesType = {
-	room: stringArg(),
-	submission: stringArg(),
-	category: stringArg()
-};*/
-
-export async function updateHazardFormChild(child: submission, tx: any, room: string, parentHazard: number) {
+export async function updateHazardFormChild(child: submission, tx: any, context: any, room: string, parentHazard: number) {
 	if ( child.id == undefined || child.id.eph_id == undefined || child.id.eph_id == '' || child.id.salt == undefined || child.id.salt == '' ) {
 		throw new Error(`Not allowed to update hazards child`);
 	}
