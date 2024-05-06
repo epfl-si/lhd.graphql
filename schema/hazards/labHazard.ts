@@ -5,6 +5,7 @@ import {mutationStatusType} from "../statuses";
 import {getSHA256} from "../../utils/HashingTools";
 import {IDObfuscator, submission} from "../../utils/IDObfuscator";
 import {LabHazardChildStruct, updateHazardFormChild} from "./labHazardChild";
+import {createNewMutationLog} from "../global/mutationLogs";
 
 export const LabHazardStruct = objectType({
 	name: lab_has_hazards.$name,
@@ -102,10 +103,12 @@ export const RoomHazardMutations = extendType({
 								})
 								if ( !hazard ) {
 									throw new Error(`Hazard not created for room ${args.room}.`);
+								} else {
+									await createNewMutationLog(tx, context, tx.lab_has_hazards.name, '', {}, hazard, 'CREATE');
 								}
 
 								for await (const child of h.children) {
-									await updateHazardFormChild(child, tx, args.room, hazard.id_lab_has_hazards)
+									await updateHazardFormChild(child, tx, context, args.room, hazard.id_lab_has_hazards)
 								}
 
 							} else if (!h.id.eph_id.startsWith('newHazard')) {
@@ -132,10 +135,12 @@ export const RoomHazardMutations = extendType({
 										});
 									if ( !hazard ) {
 										throw new Error(`Hazard not updated for room ${args.room}.`);
+									} else {
+										await createNewMutationLog(tx, context, tx.lab_has_hazards.name, '', hazardsInRoom, hazard, 'UPDATE');
 									}
 
 									for await (const child of h.children) {
-										await updateHazardFormChild(child, tx, args.room, hazard.id_lab_has_hazards)
+										await updateHazardFormChild(child, tx, context, args.room, hazard.id_lab_has_hazards)
 									}
 
 								} else if (h.submission.data['status'] == 'Deleted') {
@@ -146,6 +151,8 @@ export const RoomHazardMutations = extendType({
 									});
 									if ( !hazardChildren ) {
 										throw new Error(`Hazard not deleted for room ${args.room}.`);
+									} else if (hazardChildren.count > 0) {
+										await createNewMutationLog(tx, context, tx.lab_has_hazards_child.name, '', {id_lab_has_hazards: id}, {}, 'DELETE');
 									}
 
 									const hazard = await tx.lab_has_hazards.delete({
@@ -155,6 +162,8 @@ export const RoomHazardMutations = extendType({
 										});
 									if ( !hazard ) {
 										throw new Error(`Hazard not deleted for room ${args.room}.`);
+									} else {
+										await createNewMutationLog(tx, context, tx.lab_has_hazards.name, '', hazard, {}, 'DELETE');
 									}
 								}
 							}

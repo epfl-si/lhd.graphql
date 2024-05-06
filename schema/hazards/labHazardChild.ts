@@ -5,6 +5,7 @@ import {mutationStatusType} from "../statuses";
 import {getSHA256} from "../../utils/HashingTools";
 import {IDObfuscator, submission} from "../../utils/IDObfuscator";
 import {HazardFormChildHistoryStruct} from "./hazardFormChildHistory";
+import {createNewMutationLog} from "../global/mutationLogs";
 
 export const LabHazardChildStruct = objectType({
 	name: lab_has_hazards_child.$name,
@@ -75,6 +76,8 @@ export async function updateHazardFormChild(child: submission, tx: any, room: st
 		})
 		if ( !hazardChild ) {
 			throw new Error(`Hazard child not created for room ${room}.`);
+		} else {
+			await createNewMutationLog(tx, context, tx.lab_has_hazards_child.name, '', {}, hazardChild, 'CREATE');
 		}
 	} else if ( !child.id.eph_id.startsWith('newHazardChild') ) {
 		if ( !IDObfuscator.checkSalt(child.id) ) {
@@ -101,6 +104,8 @@ export async function updateHazardFormChild(child: submission, tx: any, room: st
 				});
 			if ( !hazardChild ) {
 				throw new Error(`Hazard child not updated for room ${room}.`);
+			} else {
+				await createNewMutationLog(tx, context, tx.lab_has_hazards_child.name, '', hazardsChildInRoom, hazardChild, 'UPDATE');
 			}
 		} else if ( child.submission.data['status'] == 'Deleted' ) {
 			const hazardChild = await tx.lab_has_hazards_child.delete({
@@ -110,6 +115,8 @@ export async function updateHazardFormChild(child: submission, tx: any, room: st
 			});
 			if ( !hazardChild ) {
 				throw new Error(`Hazard child not deleted for room ${room}.`);
+			} else {
+				await createNewMutationLog(tx, context, tx.lab_has_hazards_child.name, '', hazardChild, {}, 'DELETE');
 			}
 		}
 	}

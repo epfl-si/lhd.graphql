@@ -16,6 +16,7 @@ import {LabHazardStruct} from "../hazards/labHazard";
 import {id, IDObfuscator} from "../../utils/IDObfuscator";
 import {getSHA256} from "../../utils/HashingTools";
 import {getRoomsFromApi} from "../../utils/CallAPI";
+import {createNewMutationLog} from "./mutationLogs";
 const debug = debug_('lhd:rooms');
 
 const catalyseSpecialLocations = {
@@ -297,7 +298,7 @@ export const RoomMutations = extendType({
 								if (!newRoom) {
 									const parts: string[] = room.name.split(' ');
 
-									await tx.Room.create({
+									const newRoom = await tx.Room.create({
 										data: {
 											sciper_lab: room.id,
 											building: room.building,
@@ -307,6 +308,9 @@ export const RoomMutations = extendType({
 											name: room.name
 										}
 									});
+									if (newRoom) {
+										await createNewMutationLog(tx, context, tx.Room.name, '', {}, newRoom, 'CREATE');
+									}
 								}
 							}
 						}
@@ -357,6 +361,8 @@ export const RoomMutations = extendType({
 
 						if (!updatedRoom) {
 							throw new Error(`Room ${args.name} not updated.`);
+						} else {
+							await createNewMutationLog(tx, context, tx.Room.name, '', room, updatedRoom, 'UPDATE');
 						}
 
 						const errors: string[] = [];
@@ -378,6 +384,8 @@ export const RoomMutations = extendType({
 									})
 									if ( !u ) {
 										errors.push(`Error creating unit ${unit.name}.`);
+									} else {
+										await createNewMutationLog(tx, context, tx.unit_has_room.name, '', {}, u, 'CREATE');
 									}
 								} catch ( e ) {
 									errors.push(`Error creating unit ${unit.name}.`);
@@ -385,14 +393,17 @@ export const RoomMutations = extendType({
 							}
 							else if (unitToChange.status == 'Deleted') {
 								try {
+									const whereConditionForDelete = {
+										id_lab: room.id,
+										id_unit: unit.id
+									};
 									const u = await tx.unit_has_room.deleteMany({
-										where: {
-											id_lab: room.id,
-											id_unit: unit.id
-										},
+										where: whereConditionForDelete
 									});
 									if (!u) {
 										errors.push(`Error deleting ${unit.name}.`);
+									} else {
+										await createNewMutationLog(tx, context, tx.unit_has_room.name, '', whereConditionForDelete, {}, 'DELETE');
 									}
 								} catch ( e ) {
 									errors.push(`Error creating unit ${unit.name}.`);
