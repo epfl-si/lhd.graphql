@@ -7,6 +7,7 @@ import {mutationStatusType} from "../statuses";
 import {id, IDObfuscator} from "../../utils/IDObfuscator";
 import {getSHA256} from "../../utils/HashingTools";
 import {getUnitsFromApi} from "../../utils/CallAPI";
+import {createNewMutationLog} from "../global/mutationLogs";
 
 export const UnitStruct = objectType({
 	name: Unit.$name,
@@ -147,19 +148,24 @@ const unitDeleteType = {
 	id: stringArg()
 };
 
-async function findOrCreatePerson(tx, person): Promise<Person> {
+async function findOrCreatePerson(tx, context, person): Promise<Person> {
 	let p = await tx.Person.findUnique({ where: { sciper: person.sciper }});
 
 	if (!p) {
 		try {
+			const newPerson = {
+				name: person.name,
+				surname: person.surname,
+				sciper: person.sciper,
+				email: person.email
+			};
 			p = await tx.Person.create({
-				data: {
-					name: person.name,
-					surname: person.surname,
-					sciper: person.sciper,
-					email: person.email
-				}
+				data: newPerson
 			});
+
+			if (p) {
+				await createNewMutationLog(tx, context, tx.Person.name, '', {}, newPerson, 'CREATE');
+			}
 		} catch ( e ) {
 			p = undefined;
 		}
@@ -197,23 +203,35 @@ export const UnitMutations = extendType({
 													name: facultyName,
 												}
 											});
+											if (faculty) {
+												await createNewMutationLog(tx, context, tx.School.name, '', {},
+													{name: facultyName}, 'CREATE');
+											}
 										}
 
+										const newInstitute = {
+											name: instituteName,
+											id_school: faculty.id
+										};
 										institute = await tx.Institute.create({
-											data: {
-												name: instituteName,
-												id_school: faculty.id
-											}
+											data: newInstitute
 										});
+										if (institute) {
+											await createNewMutationLog(tx, context, tx.Institute.name, '', {}, newInstitute, 'CREATE');
+										}
 									}
 
-									await tx.Unit.create({
-										data: {
-											name: unit.name,
-											unitId: unit.unitId,
-											id_institute: institute.id
-										}
+									const newUnit = {
+										name: unit.name,
+										unitId: unit.unitId,
+										id_institute: institute.id
+									};
+									const u = await tx.Unit.create({
+										data: newUnit
 									});
+									if (u) {
+										await createNewMutationLog(tx, context, tx.Unit.name, '', {}, newUnit, 'CREATE');
+									}
 								}
 							}
 						}
@@ -256,20 +274,23 @@ export const UnitMutations = extendType({
 						try {
 							for (const person of args.profs) {
 								if (person.status == 'New') {
-									const p: Person = await findOrCreatePerson(tx, person.person);
+									const p: Person = await findOrCreatePerson(tx, context, person.person);
 									if (!p) {
 										errors.push(`Person ${person.person.sciper} not found.`);
 										continue;
 									}
 									try {
+										const newSubunpro = {
+											id_person: p.id_person,
+											id_unit: unit.id
+										};
 										const subunpro = await tx.subunpro.create({
-											data: {
-												id_person: p.id_person,
-												id_unit: unit.id
-											}
+											data: newSubunpro
 										});
 										if (!subunpro) {
 											errors.push(`Relation not updated between ${unit.name} and ${person.person.sciper}.`)
+										} else {
+											await createNewMutationLog(tx, context, tx.subunpro.name, '', {}, newSubunpro, 'CREATE');
 										}
 									} catch ( e ) {
 										errors.push(`DB error: relation not updated between ${unit.name} and ${person.person.sciper}.`)
@@ -282,14 +303,17 @@ export const UnitMutations = extendType({
 										continue;
 									}
 									try {
+										const whereCondition = {
+											id_unit: unit.id,
+											id_person: p.id_person
+										};
 										const del = await tx.subunpro.deleteMany({
-											where: {
-												id_unit: unit.id,
-												id_person: p.id_person
-											}
+											where: whereCondition
 										});
 										if (!del) {
 											errors.push(`Relation unit-prof not deleted between ${unit.name} and ${person.person.sciper}.`)
+										} else {
+											await createNewMutationLog(tx, context, tx.subunpro.name, '', whereCondition, {}, 'DELETE');
 										}
 									} catch ( e ) {
 										errors.push(`DB error: relation unit-prof not deleted between ${unit.name} and ${person.person.sciper}.`)
@@ -299,20 +323,23 @@ export const UnitMutations = extendType({
 
 							for (const person of args.cosecs) {
 								if (person.status == 'New') {
-									const p: Person = await findOrCreatePerson(tx, person.person);
+									const p: Person = await findOrCreatePerson(tx, context, person.person);
 									if (!p) {
 										errors.push(`Person ${person.person.sciper} not found.`);
 										continue;
 									}
 									try {
+										const relationUnitCosec = {
+											id_person: p.id_person,
+											id_unit: unit.id
+										};
 										const unitHasCosec = await tx.unit_has_cosec.create({
-											data: {
-												id_person: p.id_person,
-												id_unit: unit.id
-											}
+											data: relationUnitCosec
 										});
 										if ( !unitHasCosec ) {
 											errors.push(`Relation not update between ${unit.name} and ${person.person.sciper}.`)
+										} else {
+											await createNewMutationLog(tx, context, tx.unit_has_cosec.name, '', {}, relationUnitCosec, 'CREATE');
 										}
 									} catch ( e ) {
 										errors.push(`DB error: relation not update between ${unit.name} and ${person.person.sciper}.`)
@@ -325,14 +352,17 @@ export const UnitMutations = extendType({
 										continue;
 									}
 									try {
+										const whereCondition = {
+											id_unit: unit.id,
+											id_person: p.id_person
+										};
 										const del = await tx.unit_has_cosec.deleteMany({
-											where: {
-												id_unit: unit.id,
-												id_person: p.id_person
-											}
+											where: whereCondition
 										});
 										if (!del) {
 											errors.push(`Relation unit-cosec not deleted between ${unit.name} and ${person.person.sciper}.`)
+										} else {
+											await createNewMutationLog(tx, context, tx.unit_has_cosec.name, '', whereCondition, {}, 'DELETE');
 										}
 									} catch ( e ) {
 										errors.push(`DB error: relation unit-cosec not deleted between ${unit.name} and ${person.person.sciper}.`)
@@ -343,14 +373,17 @@ export const UnitMutations = extendType({
 							for (const subunit of args.subUnits) {
 								if (subunit.status == 'New') {
 									try {
+										const unitDetails = {
+											name: subunit.name,
+											id_institute: unit.id_institute
+										};
 										const u = await tx.Unit.create({
-											data: {
-												name: subunit.name,
-												id_institute: unit.id_institute
-											}
+											data: unitDetails
 										});
 										if ( !u ) {
 											errors.push(`Error creating sub-unit ${subunit.name}.`);
+										} else {
+											await createNewMutationLog(tx, context, tx.Unit.name, '', {}, unitDetails, 'CREATE');
 										}
 									} catch ( e ) {
 										errors.push(`Error creating sub-unit ${subunit.name}.`);
@@ -359,7 +392,7 @@ export const UnitMutations = extendType({
 								else if (subunit.status == 'Deleted') {
 									const u = await tx.Unit.findFirst({ where: { name: subunit.name }});
 									if (u) {
-										errors.concat(await deleteUnit(tx, u));
+										errors.concat(await deleteUnit(tx, context, u));
 									} else {
 										errors.push(`Error deleting sub-unit ${subunit.name}.`)
 									}
@@ -410,7 +443,7 @@ export const UnitMutations = extendType({
 
 						const errors: string[] = [];
 						try {
-							errors.concat(await deleteUnit(tx, unit));
+							errors.concat(await deleteUnit(tx, context, unit));
 						} catch ( e ) {
 							errors.push(`Error updating unit.`)
 						}
@@ -429,7 +462,7 @@ export const UnitMutations = extendType({
 	}
 });
 
-async function deleteUnit(tx, u:Unit) {
+async function deleteUnit(tx, context, u:Unit) {
 	const errors: string[] = [];
 	try {
 		const uHc = await tx.unit_has_cosec.deleteMany({
@@ -437,47 +470,62 @@ async function deleteUnit(tx, u:Unit) {
 				id_unit: u.id,
 			}
 		});
-		if ( uHc ) {
+		if ( !uHc ) {
 			errors.push(`Error deleting cosecs for ${u.name}.`);
+		} else if(uHc.count > 0) {
+			await createNewMutationLog(tx, context, tx.unit_has_cosec.name, '', {name: u.name, id: u.id}, {}, 'DELETE');
 		}
-	} catch ( e ) {
-		errors.push(`Error deleting cosecs for ${u.name}.`);
-	}
-	try {
 		const uHr = await tx.unit_has_room.deleteMany({
 			where: {
 				id_unit: u.id,
 			}
 		});
-		if ( uHr ) {
+		if ( !uHr ) {
 			errors.push(`Error deleting rooms for ${u.name}.`);
+		} else if(uHr.count > 0) {
+			await createNewMutationLog(tx, context, tx.unit_has_room.name, '', {name: u.name, id: u.id}, {}, 'DELETE');
 		}
-	} catch ( e ) {
-		errors.push(`Error deleting rooms for ${u.name}.`);
-	}
-	try {
 		const sub = await tx.subunpro.deleteMany({
 			where: {
 				id_unit: u.id,
 			},
 		});
-		if ( sub ) {
+		if ( !sub ) {
 			errors.push(`Error deleting responsible for ${u.name}.`);
+		} else if(sub.count > 0) {
+			await createNewMutationLog(tx, context, tx.subunpro.name, '', {name: u.name, id: u.id}, {}, 'DELETE');
 		}
-	} catch ( e ) {
-		errors.push(`Error deleting responsible for ${u.name}.`);
-	}
-	try {
+		const storages = await tx.unit_has_storage_for_room.deleteMany({
+			where: {
+				id_unit: u.id,
+			},
+		});
+		if ( !storages ) {
+			errors.push(`Error deleting ${u.name}.`);
+		} else if(storages.count > 0) {
+			await createNewMutationLog(tx, context, tx.unit_has_storage_for_room.name, '', {name: u.name, id: u.id}, {}, 'DELETE');
+		}
+		const subUnitList = await tx.Unit.findMany({
+			where: {
+				name: { startsWith: u.name },
+				id: { not: u.id }
+			}
+		});
+		for await (const subUnit of subUnitList) {
+			await deleteUnit(tx, context, subUnit);
+		}
 		const unit = await tx.Unit.delete({
 			where: {
 				id: u.id,
 			},
 		});
-		if ( unit ) {
+		if ( !unit ) {
 			errors.push(`Error deleting ${u.name}.`);
+		} else {
+			await createNewMutationLog(tx, context, tx.Unit.name, '', {name: u.name, id: u.id}, {}, 'DELETE');
 		}
 	} catch ( e ) {
-		errors.push(`Error deleting ${u.name}.`);
+		errors.push(`Error deleting ${u.name}: ${e.message}.`);
 	}
 	return errors;
 }
