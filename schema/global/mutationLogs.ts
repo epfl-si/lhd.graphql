@@ -1,5 +1,6 @@
-import { objectType } from 'nexus';
+import {objectType} from 'nexus';
 import { mutation_logs } from 'nexus-prisma';
+import {Person} from "@prisma/client";
 
 export const MutationLogsStruct = objectType({
 	name: mutation_logs.$name,
@@ -15,3 +16,28 @@ export const MutationLogsStruct = objectType({
 		t.field(mutation_logs.action);
 	},
 });
+
+export async function createNewMutationLog(
+	tx: any,
+	context: any,
+	tableName: string,
+	columnName: string,
+	oldObject: object,
+	newObject: object,
+	action: 'CREATE' | 'UPDATE' | 'DELETE' | 'LINK') {
+	try {
+		await tx.mutation_logs.create({
+			data: {
+				modified_by: context.user.preferred_username,
+				modified_on: new Date(),
+				table_name: tableName,
+				column_name: columnName,
+				old_value: oldObject ? JSON.stringify(oldObject) : null,
+				new_value: JSON.stringify(newObject),
+				action: action
+			}
+		});
+	} catch ( e ) {
+		console.log(e.message);
+	}
+}
