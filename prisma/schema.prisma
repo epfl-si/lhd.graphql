@@ -502,6 +502,7 @@ model Room {
   unit_has_room             unit_has_room[]
   unit_has_storage_for_room unit_has_storage_for_room[]
   lab_has_hazards           lab_has_hazards[]
+  lab_has_hazards_additional_info lab_has_hazards_additional_info[]
 
   @@unique([building, sector, floor, roomNo], name: "unique_lab", map: "unique_lab")
   @@unique([sciper_lab, building, sector, floor, roomNo], name: "unique_labo", map: "unique_labo")
@@ -802,6 +803,7 @@ model hazard_category {
   id_hazard_category     Int        @id @default(autoincrement())
   hazard_category_name   String    @db.VarChar(60)
   hazard_form            hazard_form?
+  lab_has_hazards_additional_info lab_has_hazards_additional_info[]
 
   @@unique([hazard_category_name], map: "unique_hazard_category_name")
 }
@@ -892,4 +894,16 @@ model mutation_logs {
   old_value                          String                @db.LongText
   new_value                          String                @db.LongText
   action                             String
+}
+
+model lab_has_hazards_additional_info {
+  id_lab_has_hazards_additional_info        Int                  @id @default(autoincrement())
+  id_lab                                    Int
+  id_hazard_category                        Int
+  comment                                   String?              @db.LongText
+  hazard_category                           hazard_category      @relation(fields: [id_hazard_category], references: [id_hazard_category])
+  Room                                      Room                 @relation(fields: [id_lab], references: [id])
+
+  @@index([id_lab], name: "id_lab")
+  @@index([id_hazard_category], name: "id_hazard_category")
 }
