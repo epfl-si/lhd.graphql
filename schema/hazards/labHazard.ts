@@ -87,12 +87,13 @@ export const RoomHazardMutations = extendType({
 							throw new Error(`Room ${args.room} not found.`);
 						}
 						const submissionsHazards: submission[] = JSON.parse(args.submission);
+
+						const category = await tx.hazard_category.findFirst({ where: { hazard_category_name: args.category }});
+
 						for ( const h of submissionsHazards ) {
 							if(h.id == undefined || h.id.eph_id == undefined || h.id.eph_id == '' || h.id.salt == undefined || h.id.salt == '') {
 								throw new Error(`Not allowed to update hazards`);
 							}
-
-							const category = await tx.hazard_category.findFirst({ where: { hazard_category_name: args.category }});
 
 							const form = await tx.hazard_form.findFirst({ where: { id_hazard_category: category.id_hazard_category}});
 
@@ -178,37 +179,37 @@ export const RoomHazardMutations = extendType({
 									}
 								}
 							}
+						}
 
-							if (args.additionalInfo.comment && args.additionalInfo.comment !== '') {
-								const additionalInfoResult = await tx.lab_has_hazards_additional_info.findFirst({
-									where: {
-										id_hazard_category: category.id_hazard_category,
-										id_lab: room.id
-									}});
-								if (additionalInfoResult) {
-									const info = await tx.lab_has_hazards_additional_info.update(
-										{ where: { id_lab_has_hazards_additional_info: additionalInfoResult.id_lab_has_hazards_additional_info },
-											data: {
-												comment: args.additionalInfo.comment
-											}
-										});
-								} else {
-									const info = await tx.lab_has_hazards_additional_info.create({
-											data: {
-												comment: args.additionalInfo.comment,
-												id_hazard_category: category.id_hazard_category,
-												id_lab: room.id
-											}
-										});
-								}
-							}	else {
-								await tx.lab_has_hazards_additional_info.deleteMany({
-									where: {
+						if (args.additionalInfo.comment && args.additionalInfo.comment !== '') {
+							const additionalInfoResult = await tx.lab_has_hazards_additional_info.findFirst({
+								where: {
+									id_hazard_category: category.id_hazard_category,
+									id_lab: room.id
+								}});
+							if (additionalInfoResult) {
+								const info = await tx.lab_has_hazards_additional_info.update(
+									{ where: { id_lab_has_hazards_additional_info: additionalInfoResult.id_lab_has_hazards_additional_info },
+										data: {
+											comment: args.additionalInfo.comment
+										}
+									});
+							} else {
+								const info = await tx.lab_has_hazards_additional_info.create({
+									data: {
+										comment: args.additionalInfo.comment,
 										id_hazard_category: category.id_hazard_category,
 										id_lab: room.id
 									}
-								})
+								});
 							}
+						}	else {
+							await tx.lab_has_hazards_additional_info.deleteMany({
+								where: {
+									id_hazard_category: category.id_hazard_category,
+									id_lab: room.id
+								}
+							})
 						}
 						return mutationStatusType.success();
 					});
