@@ -1,6 +1,5 @@
-import {booleanArg, extendType, list, objectType, stringArg} from 'nexus';
-import { lab_has_hazards, hazard_form_history, hazard_form } from 'nexus-prisma';
-import {HazardCategoryStruct} from "./hazardCategory";
+import {objectType} from 'nexus';
+import {hazard_form_history} from 'nexus-prisma';
 import {HazardFormStruct} from "./hazardForm";
 
 export const HazardFormHistoryStruct = objectType({

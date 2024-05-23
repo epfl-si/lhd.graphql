@@ -1,9 +1,8 @@
 import {extendType, objectType, stringArg} from 'nexus';
-import {HazardCategoryStruct} from "./hazardCategory";
 import {mutationStatusType} from "../statuses";
 import {id, IDObfuscator} from "../../utils/IDObfuscator";
 import {getSHA256} from "../../utils/HashingTools";
-import {hazard_form, hazard_form_child} from "nexus-prisma";
+import {hazard_form_child} from "nexus-prisma";
 
 export const HazardFormChildStruct = objectType({
 	name: hazard_form_child.$name,
