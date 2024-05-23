@@ -1,4 +1,4 @@
-import {extendType, objectType, stringArg} from 'nexus';
+import {arg, extendType, inputObjectType, list, objectType, stringArg} from 'nexus';
 import {lab_has_hazards} from 'nexus-prisma';
 import {HazardFormHistoryStruct} from "./hazardFormHistory";
 import {mutationStatusType} from "../statuses";
@@ -56,10 +56,20 @@ export const RoomHazardStatus = mutationStatusType({
 	}
 });
 
+export const AdditionalInfoType = inputObjectType({
+	name: "AdditionalInfoType",
+	definition(t) {
+		t.string('comment');
+	}
+})
+
 const roomHazardChangesType = {
 	room: stringArg(),
 	submission: stringArg(),
-	category: stringArg()
+	category: stringArg(),
+	additionalInfo: arg({
+		type: 'AdditionalInfoType'
+	})
 };
 
 export const RoomHazardMutations = extendType({
@@ -111,7 +121,8 @@ export const RoomHazardMutations = extendType({
 									await updateHazardFormChild(child, tx, context, args.room, hazard.id_lab_has_hazards)
 								}
 
-							} else if (!h.id.eph_id.startsWith('newHazard')) {
+							}
+							else if (!h.id.eph_id.startsWith('newHazard')) {
 								if(!IDObfuscator.checkSalt(h.id)) {
 									throw new Error(`Bad descrypted request`);
 								}
@@ -166,6 +177,37 @@ export const RoomHazardMutations = extendType({
 										await createNewMutationLog(tx, context, tx.lab_has_hazards.name, '', hazard, {}, 'DELETE');
 									}
 								}
+							}
+
+							if (args.additionalInfo.comment && args.additionalInfo.comment !== '') {
+								const additionalInfoResult = await tx.lab_has_hazards_additional_info.findFirst({
+									where: {
+										id_hazard_category: category.id_hazard_category,
+										id_lab: room.id
+									}});
+								if (additionalInfoResult) {
+									const info = await tx.lab_has_hazards_additional_info.update(
+										{ where: { id_lab_has_hazards_additional_info: additionalInfoResult.id_lab_has_hazards_additional_info },
+											data: {
+												comment: args.additionalInfo.comment
+											}
+										});
+								} else {
+									const info = await tx.lab_has_hazards_additional_info.create({
+											data: {
+												comment: args.additionalInfo.comment,
+												id_hazard_category: category.id_hazard_category,
+												id_lab: room.id
+											}
+										});
+								}
+							}	else {
+								await tx.lab_has_hazards_additional_info.deleteMany({
+									where: {
+										id_hazard_category: category.id_hazard_category,
+										id_lab: room.id
+									}
+								})
 							}
 						}
 						return mutationStatusType.success();
