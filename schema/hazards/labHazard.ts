@@ -191,25 +191,48 @@ export const RoomHazardMutations = extendType({
 								const info = await tx.lab_has_hazards_additional_info.update(
 									{ where: { id_lab_has_hazards_additional_info: additionalInfoResult.id_lab_has_hazards_additional_info },
 										data: {
+											modified_by: context.user.preferred_username,
+											modified_on: new Date(),
 											comment: args.additionalInfo.comment
 										}
 									});
+
+								if ( !info ) {
+									throw new Error(`Additional information not updated for room ${args.room}.`);
+								} else {
+									await createNewMutationLog(tx, context, tx.lab_has_hazards_additional_info.name, '', {}, info, 'UPDATE');
+								}
 							} else {
 								const info = await tx.lab_has_hazards_additional_info.create({
 									data: {
+										modified_by: context.user.preferred_username,
+										modified_on: new Date(),
 										comment: args.additionalInfo.comment,
 										id_hazard_category: category.id_hazard_category,
 										id_lab: room.id
 									}
 								});
+
+								if ( !info ) {
+									throw new Error(`Additional information not created for room ${args.room}.`);
+								} else {
+									await createNewMutationLog(tx, context, tx.lab_has_hazards_additional_info.name, '', {}, info, 'CREATE');
+								}
 							}
 						}	else {
-							await tx.lab_has_hazards_additional_info.deleteMany({
+							const info = await tx.lab_has_hazards_additional_info.deleteMany({
 								where: {
 									id_hazard_category: category.id_hazard_category,
 									id_lab: room.id
 								}
-							})
+							});
+
+							if ( !info ) {
+								throw new Error(`Additional information not deleted for room ${args.room}.`);
+							} else if (info.count > 0) {
+								await createNewMutationLog(tx, context, tx.lab_has_hazards_additional_info.name, '',
+									{id_hazard_category: category.id_hazard_category, id_lab: room.id}, {}, 'DELETE');
+							}
 						}
 						return mutationStatusType.success();
 					});
