@@ -901,6 +901,8 @@ model lab_has_hazards_additional_info {
   id_lab                                    Int
   id_hazard_category                        Int
   comment                                   String?              @db.LongText
+  modified_by                               String
+  modified_on                               DateTime             @default(now())
   hazard_category                           hazard_category      @relation(fields: [id_hazard_category], references: [id_hazard_category])
   Room                                      Room                 @relation(fields: [id_lab], references: [id])
 
