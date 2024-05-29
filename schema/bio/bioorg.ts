@@ -7,6 +7,12 @@ export const BioOrgStruct = objectType({
 	definition(t) {
 		t.field(bio_org.organism);
 		t.field(bio_org.risk_group);
+		t.field('fileLink', {
+			type: "String",
+			resolve(bio) {
+				return 'https://lhd.epfl.ch/hazards/bio/lhd_bio_file.php?id=' + bio.id_bio_org;
+			},
+		});
 	},
 });
 
