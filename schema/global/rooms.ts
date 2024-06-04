@@ -18,6 +18,7 @@ import {getSHA256} from "../../utils/HashingTools";
 import {getRoomsFromApi} from "../../utils/CallAPI";
 import {createNewMutationLog} from "./mutationLogs";
 import {HazardsAdditionalInfoStruct} from "../hazards/hazardsAdditionalInfo";
+import {LabHazardChildStruct} from "../hazards/labHazardChild";
 const debug = debug_('lhd:rooms');
 
 const catalyseSpecialLocations = {
@@ -149,6 +150,17 @@ export const RoomStruct = objectType({
 				return await context.prisma.lab_has_hazards_additional_info.findMany({
 					where: { id_lab: (parent as any).id },
 					include: { hazard_category: true }
+				});
+			}
+		});
+		t.nonNull.list.nonNull.field('hazardReferences',  {
+			type: LabHazardChildStruct,
+			resolve: async (parent, _, context) => {
+				return await context.prisma.lab_has_hazards_child.findMany({
+					where: { submission:  {
+							contains: (parent as any).name
+						}},
+					//include: {lab_has_hazard : true }
 				});
 			}
 		});

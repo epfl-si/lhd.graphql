@@ -6,6 +6,7 @@ import {getSHA256} from "../../utils/HashingTools";
 import {IDObfuscator, submission} from "../../utils/IDObfuscator";
 import {HazardFormChildHistoryStruct} from "./hazardFormChildHistory";
 import {createNewMutationLog} from "../global/mutationLogs";
+import {LabHazardStruct} from "./labHazard";
 
 export const LabHazardChildStruct = objectType({
 	name: lab_has_hazards_child.$name,
@@ -19,6 +20,14 @@ export const LabHazardChildStruct = objectType({
 				return await context.prisma.hazard_form_child_history.findUnique({
 					where: { id_hazard_form_child_history: parent.id_hazard_form_child_history},
 					include: { hazard_form_child: true }
+				});
+			},
+		});
+		t.nonNull.field('hazards', {
+			type: LabHazardStruct,
+			resolve: async (parent, _, context) => {
+				return await context.prisma.lab_has_hazards.findUnique({
+					where: { id_lab_has_hazards: parent.id_lab_has_hazards},
 				});
 			},
 		});
