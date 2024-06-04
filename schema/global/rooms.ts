@@ -158,9 +158,8 @@ export const RoomStruct = objectType({
 			resolve: async (parent, _, context) => {
 				return await context.prisma.lab_has_hazards_child.findMany({
 					where: { submission:  {
-							contains: (parent as any).name
+							contains: '\"' + (parent as any).name + '\"'
 						}},
-					//include: {lab_has_hazard : true }
 				});
 			}
 		});
