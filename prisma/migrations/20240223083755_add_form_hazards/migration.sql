@@ -61,11 +61,12 @@ INSERT INTO hazard_category (hazard_category_name) VALUES
                                                ('CompressedGas'),
                                                ('Cryogenics'),
                                                ('Electrical'),
-                                               ('EMRadiation'),
+                                               ('TimeVaryingEMF'),
                                                ('IonisingRadiation'),
                                                ('Laser'),
                                                ('StaticMagneticField'),
                                                ('Nanoparticles'),
                                                ('Noise'),
-                                               ('Temperature');
+                                               ('Temperature'),
+                                               ('IncoherentLightSource');
 commit;
