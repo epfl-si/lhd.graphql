@@ -59,5 +59,6 @@
     "prisma"
   ],
   "author": "EPFL ISAS-FSD <isas-fsd@groupes.epfl.ch>",
-  "license": "ISC"
+  "license": "ISC",
+  "packageManager": "yarn@1.22.22"
 }
