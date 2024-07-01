@@ -8,6 +8,7 @@ export const HazardsAdditionalInfoStruct = objectType({
 
 	definition(t) {
 		t.field(lab_has_hazards_additional_info.comment);
+		t.field(lab_has_hazards_additional_info.filePath);
 		t.field(lab_has_hazards_additional_info.modified_by);
 		t.field(lab_has_hazards_additional_info.modified_on);
 		t.nonNull.field('hazard_category', {

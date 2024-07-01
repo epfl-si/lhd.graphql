@@ -7,6 +7,11 @@ import {IDObfuscator, submission} from "../../utils/IDObfuscator";
 import {LabHazardChildStruct, updateHazardFormChild} from "./labHazardChild";
 import {createNewMutationLog} from "../global/mutationLogs";
 import {RoomStruct} from "../global/rooms";
+import * as dotenv from "dotenv";
+import {saveBase64File} from "../../utils/File";
+
+dotenv.config();
+const HAZARD_DOCUMENT_FOLDER = process.env.HAZARD_DOCUMENT_FOLDER;
 
 export const LabHazardStruct = objectType({
 	name: lab_has_hazards.$name,
@@ -69,6 +74,8 @@ export const AdditionalInfoType = inputObjectType({
 	name: "AdditionalInfoType",
 	definition(t) {
 		t.string('comment');
+		t.string('file');
+		t.string('fileName');
 	}
 })
 
@@ -190,6 +197,12 @@ export const RoomHazardMutations = extendType({
 							}
 						}
 
+						let filePath = HAZARD_DOCUMENT_FOLDER + args.category + '/' + room.id + '/' + args.additionalInfo.fileName;
+
+						if (args.additionalInfo.file && args.additionalInfo.file != '' && args.additionalInfo.fileName && args.additionalInfo.fileName != '') {
+							filePath = saveBase64File(args.additionalInfo.file,  HAZARD_DOCUMENT_FOLDER + args.category + '/' + room.id + '/', args.additionalInfo.fileName)
+						}
+
 						const additionalInfoResult = await tx.lab_has_hazards_additional_info.findFirst({
 							where: {
 								id_hazard_category: category.id_hazard_category,
@@ -201,7 +214,8 @@ export const RoomHazardMutations = extendType({
 									data: {
 										modified_by: context.user.preferred_username,
 										modified_on: new Date(),
-										comment: args.additionalInfo.comment ? args.additionalInfo.comment : ''
+										comment: args.additionalInfo.comment ? args.additionalInfo.comment : '',
+										filePath: filePath
 									}
 								});
 
@@ -216,6 +230,7 @@ export const RoomHazardMutations = extendType({
 									modified_by: context.user.preferred_username,
 									modified_on: new Date(),
 									comment: args.additionalInfo.comment ? args.additionalInfo.comment : '',
+									filePath: filePath,
 									id_hazard_category: category.id_hazard_category,
 									id_lab: room.id
 								}
