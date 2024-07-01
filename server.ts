@@ -12,6 +12,7 @@ import {schema} from './nexus/schema';
 
 import {errors, Issuer} from 'openid-client';
 import {loginResponse, UserInfo} from './serverTypes';
+import * as path from "node:path";
 
 type TestInjections = {
 	insecure?: boolean;
@@ -55,7 +56,7 @@ export async function makeServer(
 
 	await server.start();
 
-	app.use(express.json());
+	app.use(express.json({ limit: '50mb' }));
 	app.use(cors());
 	if (! insecure) {
 		app.use(async function (req, res, next) {
@@ -78,7 +79,15 @@ export async function makeServer(
 		const html =  await fs.readFile('developer/graphiql.html', 'utf8')
 		res.send(html)
 	})
-	server.applyMiddleware({ path: '/', bodyParserConfig: false, app });
+
+	app.get('/hazardFile/', async (req, res) => {
+		const filePath = path.join(req.query.filePath as string);
+		const fileName = path.basename(filePath);
+		res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+		res.sendFile(filePath);
+	});
+
+	server.applyMiddleware({ path: '/', bodyParserConfig: { limit: '50mb' }, app });
 
 	return httpServer;
 }
