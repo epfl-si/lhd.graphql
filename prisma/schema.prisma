@@ -208,6 +208,7 @@ model bio_org {
   id_bio_org  Int           @id @default(autoincrement())
   organism    String        @db.VarChar(100)
   risk_group  Int
+  filePath    String?       @db.VarChar(250)
   updated_on  DateTime?     @db.Date
   updated_by  String?       @db.VarChar(50)
   bio_org_lab bio_org_lab[]
@@ -901,6 +902,7 @@ model lab_has_hazards_additional_info {
   id_lab                                    Int
   id_hazard_category                        Int
   comment                                   String?              @db.LongText
+  filePath                                  String?              @db.VarChar(250)
   modified_by                               String
   modified_on                               DateTime             @default(now())
   hazard_category                           hazard_category      @relation(fields: [id_hazard_category], references: [id_hazard_category])
