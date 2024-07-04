@@ -10,17 +10,14 @@ ENV PATH /app/node_modules/.bin:$PATH
 # install app dependencies
 COPY package.json ./
 COPY yarn.lock ./
-ADD prisma ./prisma
-ADD schema ./schema
-COPY nexus ./nexus
 # Installs all node packages
-RUN yarn
+RUN env INSTALL_ONLY=1 yarn
 
 # Copies everything over to Docker environment
 COPY . ./
 
 # Runs yarn a second time to generate types from the Prisma schema
-RUN yarn prepublish
+RUN yarn codegen
 EXPOSE 3001
 # start app
 CMD ["yarn", "start"]
