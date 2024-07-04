@@ -18,7 +18,7 @@ async function callAPI(url: string) {
 	const headers: Headers = new Headers()
 	headers.set('Content-Type', 'application/json')
 	headers.set('Accept', 'application/json')
-	headers.set('Authorization', 'Basic ' + Buffer.from("lhd:" + process.env.LHD_IMAP_PASSWORD).toString('base64'));
+	headers.set('Authorization', 'Basic ' + Buffer.from("lhd:" + process.env.LHD_API_PASSWORD).toString('base64'));
 	const request: RequestInfo = new Request(url, {
 		method: 'GET',
 		headers: headers
