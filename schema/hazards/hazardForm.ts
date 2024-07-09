@@ -77,6 +77,9 @@ export const HazardFormMutations = extendType({
 			async resolve(root, args, context) {
 				try {
 					return await context.prisma.$transaction(async (tx) => {
+						if (!context.user.groups.includes('LHD_acces_admin')) {
+							throw new Error(`Only admins are allowed to update hazard form`);
+						}
 						if (!args.id) {
 							throw new Error(`Not allowed to update hazard form`);
 						}
@@ -156,6 +159,9 @@ export const HazardFormMutations = extendType({
 			async resolve(root, args, context) {
 				try {
 					return await context.prisma.$transaction(async (tx) => {
+						if (!context.user.groups.includes('LHD_acces_admin')) {
+							throw new Error(`Only admins are allowed to update hazard form`);
+						}
 						if (!args.id) {
 							throw new Error(`Not allowed to update hazard form`);
 						}
