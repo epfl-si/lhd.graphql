@@ -110,6 +110,9 @@ export const ConnectedUserInfoStruct = objectType({
 	name: 'ConnectedUserInfo',
 	definition(t) {
 		t.list.string('groups');
+		t.string('preferred_username');
+		t.string('given_name');
+		t.string('family_name');
 	},
 });
 
@@ -119,7 +122,12 @@ export const ConnectedUserInfoQuery = extendType({
 		t.field("connectedUserInfo", {
 			type: "ConnectedUserInfo",
 			async resolve(parent, args, context) {
-				return context.user;
+				return {
+					groups: context.user.groups,
+					preferred_username: context.user.preferred_username,
+					given_name: context.user.given_name,
+					family_name: context.user.family_name
+				};
 			}
 		})
 	},
