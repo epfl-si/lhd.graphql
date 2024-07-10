@@ -1,5 +1,5 @@
 import {extendType, objectType} from 'nexus';
-import { bio_org } from 'nexus-prisma';
+import {bio_org, bio_org_lab} from 'nexus-prisma';
 
 export const BioOrgStruct = objectType({
 	name: bio_org.$name,
@@ -7,12 +7,7 @@ export const BioOrgStruct = objectType({
 	definition(t) {
 		t.field(bio_org.organism);
 		t.field(bio_org.risk_group);
-		t.field('fileLink', {
-			type: "String",
-			resolve(bio) {
-				return 'https://lhd.epfl.ch/hazards/bio/lhd_bio_file.php?id=' + bio.id_bio_org;
-			},
-		});
+		t.field(bio_org.filePath);
 	},
 });
 

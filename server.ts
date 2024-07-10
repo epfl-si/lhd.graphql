@@ -81,10 +81,14 @@ export async function makeServer(
 	})
 
 	app.get('/hazardFile/', async (req, res) => {
-		const filePath = path.join(req.query.filePath as string);
-		const fileName = path.basename(filePath);
-		res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-		res.sendFile(filePath);
+		try {
+			const filePath = path.join(req.query.filePath as string);
+			const fileName = path.basename(filePath);
+			res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+			res.sendFile(process.env.DOCUMENTS_PATH + "/" + filePath);
+		} catch ( e ) {
+			res.status(404);
+		}
 	});
 
 	server.applyMiddleware({ path: '/', bodyParserConfig: { limit: '50mb' }, app });

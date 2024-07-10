@@ -197,7 +197,7 @@ export const RoomHazardMutations = extendType({
 							}
 						}
 
-						let filePath = HAZARD_DOCUMENT_FOLDER + args.category + '/' + room.id + '/' + args.additionalInfo.fileName;
+						let filePath = '';
 
 						if (args.additionalInfo.file && args.additionalInfo.file != '' && args.additionalInfo.fileName && args.additionalInfo.fileName != '') {
 							filePath = saveBase64File(args.additionalInfo.file,  HAZARD_DOCUMENT_FOLDER + args.category + '/' + room.id + '/', args.additionalInfo.fileName)

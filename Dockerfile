@@ -6,7 +6,8 @@ WORKDIR /app
 
 # add `/app/node_modules/.bin` to $PATH
 ENV PATH /app/node_modules/.bin:$PATH
-ENV HAZARD_DOCUMENT_FOLDER=/LHD_documents/upload/hazards/
+ENV HAZARD_DOCUMENT_FOLDER=hazards/
+ENV DOCUMENTS_PATH=/var/documents
 
 # install app dependencies
 COPY package.json ./
