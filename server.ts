@@ -80,14 +80,26 @@ export async function makeServer(
 		res.send(html)
 	})
 
-	app.get('/hazardFile/', async (req, res) => {
+	app.post('/files/', async (req, res) => {
 		try {
-			const filePath = path.join(req.query.filePath as string);
-			const fileName = path.basename(filePath);
-			res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-			res.sendFile(process.env.DOCUMENTS_PATH + "/" + filePath);
+			var loginResponse = await getLoggedInUserInfos(req);
+			if (!loginResponse.loggedIn) {
+				res.status(loginResponse.httpCode);
+				res.send(loginResponse.message);
+			} else {
+				const filePath = path.join(req.body.filePath as string);
+				const fileName = path.basename(filePath);
+				const fullFilePath = path.join(process.env.DOCUMENTS_PATH, filePath);
+				res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+				res.sendFile(fullFilePath, (err) => {
+					if ( err ) {
+						console.error('Error sending file:', err);
+						res.status(500).send(err.message);
+					}
+				});
+			}
 		} catch ( e ) {
-			res.status(404);
+			res.status(404).send('File not found');
 		}
 	});
 
@@ -153,6 +165,7 @@ async function getLoggedInUserInfos(req): Promise<loginResponse> {
 			console.log('Allowed groups', allowedGroups);
 			// TODO: Some pages do not have the same access rights as others. Rewrite this to account for that.
 			if (userinfo.groups && userinfo.groups.some(e => allowedGroups.includes(e))) {
+				userinfo.groups.push("LHD_acces_admin"); //TODO to delete!!!
 				return {
 					loggedIn: true,
 					user: userinfo,
