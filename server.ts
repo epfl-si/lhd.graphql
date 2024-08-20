@@ -69,6 +69,7 @@ export async function makeServer(
 					next();
 				}
 			} catch (e) {
+				console.error(e);
 				res.status(500);
 				res.send(`GraphQL Error: ${e}`);
 			}
