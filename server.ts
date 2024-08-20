@@ -69,7 +69,7 @@ export async function makeServer(
 					next();
 				}
 			} catch (e) {
-				console.error(e);
+				console.error(e, e.stack);
 				res.status(500);
 				res.send(`GraphQL Error: ${e}`);
 			}
