@@ -9,7 +9,6 @@ generator nexusPrisma {
 datasource db {
   provider = "mysql"
   url      = env("LHD_DB_URL")
-  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 model aa {
