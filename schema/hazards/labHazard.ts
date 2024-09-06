@@ -209,22 +209,36 @@ export const RoomHazardMutations = extendType({
 								id_lab: room.id
 							}});
 						if (additionalInfoResult) {
-							const info = await tx.lab_has_hazards_additional_info.update(
-								{ where: { id_lab_has_hazards_additional_info: additionalInfoResult.id_lab_has_hazards_additional_info },
-									data: {
-										modified_by: context.user.preferred_username,
-										modified_on: new Date(),
-										comment: args.additionalInfo.comment ? args.additionalInfo.comment : '',
-										filePath: filePath
+							if (additionalInfoResult.filePath != '' || filePath != '' || (args.additionalInfo.comment && args.additionalInfo.comment != '')) {
+
+								const info = await tx.lab_has_hazards_additional_info.update(
+									{ where: { id_lab_has_hazards_additional_info: additionalInfoResult.id_lab_has_hazards_additional_info },
+										data: {
+											modified_by: context.user.preferred_username,
+											modified_on: new Date(),
+											comment: args.additionalInfo.comment ? args.additionalInfo.comment : '',
+											filePath: filePath != '' ? filePath : additionalInfoResult.filePath
+										}
+									});
+
+								if ( !info ) {
+									throw new Error(`Additional information not updated for room ${args.room}.`);
+								} else {
+									await createNewMutationLog(tx, context, tx.lab_has_hazards_additional_info.name, '', additionalInfoResult, info, 'UPDATE');
+								}
+							} else {
+								const additionalInfoToBeDeleted = await tx.lab_has_hazards_additional_info.delete({
+									where: {
+										id_lab_has_hazards_additional_info: additionalInfoResult.id_lab_has_hazards_additional_info
 									}
 								});
-
-							if ( !info ) {
-								throw new Error(`Additional information not updated for room ${args.room}.`);
-							} else {
-								await createNewMutationLog(tx, context, tx.lab_has_hazards_additional_info.name, '', additionalInfoResult, info, 'UPDATE');
+								if ( !additionalInfoToBeDeleted ) {
+									throw new Error(`Additional information not deleted for room ${args.room}.`);
+								} else {
+									await createNewMutationLog(tx, context, tx.lab_has_hazards_additional_info.name, '', additionalInfoToBeDeleted, {}, 'DELETE');
+								}
 							}
-						} else {
+						} else if (filePath != '' || (args.additionalInfo.comment && args.additionalInfo.comment != '')) {
 							const info = await tx.lab_has_hazards_additional_info.create({
 								data: {
 									modified_by: context.user.preferred_username,
