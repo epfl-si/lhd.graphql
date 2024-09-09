@@ -57,7 +57,8 @@ export const RoomStruct = objectType({
 			'roomNo',
 			'kind',
 			'vol',
-			'vent'
+			'vent',
+			'adminuse'
 		]) {
 			t.field(Room[f]);
 		}
@@ -292,6 +293,7 @@ export const RoomCreationType = inputObjectType({
 		t.string('floor');
 		t.string('building');
 		t.string('sector');
+		t.string("adminuse");
 	}
 })
 
@@ -326,7 +328,8 @@ export const RoomMutations = extendType({
 											sector: room.sector,
 											floor: room.floor,
 											roomNo: parts[parts.length - 1],
-											name: room.name
+											name: room.name,
+											adminuse: room.adminuse
 										}
 									});
 									if (newRoom) {
@@ -454,6 +457,7 @@ export const RoomFromAPI = objectType({
 		t.nonNull.int("id");
 		t.string("sector");
 		t.string("building");
+		t.string("adminuse");
 		//t.field("building", {type: BuildingType});
 		//lab et location
 	}
@@ -484,7 +488,8 @@ export const RoomFromAPIQuery = extendType({
 						floor: u.floor,
 						id: u.id,
 						building: u.building['name'],
-						sector: u.zone
+						sector: u.zone,
+						adminuse: u.adminuse
 					});
 				});
 				return roomsList;
