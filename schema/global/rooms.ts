@@ -489,7 +489,8 @@ export const RoomFromAPIQuery = extendType({
 						id: u.id,
 						building: u.building['name'],
 						sector: u.zone,
-						adminuse: u.adminuse
+						adminuse: u.adminuse,
+						vent: 'n'
 					});
 				});
 				return roomsList;
