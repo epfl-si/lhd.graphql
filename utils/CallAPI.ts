@@ -3,7 +3,7 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 export async function getUsersFromApi(search: string): Promise<any[]> {
-	return callAPI(`https://${process.env.API_EPFL_CH_URL}/v1/persons?query=${search}`);
+	return callAPI(`https://${process.env.API_EPFL_CH_URL}/v1/persons?query=${search}&isaccredited=1`);
 }
 
 export async function getUnitsFromApi(search: string): Promise<any[]> {
