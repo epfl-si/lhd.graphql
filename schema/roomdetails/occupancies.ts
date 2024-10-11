@@ -9,7 +9,7 @@ import { RoomStruct } from '../global/rooms';
 import { PersonStruct, nilPersonId } from '../global/people';
 import { UnitStruct } from './units';
 import { subunpro } from 'nexus-prisma';
-import { Person, labunpe } from '@prisma/client';
+import { Person } from '@prisma/client';
 
 /**
  * The abstract Occupancy type.
@@ -41,45 +41,7 @@ Room, a responsible Person, and has-many COSECs (also Persons).
 			type: PersonStruct,
 			description: `The security officers (“COrrespondants de SÉCurité”) for this Occupancy.`,
 			async resolve(parent, _, context) {
-				// Despite TypeScript's opinion, we know that `parent.room.labunpe`
-				// exists and is an array of labunpeStruct's, because we know (as per
-				// comment above) that `parent` was made in ./rooms.ts:
-				const labunpeStructs = (parent.room as any).labunpe as labunpe[];
-				// ... But we need to make this SQL query anyway, so as to join
-				// with cosecs (which ./rooms.ts doesn't do):
-				const labunpes = await Promise.all(
-					labunpeStructs.map(labunpe =>
-						context.prisma.labunpe.findUnique({
-							where: { id_labunpe: labunpe.id_labunpe },
-							// We could punt the cosec join into the
-							// ./people.ts resolver, but that would
-							// leave us unable to sort:
-							include: { cosec: true },
-						})
-					)
-				);
-
-
-
-
-				/*const labunpeStructs = (parent.room as any).units as unit[];
-				// ... But we need to make this SQL query anyway, so as to join
-				// with cosecs (which ./rooms.ts doesn't do):
-				const labunpes = await Promise.all(
-					labunpeStructs.map(unit =>
-						context.prisma.unit.findUnique({
-							where: { id_unit: unit.id_unit },
-							// We could punt the cosec join into the
-							// ./people.ts resolver, but that would
-							// leave us unable to sort:
-							include: { cosec: true },
-						})
-					)
-				);*/
-
-
-
-				return sanitizePersonList(labunpes.map(labunpe => labunpe.cosec));
+				return [];
 			},
 		});
 		t.nonNull.list.nonNull.field('professors', {

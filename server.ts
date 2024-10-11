@@ -1,20 +1,18 @@
-import { Prisma, PrismaClient } from '@prisma/client';
-import { ApolloServer } from 'apollo-server-express';
-import {
-	PluginDefinition,
-	ApolloServerPluginDrainHttpServer,
-} from 'apollo-server-core';
-import { debug } from 'debug';
+import {Prisma, PrismaClient} from '@prisma/client';
+import {ApolloServer} from 'apollo-server-express';
+import {ApolloServerPluginDrainHttpServer, PluginDefinition,} from 'apollo-server-core';
+import {debug} from 'debug';
 
 import * as dotenv from 'dotenv';
 import * as express from 'express';
 import * as http from 'http';
 import * as cors from 'cors';
-import * as fs  from 'fs/promises'
-import { schema } from './nexus/schema';
+import * as fs from 'fs/promises'
+import {schema} from './nexus/schema';
 
-import { Issuer, errors } from 'openid-client';
-import { UserInfo, loginResponse } from './serverTypes';
+import {errors, Issuer} from 'openid-client';
+import {loginResponse, UserInfo} from './serverTypes';
+import * as path from "node:path";
 
 type TestInjections = {
 	insecure?: boolean;
@@ -48,7 +46,7 @@ export async function makeServer(
 	const httpServer = http.createServer(app);
 
 	const server = new ApolloServer({
-		context: () => ({ prisma }),
+		context: (express) => ({ prisma, user: express.req.user}),
 		schema,
 		plugins: [
 			onServerStop(() => prisma.$disconnect()),
@@ -58,12 +56,12 @@ export async function makeServer(
 
 	await server.start();
 
-	app.use(express.json());
+	app.use(express.json({ limit: '50mb' }));
 	app.use(cors());
 	if (! insecure) {
 		app.use(async function (req, res, next) {
 			try {
-				var loginResponse = await isLoggedIn(req);
+				var loginResponse = await getLoggedInUserInfos(req);
 				if (req.method === 'POST' && !isHarmless(req) && !loginResponse.loggedIn) {
 					res.status(loginResponse.httpCode);
 					res.send(loginResponse.message);
@@ -71,6 +69,7 @@ export async function makeServer(
 					next();
 				}
 			} catch (e) {
+				console.error(e, e.stack);
 				res.status(500);
 				res.send(`GraphQL Error: ${e}`);
 			}
@@ -81,7 +80,31 @@ export async function makeServer(
 		const html =  await fs.readFile('developer/graphiql.html', 'utf8')
 		res.send(html)
 	})
-	server.applyMiddleware({ path: '/', bodyParserConfig: false, app });
+
+	app.post('/files/', async (req, res) => {
+		try {
+			var loginResponse = await getLoggedInUserInfos(req);
+			if (!loginResponse.loggedIn) {
+				res.status(loginResponse.httpCode);
+				res.send(loginResponse.message);
+			} else {
+				const filePath = path.join(req.body.filePath as string);
+				const fileName = path.basename(filePath);
+				const fullFilePath = path.join(process.env.DOCUMENTS_PATH, filePath);
+				res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+				res.sendFile(fullFilePath, (err) => {
+					if ( err ) {
+						console.error('Error sending file:', err);
+						res.status(500).send(err.message);
+					}
+				});
+			}
+		} catch ( e ) {
+			res.status(404).send('File not found');
+		}
+	});
+
+	server.applyMiddleware({ path: '/', bodyParserConfig: { limit: '50mb' }, app });
 
 	return httpServer;
 }
@@ -131,8 +154,8 @@ async function issuer() {
 	return _issuer;
 }
 
-async function isLoggedIn(req): Promise<loginResponse> {
-	async function verifyToken(access_token: string) {
+async function getLoggedInUserInfos(req): Promise<loginResponse> {
+	async function getUserAuthentication(access_token: string) {
 		const issuer_ = await issuer();
 		const client = new issuer_.Client({ client_id: 'LHDv3 server' });
 
@@ -143,14 +166,17 @@ async function isLoggedIn(req): Promise<loginResponse> {
 			console.log('Allowed groups', allowedGroups);
 			// TODO: Some pages do not have the same access rights as others. Rewrite this to account for that.
 			if (userinfo.groups && userinfo.groups.some(e => allowedGroups.includes(e))) {
+				userinfo.groups.push("LHD_acces_admin"); //TODO to delete!!!
 				return {
 					loggedIn: true,
+					user: userinfo,
 					httpCode: 200,
 					message: 'Correct access rights and token are working, user logged in.',
 				};
 			}
 			return {
 				loggedIn: false,
+				user: null,
 				httpCode: 403,
 				message: `Wrong access rights. You are required to have one of the following groups: ${allowedGroups.join(
 					', '
@@ -172,8 +198,14 @@ async function isLoggedIn(req): Promise<loginResponse> {
 	const matched = req.headers.authorization?.match(/^Bearer\s(.*)$/);
 
 	if (!matched) {
-		return undefined;
+		return {
+			loggedIn: false,
+			httpCode: 401,
+			message: `No token, no logged in`,
+		};
 	}
 
-	return await verifyToken(matched[1]);
+	const authenticationResult = await getUserAuthentication(matched[1]);
+	req.user = authenticationResult.user;
+	return authenticationResult;
 }

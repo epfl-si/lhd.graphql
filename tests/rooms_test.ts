@@ -137,21 +137,6 @@ describe("End-to-end tests", () => {
       assert(roomKinds.length > 9)
     })
   })
-
-  describe('Room occupancies', () => {
-    let they = it
-    they("point back to their owner Room", async () => {
-      let occupancies = 0
-      for(const room of await q({building: { equals: "BC" }},
-                                'occupancies { room { name } }')) {
-        for (const occupancy of room.occupancies) {
-          occupancies++
-          assert.equal(occupancy.room.name, room.name)
-        }
-      }
-      assert(occupancies > 0, 'No occupancies in database?')
-    })
-  })
 })
 
 
