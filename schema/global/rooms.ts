@@ -2,16 +2,14 @@
  * GraphQL types and queries for Room's and RoomKind's
  */
 
-import { HazLevelStruct } from '../hazards/hazlevel';
-import { BioStruct } from '../bio/biohazard';
-import {DispensationHolder, DispensationRoom, DispensationStruct} from '../dispensations';
-import { Room as roomStruct, Unit } from '@prisma/client';
-import {enumType, objectType, extendType, nonNull, stringArg, intArg, list, inputObjectType} from 'nexus';
-import { Room, RoomKind, cad_lab } from 'nexus-prisma';
-import { debug as debug_ } from 'debug';
-import {UnitCreationType, UnitMutationType, UnitStruct} from "../roomdetails/units";
+import {HazLevelStruct} from '../hazards/hazlevel';
+import {BioStruct} from '../bio/biohazard';
+import {DispensationStruct} from '../dispensations';
+import {enumType, extendType, inputObjectType, intArg, list, objectType, stringArg} from 'nexus';
+import {Room, RoomKind} from 'nexus-prisma';
+import {debug as debug_} from 'debug';
+import {UnitMutationType, UnitStruct} from "../roomdetails/units";
 import {mutationStatusType} from "../statuses";
-import {PersonStruct} from "./people";
 import {LabHazardStruct} from "../hazards/labHazard";
 import {id, IDObfuscator} from "../../utils/IDObfuscator";
 import {getSHA256} from "../../utils/HashingTools";
@@ -19,6 +17,7 @@ import {getRoomsFromApi} from "../../utils/CallAPI";
 import {createNewMutationLog} from "./mutationLogs";
 import {HazardsAdditionalInfoStruct} from "../hazards/hazardsAdditionalInfo";
 import {LabHazardChildStruct} from "../hazards/labHazardChild";
+
 const debug = debug_('lhd:rooms');
 
 const catalyseSpecialLocations = {
