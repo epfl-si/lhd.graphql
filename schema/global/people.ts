@@ -1,5 +1,6 @@
 import { objectType, extendType, stringArg, booleanArg, list, unionType } from 'nexus';
 import { Person } from 'nexus-prisma';
+import {getUsersFromApi} from "../../utils/CallAPI";
 
 export const PersonStruct = objectType({
 	name: Person.$name,
@@ -86,15 +87,15 @@ export const PersonFullTextQuery = extendType({
 
 				const filteredLdapUsers = [];
 				if (!args.lhdOnly) {
-					const ldapUsers = await getUsersSearchApi(args.search);
-					ldapUsers.forEach(u => {
-						if (!lhdPeopleTyped.find(p => p.sciper == u.sciper)) {
+					const ldapUsers = await getUsersFromApi(args.search);
+					ldapUsers["persons"].forEach(u => {
+						if (!lhdPeopleTyped.find(p => p.sciper == u.id)) {
 							filteredLdapUsers.push({
 								type: 'DirectoryPerson',
-								surname: u.name,
+								surname: u.lastname,
 								name: u.firstname,
 								email: u.email,
-								sciper: u.sciper
+								sciper: u.id
 							});
 						}
 					});
@@ -105,16 +106,29 @@ export const PersonFullTextQuery = extendType({
 	},
 })
 
-async function getUsersSearchApi(search: string): Promise<any[]> {
-	const headers: Headers = new Headers()
-	headers.set('Content-Type', 'application/json')
-	headers.set('Accept', 'application/json')
+export const ConnectedUserInfoStruct = objectType({
+	name: 'ConnectedUserInfo',
+	definition(t) {
+		t.list.string('groups');
+		t.string('preferred_username');
+		t.string('given_name');
+		t.string('family_name');
+	},
+});
 
-	const request: RequestInfo = new Request(`https://search-api.epfl.ch/api/ldap?q=${search}`, {
-		method: 'GET',
-		headers: headers
-	})
-
-	const result = await fetch(request);
-	return result.json();
-}
+export const ConnectedUserInfoQuery = extendType({
+	type: 'Query',
+	definition(t) {
+		t.field("connectedUserInfo", {
+			type: "ConnectedUserInfo",
+			async resolve(parent, args, context) {
+				return {
+					groups: context.user.groups,
+					preferred_username: context.user.preferred_username,
+					given_name: context.user.given_name,
+					family_name: context.user.family_name
+				};
+			}
+		})
+	},
+})

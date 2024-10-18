@@ -2,15 +2,22 @@
  * GraphQL types and queries for Room's and RoomKind's
  */
 
-import { HazLevelStruct } from '../hazards/hazlevel';
-import { BioStruct } from '../bio/biohazard';
-import {DispensationHolder, DispensationRoom, DispensationStruct} from '../dispensations';
-import { Room as roomStruct, Unit } from '@prisma/client';
-import {enumType, objectType, extendType, nonNull, stringArg, intArg, list, inputObjectType} from 'nexus';
-import { Room, RoomKind, cad_lab } from 'nexus-prisma';
-import { debug as debug_ } from 'debug';
+import {HazLevelStruct} from '../hazards/hazlevel';
+import {BioStruct} from '../bio/biohazard';
+import {DispensationStruct} from '../dispensations';
+import {enumType, extendType, inputObjectType, intArg, list, objectType, stringArg} from 'nexus';
+import {Room, RoomKind} from 'nexus-prisma';
+import {debug as debug_} from 'debug';
 import {UnitMutationType, UnitStruct} from "../roomdetails/units";
 import {mutationStatusType} from "../statuses";
+import {LabHazardStruct} from "../hazards/labHazard";
+import {id, IDObfuscator} from "../../utils/IDObfuscator";
+import {getSHA256} from "../../utils/HashingTools";
+import {getRoomsFromApi} from "../../utils/CallAPI";
+import {createNewMutationLog} from "./mutationLogs";
+import {HazardsAdditionalInfoStruct} from "../hazards/hazardsAdditionalInfo";
+import {LabHazardChildStruct} from "../hazards/labHazardChild";
+
 const debug = debug_('lhd:rooms');
 
 const catalyseSpecialLocations = {
@@ -49,10 +56,18 @@ export const RoomStruct = objectType({
 			'roomNo',
 			'kind',
 			'vol',
-			'vent'
+			'vent',
+			'adminuse'
 		]) {
 			t.field(Room[f]);
 		}
+
+		t.string('id',  {
+			resolve: async (parent, _, context) => {
+				const encryptedID = IDObfuscator.obfuscate({id: parent.id, obj: getRoomToString(parent)});
+				return JSON.stringify(encryptedID);
+			},
+		});
 
 		t.field('site', {
 			type: 'Location',
@@ -120,6 +135,35 @@ export const RoomStruct = objectType({
 			},
 		});
 
+		t.nonNull.list.nonNull.field('hazards', {
+			type: LabHazardStruct,
+			resolve: async (parent, _, context) => {
+				return await context.prisma.lab_has_hazards.findMany({//submission
+					where: { id_lab: (parent as any).id },
+					include: { hazard_form_history: true }
+				});
+			}
+		});
+		t.nonNull.list.nonNull.field('hazardAdditionalInfo',  {
+			type: HazardsAdditionalInfoStruct,
+			resolve: async (parent, _, context) => {
+				return await context.prisma.lab_has_hazards_additional_info.findMany({
+					where: { id_lab: (parent as any).id },
+					include: { hazard_category: true }
+				});
+			}
+		});
+		t.nonNull.list.nonNull.field('hazardReferences',  {
+			type: LabHazardChildStruct,
+			resolve: async (parent, _, context) => {
+				return await context.prisma.lab_has_hazards_child.findMany({
+					where: { submission:  {
+							contains: '\"' + (parent as any).name + '\"'
+						}},
+				});
+			}
+		});
+
 		t.float('yearly_audits', {
 			resolve: async (parent, _, context) => {
 				const naudits = await context.prisma.naudits.findMany({
@@ -148,6 +192,23 @@ export const RoomStruct = objectType({
 	},
 });
 
+function getRoomToString(parent) {
+	return {
+		id: parent.id,
+		sciper_lab: parent.sciper_lab,
+		building: parent.building,
+		sector: parent.sector,
+		floor: parent.floor,
+		roomNo:	parent.roomNo,
+		id_labType:	parent.id_labType,
+		description: parent.description,
+		location: parent.location,
+		vol: parent.vol,
+		vent:	parent.vent,
+		name:	parent.name
+	};
+}
+
 export const RoomKindStruct = objectType({
 	name: RoomKind.$name,
 	definition(t) {
@@ -162,6 +223,66 @@ export const RoomQuery = extendType({
 	},
 });
 
+export const RoomsWithPaginationStruct = objectType({
+	name: 'RoomsWithPagination',
+	definition(t) {
+		t.list.field('rooms', { type: 'Room' });
+		t.int('totalCount');
+	},
+});
+
+export const RoomsWithPaginationQuery = extendType({
+	type: 'Query',
+	definition(t) {
+		t.field("roomsWithPagination", {
+			type: "RoomsWithPagination",
+			args: {
+				skip: intArg({ default: 0 }),
+				take: intArg({ default: 20 }),
+				search: stringArg(),
+			},
+			async resolve(parent, args, context) {
+				const queryArray = args.search.split("&");
+				const dictionary = queryArray.map(query => query.split("="));
+				const whereCondition = [];
+				if (dictionary.length == 0) {
+					whereCondition.push({ name: { contains: '' }})
+				} else {
+					dictionary.forEach(query => {
+						const value = decodeURIComponent(query[1]);
+						if (query[0] == 'Room') {
+							whereCondition.push({ name: { contains: value }})
+						} else if (query[0] == 'Hazard') {
+							whereCondition.push({ lab_has_hazards : {some: {hazard_form_history: { is: {hazard_form: { is: {hazard_category: { is: {hazard_category_name: { contains: value }}}}}}}}}})
+						} else if (query[0] == 'Designation') {
+							whereCondition.push({ kind : { is: {name: { contains: value }}}})
+						} else if (query[0] == 'Floor') {
+							whereCondition.push({ floor: { contains: value }})
+						} else if (query[0] == 'Sector') {
+							whereCondition.push({ sector: { contains: value }})
+						} else if (query[0] == 'Building') {
+							whereCondition.push({ building: { contains: value }})
+						} else if (query[0] == 'Unit') {
+							whereCondition.push({ unit_has_room: { some: {unit: {is: {name: {contains: value}}}} }})
+						}
+					})
+				}
+
+				const roomsList = await context.prisma.Room.findMany({
+					where: {
+						AND: whereCondition
+					},
+				});
+
+				const rooms = roomsList.slice(args.skip, args.skip + args.take);
+				const totalCount = roomsList.length;
+
+				return { rooms, totalCount };
+			}
+		});
+	},
+});
+
 export const RoomKindQuery = extendType({
 	type: 'Query',
 	definition(t) {
@@ -170,12 +291,30 @@ export const RoomKindQuery = extendType({
 });
 
 const roomType = {
+	id: stringArg(),
 	name: stringArg(),
 	kind: stringArg(),
 	vol: intArg(),
 	vent: stringArg(),
 	units: list(UnitMutationType)
 };
+
+const roomCreationType = {
+	rooms: list("RoomCreationType")
+};
+
+export const RoomCreationType = inputObjectType({
+	name: "RoomCreationType",
+	definition(t) {
+		t.nonNull.int('id');
+		t.nonNull.string('name');
+		t.nonNull.string('status');
+		t.string('floor');
+		t.string('building');
+		t.string('sector');
+		t.string("adminuse");
+	}
+})
 
 export const RoomStatus = mutationStatusType({
 	name: "RoomStatus",
@@ -187,6 +326,44 @@ export const RoomStatus = mutationStatusType({
 export const RoomMutations = extendType({
 	type: 'Mutation',
 	definition(t) {
+		t.nonNull.field('createRoom', {
+			description: `Create a new room.`,
+			args: roomCreationType,
+			type: "RoomStatus",
+			async resolve(root, args, context) {
+				try {
+					return await context.prisma.$transaction(async (tx) => {
+						for (const room of args.rooms) {
+							if (room.status == 'New') {
+								const newRoom = await tx.Room.findUnique({ where: { sciper_lab: room.id }});
+
+								if (!newRoom) {
+									const parts: string[] = room.name.split(' ');
+
+									const newRoom = await tx.Room.create({
+										data: {
+											sciper_lab: room.id,
+											building: room.building,
+											sector: room.sector,
+											floor: room.floor,
+											roomNo: parts[parts.length - 1],
+											name: room.name,
+											adminuse: room.adminuse
+										}
+									});
+									if (newRoom) {
+										await createNewMutationLog(tx, context, tx.Room.name, '', {}, newRoom, 'CREATE');
+									}
+								}
+							}
+						}
+						return mutationStatusType.success();
+					});
+				} catch ( e ) {
+					return mutationStatusType.error(e.message);
+				}
+			}
+		});
 		t.nonNull.field('updateRoom', {
 			description: `Update room details.`,
 			args: roomType,
@@ -194,9 +371,25 @@ export const RoomMutations = extendType({
 			async resolve(root, args, context) {
 				try {
 					return await context.prisma.$transaction(async (tx) => {
-						const room = await tx.Room.findFirst({ where: { name: args.name }});
+						if (!args.id) {
+							throw new Error(`Not allowed to update room`);
+						}
+						const id: id = JSON.parse(args.id);
+						if(id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
+							throw new Error(`Not allowed to update room`);
+						}
+
+						if(!IDObfuscator.checkSalt(id)) {
+							throw new Error(`Bad descrypted request`);
+						}
+						const idDeobfuscated = IDObfuscator.deobfuscateId(id);
+						const room = await tx.Room.findUnique({where: {id: idDeobfuscated}});
 						if (! room) {
 							throw new Error(`Room ${args.name} not found.`);
+						}
+						const roomObject =  getSHA256(JSON.stringify(getRoomToString(room)), id.salt);
+						if (IDObfuscator.getDataSHA256(id) !== roomObject) {
+							throw new Error(`Room ${args.name} has been changed from another user. Please reload the page to make modifications`);
 						}
 
 						const roomKind = await tx.RoomKind.findFirst({where: {name: args.kind}})
@@ -211,6 +404,8 @@ export const RoomMutations = extendType({
 
 						if (!updatedRoom) {
 							throw new Error(`Room ${args.name} not updated.`);
+						} else {
+							await createNewMutationLog(tx, context, tx.Room.name, '', room, updatedRoom, 'UPDATE');
 						}
 
 						const errors: string[] = [];
@@ -232,6 +427,8 @@ export const RoomMutations = extendType({
 									})
 									if ( !u ) {
 										errors.push(`Error creating unit ${unit.name}.`);
+									} else {
+										await createNewMutationLog(tx, context, tx.unit_has_room.name, '', {}, u, 'CREATE');
 									}
 								} catch ( e ) {
 									errors.push(`Error creating unit ${unit.name}.`);
@@ -239,14 +436,17 @@ export const RoomMutations = extendType({
 							}
 							else if (unitToChange.status == 'Deleted') {
 								try {
+									const whereConditionForDelete = {
+										id_lab: room.id,
+										id_unit: unit.id
+									};
 									const u = await tx.unit_has_room.deleteMany({
-										where: {
-											id_lab: room.id,
-											id_unit: unit.id
-										},
+										where: whereConditionForDelete
 									});
 									if (!u) {
 										errors.push(`Error deleting ${unit.name}.`);
+									} else {
+										await createNewMutationLog(tx, context, tx.unit_has_room.name, '', whereConditionForDelete, {}, 'DELETE');
 									}
 								} catch ( e ) {
 									errors.push(`Error creating unit ${unit.name}.`);
@@ -267,3 +467,53 @@ export const RoomMutations = extendType({
 		});
 	}
 });
+
+export const RoomFromAPI = objectType({
+	name: "RoomFromAPI",
+	definition(t) {
+		t.nonNull.string("name");
+		t.string("floor");
+		t.nonNull.int("id");
+		t.string("sector");
+		t.string("building");
+		t.string("adminuse");
+		//t.field("building", {type: BuildingType});
+		//lab et location
+	}
+})
+
+/*export const BuildingType = objectType({
+	name: "BuildingType",
+	definition(t) {
+		t.nonNull.string('name');
+	}
+})*/
+
+export const RoomFromAPIQuery = extendType({
+	type: 'Query',
+	definition(t) {
+		t.field("roomsFromAPI", {
+			type: list("RoomFromAPI"),
+			args: {
+				search: stringArg()
+			},
+			async resolve(parent, args, context): Promise<any> {
+				const rooms = await getRoomsFromApi(args.search);
+				const roomsList = [];
+				rooms["rooms"].forEach(u =>
+				{
+					roomsList.push({
+						name: u.name,
+						floor: u.floor,
+						id: u.id,
+						building: u.building['name'],
+						sector: u.zone,
+						adminuse: u.adminuse,
+						vent: 'n'
+					});
+				});
+				return roomsList;
+			}
+		})
+	},
+})

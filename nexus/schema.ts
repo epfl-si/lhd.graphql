@@ -71,6 +71,13 @@ import * as roomTypes from '../schema/global/rooms';
 import * as unitTypes from '../schema/roomdetails/units';
 import * as dispensationTypes from '../schema/dispensations';
 import * as statusTypes from '../schema/statuses';
+import * as hazardCategoryTypes from '../schema/hazards/hazardCategory'
+import * as hazardFormTypes from '../schema/hazards/hazardForm'
+import * as hazardFormChildTypes from '../schema/hazards/hazardFormChild'
+import * as labHazardTypes from '../schema/hazards/labHazard'
+import * as bioOrgTypes from '../schema/bio/bioorg'
+import * as mutationLogs from '../schema/global/mutationLogs'
+import * as hazardsAdditionalInfo from '../schema/hazards/hazardsAdditionalInfo'
 
 const types = [
 	schoolTypes,
@@ -81,6 +88,13 @@ const types = [
 	unitTypes,
 	dispensationTypes,
 	statusTypes,
+	hazardCategoryTypes,
+	hazardFormTypes,
+	labHazardTypes,
+	bioOrgTypes,
+	hazardFormChildTypes,
+	mutationLogs,
+	hazardsAdditionalInfo
 ];
 
 // No user-serviceable parts below /////////////////////////////////////////////////
