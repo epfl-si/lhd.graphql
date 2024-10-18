@@ -242,15 +242,35 @@ export const RoomsWithPaginationQuery = extendType({
 				search: stringArg(),
 			},
 			async resolve(parent, args, context) {
+				const queryArray = args.search.split("&");
+				const dictionary = queryArray.map(query => query.split("="));
+				const whereCondition = [];
+				if (dictionary.length == 0) {
+					whereCondition.push({ name: { contains: '' }})
+				} else {
+					dictionary.forEach(query => {
+						const value = decodeURIComponent(query[1]);
+						if (query[0] == 'Room') {
+							whereCondition.push({ name: { contains: value }})
+						} else if (query[0] == 'Hazard') {
+							whereCondition.push({ lab_has_hazards : {some: {hazard_form_history: { is: {hazard_form: { is: {hazard_category: { is: {hazard_category_name: { contains: value }}}}}}}}}})
+						} else if (query[0] == 'Designation') {
+							whereCondition.push({ kind : { is: {name: { contains: value }}}})
+						} else if (query[0] == 'Floor') {
+							whereCondition.push({ floor: { contains: value }})
+						} else if (query[0] == 'Sector') {
+							whereCondition.push({ sector: { contains: value }})
+						} else if (query[0] == 'Building') {
+							whereCondition.push({ building: { contains: value }})
+						} else if (query[0] == 'Unit') {
+							whereCondition.push({ unit_has_room: { some: {unit: {is: {name: {contains: value}}}} }})
+						}
+					})
+				}
+
 				const roomsList = await context.prisma.Room.findMany({
 					where: {
-						OR: [
-							{ name: { contains: args.search }},
-							{ building: { contains: args.search }},
-							{ sector: { contains: args.search }},
-							{ floor: { contains: args.search }},
-							{ lab_has_hazards : {some: {hazard_form_history: { is: {hazard_form: { is: {hazard_category: { is: {hazard_category_name: { contains: args.search }}}}}}}}}},
-						]
+						AND: whereCondition
 					},
 				});
 
