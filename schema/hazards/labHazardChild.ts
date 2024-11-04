@@ -109,6 +109,19 @@ export async function updateHazardFormChild(child: submission, tx: any, context:
 					id_lab_has_hazards_child: id
 				}
 			});
+			const lab_has_hazardsList = await tx.lab_has_hazards_child.findMany({where: {id_lab_has_hazards: parentHazard}});
+			if (lab_has_hazardsList.length == 0) {
+				const hazard = await tx.lab_has_hazards.delete({
+					where: {
+						id_lab_has_hazards: parentHazard
+					}
+				});
+				if ( !hazard ) {
+					throw new Error(`Hazard not deleted for room ${room}.`);
+				} else {
+					await createNewMutationLog(tx, context, tx.lab_has_hazards.name, '', hazard, {}, 'DELETE');
+				}
+			}
 			if ( !hazardChild ) {
 				throw new Error(`Hazard child not deleted for room ${room}.`);
 			} else {
