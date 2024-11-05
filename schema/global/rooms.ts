@@ -263,7 +263,13 @@ export const RoomsWithPaginationQuery = extendType({
 						} else if (query[0] == 'Building') {
 							whereCondition.push({ building: { contains: value }})
 						} else if (query[0] == 'Unit') {
-							whereCondition.push({ unit_has_room: { some: {unit: {is: {name: {contains: value}}}} }})
+							whereCondition.push({
+								OR: [
+									{ unit_has_room: { some: {unit: {is: {name: {contains: value}}}} }},
+									{ unit_has_room: { some: {unit: {is: {institute: {is: {name: {contains: value}}}}}} }},
+									{ unit_has_room: { some: {unit: {is: {institute: {is: {school: {is: {name: {contains: value}}}}}}}} }}
+								]
+							})
 						}
 					})
 				}
