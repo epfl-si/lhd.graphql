@@ -131,7 +131,7 @@ export const RoomHazardMutations = extendType({
 								if ( !hazard ) {
 									throw new Error(`Hazard not created for room ${args.room}.`);
 								} else {
-									await createNewMutationLog(tx, context, tx.lab_has_hazards.name, '', {}, hazard, 'CREATE');
+									await createNewMutationLog(tx, context, tx.lab_has_hazards.name, hazard.id_lab_has_hazards, '', {}, hazard, 'CREATE');
 								}
 
 								for await (const child of h.children) {
@@ -164,7 +164,7 @@ export const RoomHazardMutations = extendType({
 									if ( !hazard ) {
 										throw new Error(`Hazard not updated for room ${args.room}.`);
 									} else {
-										await createNewMutationLog(tx, context, tx.lab_has_hazards.name, '', hazardsInRoom, hazard, 'UPDATE');
+										await createNewMutationLog(tx, context, tx.lab_has_hazards.name, hazard.id_lab_has_hazards, '', hazardsInRoom, hazard, 'UPDATE');
 									}
 
 									for await (const child of h.children) {
@@ -180,7 +180,7 @@ export const RoomHazardMutations = extendType({
 									if ( !hazardChildren ) {
 										throw new Error(`Hazard not deleted for room ${args.room}.`);
 									} else if (hazardChildren.count > 0) {
-										await createNewMutationLog(tx, context, tx.lab_has_hazards_child.name, '', {id_lab_has_hazards: id}, {}, 'DELETE');
+										await createNewMutationLog(tx, context, tx.lab_has_hazards_child.name, 0, '', {id_lab_has_hazards: id}, {}, 'DELETE');
 									}
 
 									const hazard = await tx.lab_has_hazards.delete({
@@ -191,7 +191,7 @@ export const RoomHazardMutations = extendType({
 									if ( !hazard ) {
 										throw new Error(`Hazard not deleted for room ${args.room}.`);
 									} else {
-										await createNewMutationLog(tx, context, tx.lab_has_hazards.name, '', hazard, {}, 'DELETE');
+										await createNewMutationLog(tx, context, tx.lab_has_hazards.name, 0, '', hazard, {}, 'DELETE');
 									}
 								}
 							}
@@ -222,7 +222,7 @@ export const RoomHazardMutations = extendType({
 							if ( !info ) {
 								throw new Error(`Additional information not updated for room ${args.room}.`);
 							} else {
-								await createNewMutationLog(tx, context, tx.lab_has_hazards_additional_info.name, '', additionalInfoResult, info, 'UPDATE');
+								await createNewMutationLog(tx, context, tx.lab_has_hazards_additional_info.name, info.id_lab_has_hazards_additional_info, '', additionalInfoResult, info, 'UPDATE');
 							}
 						} else {
 							const info = await tx.lab_has_hazards_additional_info.create({
@@ -239,7 +239,7 @@ export const RoomHazardMutations = extendType({
 							if ( !info ) {
 								throw new Error(`Additional information not created for room ${args.room}.`);
 							} else {
-								await createNewMutationLog(tx, context, tx.lab_has_hazards_additional_info.name, '', {}, info, 'CREATE');
+								await createNewMutationLog(tx, context, tx.lab_has_hazards_additional_info.name, info.id_lab_has_hazards_additional_info, '', {}, info, 'CREATE');
 							}
 						}
 

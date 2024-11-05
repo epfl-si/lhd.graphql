@@ -352,7 +352,7 @@ export const RoomMutations = extendType({
 										}
 									});
 									if (newRoom) {
-										await createNewMutationLog(tx, context, tx.Room.name, '', {}, newRoom, 'CREATE');
+										await createNewMutationLog(tx, context, tx.Room.name, newRoom.id, '', {}, newRoom, 'CREATE');
 									}
 								}
 							}
@@ -405,7 +405,7 @@ export const RoomMutations = extendType({
 						if (!updatedRoom) {
 							throw new Error(`Room ${args.name} not updated.`);
 						} else {
-							await createNewMutationLog(tx, context, tx.Room.name, '', room, updatedRoom, 'UPDATE');
+							await createNewMutationLog(tx, context, tx.Room.name, updatedRoom.id, '', room, updatedRoom, 'UPDATE');
 						}
 
 						const errors: string[] = [];
@@ -428,7 +428,7 @@ export const RoomMutations = extendType({
 									if ( !u ) {
 										errors.push(`Error creating unit ${unit.name}.`);
 									} else {
-										await createNewMutationLog(tx, context, tx.unit_has_room.name, '', {}, u, 'CREATE');
+										await createNewMutationLog(tx, context, tx.unit_has_room.name, 0, '', {}, u, 'CREATE');
 									}
 								} catch ( e ) {
 									errors.push(`Error creating unit ${unit.name}.`);
@@ -446,7 +446,7 @@ export const RoomMutations = extendType({
 									if (!u) {
 										errors.push(`Error deleting ${unit.name}.`);
 									} else {
-										await createNewMutationLog(tx, context, tx.unit_has_room.name, '', whereConditionForDelete, {}, 'DELETE');
+										await createNewMutationLog(tx, context, tx.unit_has_room.name, 0,'', whereConditionForDelete, {}, 'DELETE');
 									}
 								} catch ( e ) {
 									errors.push(`Error creating unit ${unit.name}.`);

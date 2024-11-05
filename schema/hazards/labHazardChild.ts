@@ -73,7 +73,7 @@ export async function updateHazardFormChild(child: submission, tx: any, context:
 		if ( !hazardChild ) {
 			throw new Error(`Hazard child not created for room ${room}.`);
 		} else {
-			await createNewMutationLog(tx, context, tx.lab_has_hazards_child.name, '', {}, hazardChild, 'CREATE');
+			await createNewMutationLog(tx, context, tx.lab_has_hazards_child.name, hazardChild.id_lab_has_hazards_child,'', {}, hazardChild, 'CREATE');
 		}
 	} else if ( !child.id.eph_id.startsWith('newHazardChild') ) {
 		if ( !IDObfuscator.checkSalt(child.id) ) {
@@ -101,7 +101,7 @@ export async function updateHazardFormChild(child: submission, tx: any, context:
 			if ( !hazardChild ) {
 				throw new Error(`Hazard child not updated for room ${room}.`);
 			} else {
-				await createNewMutationLog(tx, context, tx.lab_has_hazards_child.name, '', hazardsChildInRoom, hazardChild, 'UPDATE');
+				await createNewMutationLog(tx, context, tx.lab_has_hazards_child.name, hazardChild.id_lab_has_hazards_child, '', hazardsChildInRoom, hazardChild, 'UPDATE');
 			}
 		} else if ( child.submission.data['status'] == 'Deleted' ) {
 			const hazardChild = await tx.lab_has_hazards_child.delete({
@@ -119,13 +119,13 @@ export async function updateHazardFormChild(child: submission, tx: any, context:
 				if ( !hazard ) {
 					throw new Error(`Hazard not deleted for room ${room}.`);
 				} else {
-					await createNewMutationLog(tx, context, tx.lab_has_hazards.name, '', hazard, {}, 'DELETE');
+					await createNewMutationLog(tx, context, tx.lab_has_hazards.name, 0, '', hazard, {}, 'DELETE');
 				}
 			}
 			if ( !hazardChild ) {
 				throw new Error(`Hazard child not deleted for room ${room}.`);
 			} else {
-				await createNewMutationLog(tx, context, tx.lab_has_hazards_child.name, '', hazardChild, {}, 'DELETE');
+				await createNewMutationLog(tx, context, tx.lab_has_hazards_child.name, 0, '', hazardChild, {}, 'DELETE');
 			}
 		}
 	}

@@ -10,6 +10,7 @@ export const MutationLogsStruct = objectType({
 		t.field(mutation_logs.modified_by);
 		t.field(mutation_logs.modified_on);
 		t.field(mutation_logs.table_name);
+		t.field(mutation_logs.table_id);
 		t.field(mutation_logs.column_name);
 		t.field(mutation_logs.old_value);
 		t.field(mutation_logs.new_value);
@@ -21,6 +22,7 @@ export async function createNewMutationLog(
 	tx: any,
 	context: any,
 	tableName: string,
+	table_id: number,
 	columnName: string,
 	oldObject: object,
 	newObject: object,
@@ -31,6 +33,7 @@ export async function createNewMutationLog(
 				modified_by: context.user.preferred_username,
 				modified_on: new Date(),
 				table_name: tableName,
+				table_id: table_id,
 				column_name: columnName,
 				old_value: oldObject ? JSON.stringify(oldObject) : null,
 				new_value: JSON.stringify(newObject),

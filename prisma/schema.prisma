@@ -892,6 +892,7 @@ model mutation_logs {
   modified_by                        String
   modified_on                        DateTime              @default(now())
   table_name                         String
+  table_id                           Int
   column_name                        String
   old_value                          String                @db.LongText
   new_value                          String                @db.LongText
