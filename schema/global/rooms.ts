@@ -278,6 +278,11 @@ export const RoomsWithPaginationQuery = extendType({
 					where: {
 						AND: whereCondition
 					},
+					orderBy: [
+						{
+							name: 'asc',
+						},
+					]
 				});
 
 				const rooms = roomsList.slice(args.skip, args.skip + args.take);
