@@ -57,7 +57,6 @@ export const RoomStruct = objectType({
 			'kind',
 			'vol',
 			'vent',
-			'adminuse'
 		]) {
 			t.field(Room[f]);
 		}
@@ -66,6 +65,13 @@ export const RoomStruct = objectType({
 			resolve: async (parent, _, context) => {
 				const encryptedID = IDObfuscator.obfuscate({id: parent.id, obj: getRoomToString(parent)});
 				return JSON.stringify(encryptedID);
+			},
+		});
+
+		t.string('adminuse',  {
+			resolve: async (parent, _, context) => {
+				const rooms = await getRoomsFromApi(parent.name);
+				return (rooms && rooms["rooms"].length > 0) ? rooms["rooms"][0].adminuse : '';
 			},
 		});
 
@@ -323,7 +329,6 @@ export const RoomCreationType = inputObjectType({
 		t.string('floor');
 		t.string('building');
 		t.string('sector');
-		t.string("adminuse");
 	}
 })
 
@@ -359,7 +364,6 @@ export const RoomMutations = extendType({
 											floor: room.floor,
 											roomNo: parts[parts.length - 1],
 											name: room.name,
-											adminuse: room.adminuse
 										}
 									});
 									if (newRoom) {
@@ -487,7 +491,6 @@ export const RoomFromAPI = objectType({
 		t.nonNull.int("id");
 		t.string("sector");
 		t.string("building");
-		t.string("adminuse");
 		//t.field("building", {type: BuildingType});
 		//lab et location
 	}
@@ -519,7 +522,6 @@ export const RoomFromAPIQuery = extendType({
 						id: u.id,
 						building: u.building['name'],
 						sector: u.zone,
-						adminuse: u.adminuse,
 						vent: 'n'
 					});
 				});

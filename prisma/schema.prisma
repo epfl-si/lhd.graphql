@@ -478,7 +478,6 @@ model Room {
   vol                       Float?
   vent                      String?                      @db.Char(1)
   name                      String?                      @map("lab_display") @db.VarChar(20)
-  adminuse                    String?                      @db.VarChar(200)
   aa                        aa[]
   dispensations             DispensationInRoomRelation[]
   auth_lab                  auth_lab[]
