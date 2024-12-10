@@ -1,13 +1,15 @@
-import {booleanArg, extendType, inputObjectType, intArg, list, objectType, stringArg} from 'nexus';
-import { Unit } from 'nexus-prisma';
-import { InstituteStruct } from './institutes';
+import {extendType, inputObjectType, intArg, list, objectType, stringArg} from 'nexus';
+import {Unit} from 'nexus-prisma';
+import {InstituteStruct} from './institutes';
 import {PersonStruct} from "../global/people";
-import {Person } from "@prisma/client";
+import {Person} from "@prisma/client";
 import {mutationStatusType} from "../statuses";
 import {id, IDObfuscator} from "../../utils/IDObfuscator";
 import {getSHA256} from "../../utils/HashingTools";
 import {getUnitsFromApi} from "../../utils/CallAPI";
 import {createNewMutationLog} from "../global/mutationLogs";
+import * as path from "node:path";
+import * as fs from "fs";
 
 export const UnitStruct = objectType({
 	name: Unit.$name,
@@ -616,6 +618,73 @@ export const UnitFromAPIQuery = extendType({
 					});
 				});
 				return unitList;
+			}
+		})
+	},
+})
+
+
+export const UnitReportFiles = objectType({
+	name: "UnitReportFiles",
+	definition(t) {
+		t.string("name");
+		t.string("path");
+		t.string("unitName");
+	}
+})
+
+export const UnitReportFilesQuery = extendType({
+	type: 'Query',
+	definition(t) {
+		t.field("unitReportFiles", {
+			type: list("UnitReportFiles"),
+			args: {
+				id: stringArg()
+			},
+			async resolve(parent, args, context): Promise<any> {
+				try {
+					return await context.prisma.$transaction(async (tx) => {
+						if (!args.id) {
+							throw new Error(`Not allowed to update unit`);
+						}
+						const ids: id[] = JSON.parse(args.id);
+						const reportList = [];
+						await Promise.all(ids.map(async (id) => {
+							if (id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
+								throw new Error(`Not allowed to update unit`);
+							}
+
+							if(!IDObfuscator.checkSalt(id)) {
+								throw new Error(`Bad descrypted request`);
+							}
+
+							const idDeobfuscated = IDObfuscator.deobfuscateId(id);
+							const reportFolder = "report_audits/pdf/" + idDeobfuscated + "/";
+							const folderPath = process.env.DOCUMENTS_PATH + "/" + reportFolder;
+							if (fs.existsSync(folderPath)) {
+								const files = fs.readdirSync(folderPath);
+								const pdfFiles = files.filter(file => path.extname(file).toLowerCase() === '.pdf');
+								const unit = await tx.Unit.findUnique({where: {id: idDeobfuscated}});
+								if (! unit) {
+									throw new Error(`Unit not found.`);
+								}
+								const fileList = [];
+								pdfFiles.forEach(file =>
+								{
+									fileList.push({
+										name: path.basename(file),
+										path: reportFolder + file,
+										unitName: unit.name
+									});
+								});
+								reportList.push(fileList);
+							}
+						}));
+						return reportList.flat();
+					});
+				} catch ( e ) {
+					throw new Error(`Error during fetch reports`);
+				}
 			}
 		})
 	},
