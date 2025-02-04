@@ -468,6 +468,7 @@ model irad {
 model Room {
   id                        Int                          @id @default(autoincrement()) @map("id_lab")
   sciper_lab                Int?                         @unique(map: "unique_sciper_lab")
+  site                      String?                      @db.VarChar(50)
   building                  String                       @db.VarChar(5)
   sector                    String?                      @db.VarChar(5)
   floor                     String?                      @db.VarChar(5)
