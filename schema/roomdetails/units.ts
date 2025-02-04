@@ -65,6 +65,16 @@ is each lowest-level administrative division within central services.`,
 					}});
 			},
 		});
+		t.field('responsible', {
+			type: PersonStruct,
+			resolve: async (parent, _, context) => {
+				if (parent.responsible_id)
+					return await context.prisma.person.findUnique({
+						where: {
+							id_person: parent.responsible_id
+						}});
+			},
+		});
 		t.string('id',  {
 			resolve: async (parent, _, context) => {
 				const encryptedID = IDObfuscator.obfuscate({id: parent.id, obj: getUnitToString(parent)});
@@ -114,6 +124,10 @@ export const UnitCreationType = inputObjectType({
 		t.nonNull.string('name');
 		t.nonNull.string('path');
 		t.nonNull.int('unitId');
+		t.int('responsibleId');
+		t.string('responsibleFirstName');
+		t.string('responsibleLastName');
+		t.string('responsibleEmail');
 		t.nonNull.string('status');
 	}
 })
@@ -150,22 +164,22 @@ const unitDeleteType = {
 	id: stringArg()
 };
 
-async function findOrCreatePerson(tx, context, person): Promise<Person> {
-	let p = await tx.Person.findUnique({ where: { sciper: person.sciper }});
+async function findOrCreatePerson(tx, context, sciperId, firstName, lastName, email): Promise<Person> {
+	let p = await tx.Person.findUnique({ where: { sciper: sciperId }});
 
 	if (!p) {
 		try {
 			p = await tx.Person.create({
 				data: {
-					name: person.name,
-					surname: person.surname,
-					sciper: person.sciper,
-					email: person.email
+					name: firstName,
+					surname: lastName,
+					sciper: sciperId,
+					email: email
 				}
 			});
 
 			if (p) {
-				await createNewMutationLog(tx, context, tx.Person.name, person.id_person, '', {}, p, 'CREATE');
+				await createNewMutationLog(tx, context, tx.Person.name, p.id_person, '', {}, p, 'CREATE');
 			}
 		} catch ( e ) {
 			p = undefined;
@@ -220,14 +234,38 @@ export const UnitMutations = extendType({
 										}
 									}
 
+									const responsible: Person = await findOrCreatePerson(tx, context,  unit.responsibleId, unit.responsibleFirstName, unit.responsibleLastName, unit.responsibleEmail);
+
 									const u = await tx.Unit.create({
 										data: {
 											name: unit.name,
 											unitId: unit.unitId,
-											id_institute: institute.id
+											id_institute: institute.id,
+											responsible_id: responsible?.id_person
 										}
 									});
+
 									if (u) {
+										if (!responsible) {
+											errors.push(`Sciper ${unit.responsibleId} not found.`);
+										} else {
+											try {
+												const newSubunpro = {
+													id_person: responsible.id_person,
+													id_unit: u.id
+												};
+												const subunpro = await tx.subunpro.create({
+													data: newSubunpro
+												});
+												if (!subunpro) {
+													errors.push(`Relation not updated between unit ${unit.name} and sciper ${unit.responsibleId}.`)
+												} else {
+													await createNewMutationLog(tx, context, tx.subunpro.name, 0, '', {}, newSubunpro, 'CREATE');
+												}
+											} catch ( e ) {
+												errors.push(`DB error: relation not updated between unit ${unit.name} and sciper ${unit.responsibleId}.`)
+											}
+										}
 										await createNewMutationLog(tx, context, tx.Unit.name, u.id_unit, '', {}, u, 'CREATE');
 									}
 								}
@@ -272,7 +310,7 @@ export const UnitMutations = extendType({
 						try {
 							for (const person of args.profs) {
 								if (person.status == 'New') {
-									const p: Person = await findOrCreatePerson(tx, context, person.person);
+									const p: Person = await findOrCreatePerson(tx, context, person.person.sciper, person.person.name, person.person.surname, person.person.email);
 									if (!p) {
 										errors.push(`Person ${person.person.sciper} not found.`);
 										continue;
@@ -321,7 +359,7 @@ export const UnitMutations = extendType({
 
 							for (const person of args.cosecs) {
 								if (person.status == 'New') {
-									const p: Person = await findOrCreatePerson(tx, context, person.person);
+									const p: Person = await findOrCreatePerson(tx, context, person.person.sciper, person.person.name, person.person.surname, person.person.email);
 									if (!p) {
 										errors.push(`Person ${person.person.sciper} not found.`);
 										continue;
@@ -595,6 +633,10 @@ export const UnitFromAPI = objectType({
 		t.string("name");
 		t.string("path");
 		t.string("unitId");
+		t.string("responsibleId");
+		t.string("responsibleFirstName");
+		t.string("responsibleLastName");
+		t.string("responsibleEmail");
 	}
 })
 
@@ -614,7 +656,12 @@ export const UnitFromAPIQuery = extendType({
 					unitList.push({
 						name: u.name,
 						path: u.path,
-						unitId: u.id
+						unitId: u.id,
+						responsibleId: u.responsibleid,
+						responsibleFirstName: u.responsible.firstname,
+						responsibleLastName: u.responsible.lastname,
+						responsibleEmail: u.responsible.email
+
 					});
 				});
 				return unitList;
