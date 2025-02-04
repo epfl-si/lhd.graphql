@@ -81,6 +81,13 @@ is each lowest-level administrative division within central services.`,
 				return JSON.stringify(encryptedID);
 			},
 		});
+
+		t.string('unitType',  {
+			resolve: async (parent, _, context) => {
+				const units = await getUnitsFromApi(parent.name);
+				return (units && units["units"].length > 0 && units["units"][0].unittype) ? units["units"][0].unittype.label : '';
+			},
+		});
 	},
 });
 
