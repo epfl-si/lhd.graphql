@@ -659,6 +659,7 @@ model Person {
   mag                    mag[]
   subunpro               subunpro[]
   unit_has_cosec         unit_has_cosec[]
+  responsible_for_units   Unit[]
 
   @@unique([name, surname, email], name: "unique_per", map: "unique_per")
   @@unique([sciper, name, surname, email], name: "unique_person", map: "unique_person")
@@ -774,16 +775,19 @@ model Unit {
   unitId                    Int?                        @unique(map: "unique_sciper_unit") @map("sciper_unit")
   name                      String?                     @map("name_unit") @db.VarChar(60)
   id_institute              Int?                        @map("id_institut")
+  responsible_id            Int?
   aa                        aa[]
   subunpro                  subunpro[]
   institute                 Institute?                  @relation(fields: [id_institute], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "unit_ibfk_1")
   unit_has_cosec            unit_has_cosec[]
   unit_has_room             unit_has_room[]
   unit_has_storage_for_room unit_has_storage_for_room[]
+  responsible               Person? @relation(fields: [responsible_id], references: [id_person], onUpdate: Restrict, map: "unit_has_responsible")
 
   @@unique([name, id_institute], name: "unique_un", map: "unique_un")
   @@unique([unitId, name, id_institute], name: "unique_unit", map: "unique_unit")
   @@index([id_institute], map: "id_institut")
+  @@index([responsible_id], map: "responsible_id")
   @@map("unit")
 }
 
