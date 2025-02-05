@@ -511,7 +511,7 @@ export const RoomFromAPIQuery = extendType({
 						floor: u.floor,
 						id: u.id,
 						building: u.building['name'],
-						sector: u.zone,
+						sector: u.zone != 'Z' ? u.zone : '',
 						vent: 'n',
 						site: u.building?.site?.label
 					});
