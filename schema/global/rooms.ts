@@ -298,7 +298,6 @@ const roomType = {
 	id: stringArg(),
 	name: stringArg(),
 	kind: stringArg(),
-	vol: intArg(),
 	vent: stringArg(),
 	units: list(UnitMutationType)
 };
@@ -317,6 +316,7 @@ export const RoomCreationType = inputObjectType({
 		t.string('floor');
 		t.string('building');
 		t.string('sector');
+		t.float('vol');
 	}
 })
 
@@ -352,7 +352,8 @@ export const RoomMutations = extendType({
 											floor: room.floor,
 											roomNo: parts[parts.length - 1],
 											name: room.name,
-											site: room.site
+											site: room.site,
+											vol: room.vol
 										}
 									});
 									if (newRoom) {
@@ -400,7 +401,6 @@ export const RoomMutations = extendType({
 						const updatedRoom = await tx.Room.update(
 							{ where: { id: room.id },
 								data: {
-									vol: args.vol,
 									vent: args.vent,
 									kind: { connect: { id_labType: roomKind.id_labType}},
 								}
@@ -481,6 +481,7 @@ export const RoomFromAPI = objectType({
 		t.string("sector");
 		t.string("site");
 		t.string("building");
+		t.float("vol");
 		//t.field("building", {type: BuildingType});
 		//lab et location
 	}
@@ -513,7 +514,8 @@ export const RoomFromAPIQuery = extendType({
 						building: u.building['name'],
 						sector: u.zone != 'Z' ? u.zone : '',
 						vent: 'n',
-						site: u.building?.site?.label
+						site: u.building?.site?.label,
+						vol: Math.round(((u.surface || 0) * (u.height || 0)) * 100) / 100
 					});
 				});
 				return roomsList;
