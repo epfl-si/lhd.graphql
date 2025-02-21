@@ -474,6 +474,7 @@ model Room {
   floor                     String?                      @db.VarChar(5)
   roomNo                    String                       @map("lab") @db.VarChar(10)
   id_labType                Int?
+  lab_type_is_different     Boolean                      @default(false)
   description               String?                      @db.VarChar(200)
   location                  String?                      @db.VarChar(10)
   vol                       Float?
