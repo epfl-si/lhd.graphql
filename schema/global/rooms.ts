@@ -5,7 +5,7 @@
 import {HazLevelStruct} from '../hazards/hazlevel';
 import {BioStruct} from '../bio/biohazard';
 import {DispensationStruct} from '../dispensations';
-import {enumType, extendType, inputObjectType, intArg, list, objectType, stringArg} from 'nexus';
+import {booleanArg, enumType, extendType, inputObjectType, intArg, list, objectType, stringArg} from 'nexus';
 import {Room, RoomKind} from 'nexus-prisma';
 import {debug as debug_} from 'debug';
 import {UnitMutationType, UnitStruct} from "../roomdetails/units";
@@ -13,7 +13,7 @@ import {mutationStatusType} from "../statuses";
 import {LabHazardStruct} from "../hazards/labHazard";
 import {id, IDObfuscator} from "../../utils/IDObfuscator";
 import {getSHA256} from "../../utils/HashingTools";
-import {getRoomsFromApi} from "../../utils/CallAPI";
+import {getDoorPlugFromApi, getRoomsFromApi} from "../../utils/CallAPI";
 import {createNewMutationLog} from "./mutationLogs";
 import {HazardsAdditionalInfoStruct} from "../hazards/hazardsAdditionalInfo";
 import {LabHazardChildStruct} from "../hazards/labHazardChild";
@@ -57,7 +57,8 @@ export const RoomStruct = objectType({
 			'kind',
 			'vol',
 			'vent',
-			'site'
+			'site',
+			'lab_type_is_different'
 		]) {
 			t.field(Room[f]);
 		}
@@ -73,6 +74,13 @@ export const RoomStruct = objectType({
 			resolve: async (parent, _, context) => {
 				const rooms = await getRoomsFromApi(parent.name);
 				return (rooms && rooms["rooms"].length > 0) ? rooms["rooms"][0].adminuse : '';
+			},
+		});
+
+		t.string('facultyuse',  {
+			resolve: async (parent, _, context) => {
+				const rooms = await getRoomsFromApi(parent.name);
+				return (rooms && rooms["rooms"].length > 0) ? rooms["rooms"][0].facultyuse : '';
 			},
 		});
 
@@ -299,6 +307,7 @@ const roomType = {
 	name: stringArg(),
 	kind: stringArg(),
 	vent: stringArg(),
+	lab_type_is_different: booleanArg(),
 	units: list(UnitMutationType)
 };
 
@@ -317,6 +326,7 @@ export const RoomCreationType = inputObjectType({
 		t.string('building');
 		t.string('sector');
 		t.float('vol');
+		t.string('api_labType');
 	}
 })
 
@@ -344,6 +354,7 @@ export const RoomMutations = extendType({
 								if (!newRoom) {
 									const parts: string[] = room.name.split(' ');
 
+									const labType = await tx.RoomKind.findFirst({where: {name: room.api_labType}});
 									const newRoom = await tx.Room.create({
 										data: {
 											sciper_lab: room.id,
@@ -353,7 +364,9 @@ export const RoomMutations = extendType({
 											roomNo: parts[parts.length - 1],
 											name: room.name,
 											site: room.site,
-											vol: room.vol
+											vol: room.vol,
+											lab_type_is_different: false,
+											id_labType: labType ? labType.id_labType : null
 										}
 									});
 									if (newRoom) {
@@ -402,6 +415,7 @@ export const RoomMutations = extendType({
 							{ where: { id: room.id },
 								data: {
 									vent: args.vent,
+									lab_type_is_different: args.lab_type_is_different,
 									kind: { connect: { id_labType: roomKind.id_labType}},
 								}
 							});
@@ -482,17 +496,8 @@ export const RoomFromAPI = objectType({
 		t.string("site");
 		t.string("building");
 		t.float("vol");
-		//t.field("building", {type: BuildingType});
-		//lab et location
 	}
 })
-
-/*export const BuildingType = objectType({
-	name: "BuildingType",
-	definition(t) {
-		t.nonNull.string('name');
-	}
-})*/
 
 export const RoomFromAPIQuery = extendType({
 	type: 'Query',
@@ -515,7 +520,9 @@ export const RoomFromAPIQuery = extendType({
 						sector: u.zone != 'Z' ? u.zone : '',
 						vent: 'n',
 						site: u.building?.site?.label,
-						vol: Math.round(((u.surface || 0) * (u.height || 0)) * 100) / 100
+						vol: Math.round(((u.surface || 0) * (u.height || 0)) * 100) / 100,
+						api_labType: u.facultyuse,
+						lab_type_is_different: false
 					});
 				});
 				return roomsList;
