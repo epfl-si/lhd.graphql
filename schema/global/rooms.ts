@@ -326,7 +326,7 @@ export const RoomCreationType = inputObjectType({
 		t.string('building');
 		t.string('sector');
 		t.float('vol');
-		t.string('api_labType');
+		t.string('facultyuse');
 	}
 })
 
@@ -354,7 +354,7 @@ export const RoomMutations = extendType({
 								if (!newRoom) {
 									const parts: string[] = room.name.split(' ');
 
-									const labType = await tx.RoomKind.findFirst({where: {name: room.api_labType}});
+									const labType = await tx.RoomKind.findFirst({where: {name: room.facultyuse}});
 									const newRoom = await tx.Room.create({
 										data: {
 											sciper_lab: room.id,
@@ -496,6 +496,7 @@ export const RoomFromAPI = objectType({
 		t.string("site");
 		t.string("building");
 		t.float("vol");
+		t.string("facultyuse");
 	}
 })
 
@@ -521,11 +522,27 @@ export const RoomFromAPIQuery = extendType({
 						vent: 'n',
 						site: u.building?.site?.label,
 						vol: Math.round(((u.surface || 0) * (u.height || 0)) * 100) / 100,
-						api_labType: u.facultyuse,
+						facultyuse: u.facultyuse,
 						lab_type_is_different: false
 					});
 				});
 				return roomsList;
+			}
+		})
+	},
+})
+
+export const DoorPlugQuery = extendType({
+	type: 'Query',
+	definition(t) {
+		t.field("fetchDoorPlug", {
+			type: "String",
+			args: {
+				roomName: stringArg()
+			},
+			async resolve(parent, args, context): Promise<any> {
+				const file = await getDoorPlugFromApi(args.roomName);
+				return "" //file.v_epfl_fiches.url;
 			}
 		})
 	},
