@@ -514,9 +514,10 @@ model Room {
 }
 
 model RoomKind {
-  id_labType Int     @id @default(autoincrement())
-  name       String? @map("labType") @db.VarChar(100)
-  Room       Room[]
+  id_labType        Int     @id @default(autoincrement())
+  name              String? @map("labType") @db.VarChar(100)
+  id_labTypeCristal String?
+  Room              Room[]
 
   @@map("labType")
 }
