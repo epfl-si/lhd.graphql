@@ -170,7 +170,6 @@ async function getLoggedInUserInfos(req): Promise<loginResponse> {
 			console.log('Allowed groups', allowedGroups);
 			// TODO: Some pages do not have the same access rights as others. Rewrite this to account for that.
 			if (userinfo.groups && userinfo.groups.some(e => allowedGroups.includes(e))) {
-				userinfo.groups.push("LHD_acces_admin"); //TODO to delete!!!
 				return {
 					loggedIn: true,
 					user: userinfo,
