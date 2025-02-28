@@ -83,6 +83,7 @@ export async function makeServer(
 
 	app.post('/files/', async (req, res) => {
 		try {
+			console.error('Getting file');
 			var loginResponse = await getLoggedInUserInfos(req);
 			if (!loginResponse.loggedIn) {
 				res.status(loginResponse.httpCode);
@@ -91,15 +92,18 @@ export async function makeServer(
 				const filePath = path.join(req.body.filePath as string);
 				const fileName = path.basename(filePath);
 				const fullFilePath = path.join(process.env.DOCUMENTS_PATH, filePath);
+				console.error('Getting file', fullFilePath);
 				res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
 				res.sendFile(fullFilePath, (err) => {
 					if ( err ) {
 						console.error('Error sending file:', err);
 						res.status(500).send(err.message);
 					}
+					console.error('Getting file success', fullFilePath);
 				});
 			}
 		} catch ( e ) {
+			console.error('Error sending file:', e);
 			res.status(404).send('File not found');
 		}
 	});
