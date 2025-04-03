@@ -131,9 +131,10 @@
             }
         });
 
+		host = window.location.host.indexOf(".epfl.ch") > -1 ? "https://satosaaas.epfl.ch/" : "http://localhost:8080/realms/LHD/";
         oidc = new window.Appauth.OpenIDConnect({
             debug: true,
-            authServerUrl: "http://localhost:8080/realms/LHD/",
+            authServerUrl: host,
             client: { clientId: "LHDv3" },
             minValiditySeconds: 270
         });
