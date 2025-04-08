@@ -133,10 +133,14 @@
 
 		host = window.location.host.indexOf(".epfl.ch") > -1 ? "https://satosaaas.epfl.ch" : "http://localhost:8080/realms/LHD";
 		client = window.location.host.indexOf("lhd-test.epfl.ch") > -1 ? "LHDv3_test" : (window.location.host.indexOf("lhd.epfl.ch") > -1 ? "LHDv3_prod" : "LHDv3");
+		scope = window.location.host.indexOf(".epfl.ch") > -1 ? "openid profile tequila" : "openid";
         oidc = new window.Appauth.OpenIDConnect({
             debug: true,
             authServerUrl: host,
-            client: { clientId: client },
+            client: {
+				clientId: client,
+				scope: scope
+            },
             minValiditySeconds: 270
         });
 
