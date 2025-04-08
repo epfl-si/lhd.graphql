@@ -131,11 +131,12 @@
             }
         });
 
-		host = window.location.host.indexOf(".epfl.ch") > -1 ? "https://satosaaas.epfl.ch/" : "http://localhost:8080/realms/LHD/";
+		host = window.location.host.indexOf(".epfl.ch") > -1 ? "https://satosaaas.epfl.ch" : "http://localhost:8080/realms/LHD";
+		client = window.location.host.indexOf("lhd-test.epfl.ch") > -1 ? "LHDv3_test" : (window.location.host.indexOf("lhd.epfl.ch") > -1 ? "LHDv3_prod" : "LHDv3");
         oidc = new window.Appauth.OpenIDConnect({
             debug: true,
             authServerUrl: host,
-            client: { clientId: "LHDv3" },
+            client: { clientId: client },
             minValiditySeconds: 270
         });
 
