@@ -50,6 +50,9 @@ export function getLabHasHazardChildToString(parent) {
 }
 
 export async function updateHazardFormChild(child: submission, tx: any, context: any, room: string, parentHazard: number) {
+	if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1) {
+		throw new Error('Permission denied');
+	}
 	if ( child.id == undefined || child.id.eph_id == undefined || child.id.eph_id == '' || child.id.salt == undefined || child.id.salt == '' ) {
 		throw new Error(`Not allowed to update hazards child`);
 	}
