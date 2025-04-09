@@ -220,7 +220,22 @@ export const RoomKindStruct = objectType({
 export const RoomQuery = extendType({
 	type: 'Query',
 	definition(t) {
-		t.crud.rooms({ filtering: true });
+		t.crud.rooms({ filtering: true,
+			resolve: async (root, args, context, info, originalResolve) => {
+				// Ensure user is authenticated
+				if (!context.user) {
+					throw new Error('Unauthorized');
+				}
+
+				// Check if user has the right to access rooms (customize this logic)
+				if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1) {
+					throw new Error('Permission denied');
+				}
+
+				// Call the original resolver if user is authorized
+				return originalResolve(root, args, context, info);
+			}
+		});
 	},
 });
 
@@ -243,6 +258,9 @@ export const RoomsWithPaginationQuery = extendType({
 				search: stringArg(),
 			},
 			async resolve(parent, args, context) {
+				if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
+					throw new Error(`Permission denied`);
+				}
 				const queryArray = args.search.split("&");
 				const dictionary = queryArray.map(query => query.split("="));
 				const whereCondition = [];
@@ -298,7 +316,22 @@ export const RoomsWithPaginationQuery = extendType({
 export const RoomKindQuery = extendType({
 	type: 'Query',
 	definition(t) {
-		t.crud.roomKinds({ filtering: true });
+		t.crud.roomKinds({ filtering: true,
+			resolve: async (root, args, context, info, originalResolve) => {
+				// Ensure user is authenticated
+				if (!context.user) {
+					throw new Error('Unauthorized');
+				}
+
+				// Check if user has the right to access rooms (customize this logic)
+				if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1) {
+					throw new Error('Permission denied');
+				}
+
+				// Call the original resolver if user is authorized
+				return originalResolve(root, args, context, info);
+			}
+		});
 	},
 });
 
@@ -346,6 +379,10 @@ export const RoomMutations = extendType({
 			type: "RoomStatus",
 			async resolve(root, args, context) {
 				try {
+					if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
+						throw new Error(`Permission denied`);
+					}
+
 					return await context.prisma.$transaction(async (tx) => {
 						for (const room of args.rooms) {
 							if (room.status == 'New') {
@@ -388,6 +425,10 @@ export const RoomMutations = extendType({
 			type: "RoomStatus",
 			async resolve(root, args, context) {
 				try {
+					if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
+						throw new Error(`Permission denied`);
+					}
+
 					return await context.prisma.$transaction(async (tx) => {
 						if (!args.id) {
 							throw new Error(`Not allowed to update room`);
@@ -509,6 +550,9 @@ export const RoomFromAPIQuery = extendType({
 				search: stringArg()
 			},
 			async resolve(parent, args, context): Promise<any> {
+				if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1) {
+					throw new Error('Permission denied');
+				}
 				const rooms = await getRoomsFromApi(args.search);
 				const roomsList = [];
 				rooms["rooms"].forEach(u =>

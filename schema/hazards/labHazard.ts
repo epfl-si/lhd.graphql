@@ -97,6 +97,9 @@ export const RoomHazardMutations = extendType({
 			type: "RoomHazardStatus",
 			async resolve(root, args, context) {
 				try {
+					if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1) {
+						throw new Error('Permission denied');
+					}
 					return await context.prisma.$transaction(async (tx) => {
 						const room = await tx.Room.findFirst({ where: { name: args.room }});
 						if (! room) {
