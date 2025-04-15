@@ -1,5 +1,5 @@
 import {extendType, objectType, stringArg} from 'nexus';
-import {lab_has_hazards_child} from 'nexus-prisma';
+import {bio_org, lab_has_hazards_child} from 'nexus-prisma';
 import {HazardFormHistoryStruct} from "./hazardFormHistory";
 import {mutationStatusType} from "../statuses";
 import {getSHA256} from "../../utils/HashingTools";
@@ -130,6 +130,31 @@ export async function updateHazardFormChild(child: submission, tx: any, context:
 			} else {
 				await createNewMutationLog(tx, context, tx.lab_has_hazards_child.name, 0, '', hazardChild, {}, 'DELETE');
 			}
+		}
+	}
+}
+
+export async function updateBioOrg(oldBioOrg: bio_org, newBioOrg: bio_org, tx: any, context: any) {
+	if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1) {
+		throw new Error('Permission denied');
+	}
+	const children = await tx.lab_has_hazards_child.findMany({where: {submission: {contains: `"organism":"${oldBioOrg.organism}"`}}});
+	for ( const child of children ) {
+		const newSubmission = JSON.parse(child.submission);
+		newSubmission.data.organism.organism = newBioOrg.organism;
+		newSubmission.data.organism.risk_group = newBioOrg.risk_group;
+		newSubmission.data.organism.filePath = newBioOrg.filePath;
+		newSubmission.data.fileLink = newBioOrg.filePath;
+		newSubmission.data.riskGroup = newBioOrg.risk_group;
+		const hazardChild = await tx.lab_has_hazards_child.update(
+			{
+				where: {id_lab_has_hazards_child: child.id_lab_has_hazards_child},
+				data: {
+					submission: JSON.stringify(newSubmission)
+				}
+			});
+		if ( hazardChild ) {
+			await createNewMutationLog(tx, context, tx.lab_has_hazards_child.name, hazardChild.id_lab_has_hazards_child, '', child, hazardChild, 'UPDATE');
 		}
 	}
 }
