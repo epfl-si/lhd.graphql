@@ -333,6 +333,15 @@ export const UnitMutations = extendType({
 							throw new Error(`Unit ${args.unit} has been changed from another user. Please reload the page to make modifications`);
 						}
 
+						if (!unit.unitId) {
+							await tx.Unit.update(
+								{ where: { id: unit.id },
+									data: {
+										name: args.unit
+									}
+								});
+						}
+
 						const errors: string[] = [];
 						try {
 							for (const person of args.profs) {
