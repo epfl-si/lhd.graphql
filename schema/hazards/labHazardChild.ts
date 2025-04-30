@@ -1,4 +1,4 @@
-import {extendType, objectType, stringArg} from 'nexus';
+import {extendType, intArg, objectType, stringArg} from 'nexus';
 import {bio_org, lab_has_hazards_child} from 'nexus-prisma';
 import {HazardFormHistoryStruct} from "./hazardFormHistory";
 import {mutationStatusType} from "../statuses";
@@ -7,6 +7,7 @@ import {IDObfuscator, submission} from "../../utils/IDObfuscator";
 import {HazardFormChildHistoryStruct} from "./hazardFormChildHistory";
 import {createNewMutationLog} from "../global/mutationLogs";
 import {LabHazardStruct} from "./labHazard";
+import { Prisma } from '@prisma/client';
 
 export const LabHazardChildStruct = objectType({
 	name: lab_has_hazards_child.$name,
@@ -158,3 +159,75 @@ export async function updateBioOrg(oldBioOrg: bio_org, newBioOrg: bio_org, tx: a
 		}
 	}
 }
+
+export const HazardFlat = objectType({
+	name: "HazardFlat",
+	definition(t) {
+		t.string("lab_display");
+		t.string("hazard_category_name");
+		t.string("parent_submission");
+		t.string("child_submission");
+		t.int("id_lab_has_hazards_child");
+		t.int("id_lab_has_hazards");
+	}
+});
+
+export const HazardsWithPaginationStruct = objectType({
+	name: 'HazardsWithPagination',
+	definition(t) {
+		t.list.field('hazards', { type: 'HazardFlat' });
+		t.int('totalCount');
+	},
+});
+
+export const HazardsWithPaginationQuery = extendType({
+	type: 'Query',
+	definition(t) {
+		t.field("hazardsWithPagination", {
+			type: "HazardsWithPagination",
+			args: {
+				skip: intArg({ default: 0 }),
+				take: intArg({ default: 20 }),
+				search: stringArg(),
+				queryString: stringArg(),
+			},
+			async resolve(parent, args, context) {
+				if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
+					throw new Error(`Permission denied`);
+				}
+
+				let jsonCondition = Prisma.raw(`1=1`);
+				if (args.queryString != '') {
+					const queryStringMap = args.queryString.split('=');
+
+					jsonCondition = Prisma.sql`
+    (JSON_VALUE(lhhc.submission, ${Prisma.raw(`'$.data.${queryStringMap[0]}'`)}) like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} OR 
+     JSON_VALUE(lhh.submission, ${Prisma.raw(`'$.data.${queryStringMap[0]}'`)}) like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} )`;
+				}
+
+
+				const rawQuery = Prisma.sql`select l.lab_display, 
+hc.hazard_category_name, 
+lhh.submission as parent_submission, 
+lhhc.submission as child_submission,
+lhhc.id_lab_has_hazards_child,
+lhh.id_lab_has_hazards
+from lab_has_hazards_child lhhc 
+right join lab_has_hazards lhh on lhh.id_lab_has_hazards = lhhc.id_lab_has_hazards
+inner join hazard_form_history hfh on hfh.id_hazard_form_history =lhh.id_hazard_form_history
+inner join hazard_form hf on hf.id_hazard_form = hfh.id_hazard_form
+inner join hazard_category hc on hc.id_hazard_category = hf.id_hazard_category 
+inner join lab l on l.id_lab = lhh.id_lab
+where hc.hazard_category_name = ${args.search}
+and ${jsonCondition}
+order by l.lab_display asc
+`;
+				const hazardList = await context.prisma.$queryRaw(rawQuery);
+				const hazards = hazardList.slice(args.skip, args.skip + args.take);
+				const totalCount = hazardList.length;
+
+				return { hazards, totalCount };
+			}
+		});
+	},
+});
