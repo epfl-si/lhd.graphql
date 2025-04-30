@@ -198,11 +198,28 @@ export const HazardsWithPaginationQuery = extendType({
 
 				let jsonCondition = Prisma.raw(`1=1`);
 				if (args.queryString != '') {
-					const queryStringMap = args.queryString.split('=');
+					const queryStringArgs = args.queryString.split('&');
+					const sql = queryStringArgs.map(qs => {
+						const queryStringMap = qs.split('=');
 
-					jsonCondition = Prisma.sql`
+						if (queryStringMap[0] == 'chemical')
+							queryStringMap[0] = 'chemical.haz_en';
+						else if (queryStringMap[0] == 'organism')
+							queryStringMap[0] = 'organism.organism';
+						else if (queryStringMap[0] == 'container')
+							queryStringMap[0] = 'container.name';
+
+						if (queryStringMap[0] == 'lab_display') {
+							return Prisma.sql`l.lab_display like ${Prisma.raw(`'%${queryStringMap[1]}%'`)}`;
+						} else {
+							return Prisma.sql`
     (JSON_VALUE(lhhc.submission, ${Prisma.raw(`'$.data.${queryStringMap[0]}'`)}) like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} OR 
-     JSON_VALUE(lhh.submission, ${Prisma.raw(`'$.data.${queryStringMap[0]}'`)}) like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} )`;
+     JSON_VALUE(lhh.submission, ${Prisma.raw(`'$.data.${queryStringMap[0]}'`)}) like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} OR
+     JSON_QUERY(lhhc.submission, ${Prisma.raw(`'$.data.${queryStringMap[0]}'`)}) like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} OR 
+     JSON_QUERY(lhh.submission, ${Prisma.raw(`'$.data.${queryStringMap[0]}'`)}) like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} )`;
+						}
+					})
+					jsonCondition = Prisma.sql`${Prisma.join(sql, ` AND `)}`;
 				}
 
 
