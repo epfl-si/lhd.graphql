@@ -75,6 +75,7 @@ import * as hazardCategoryTypes from '../schema/hazards/hazardCategory'
 import * as hazardFormTypes from '../schema/hazards/hazardForm'
 import * as hazardFormChildTypes from '../schema/hazards/hazardFormChild'
 import * as labHazardTypes from '../schema/hazards/labHazard'
+import * as labHazardChildTypes from '../schema/hazards/labHazardChild'
 import * as bioOrgTypes from '../schema/bio/bioorg'
 import * as mutationLogs from '../schema/global/mutationLogs'
 import * as hazardsAdditionalInfo from '../schema/hazards/hazardsAdditionalInfo'
@@ -91,6 +92,7 @@ const types = [
 	hazardCategoryTypes,
 	hazardFormTypes,
 	labHazardTypes,
+	labHazardChildTypes,
 	bioOrgTypes,
 	hazardFormChildTypes,
 	mutationLogs,
