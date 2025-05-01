@@ -139,7 +139,7 @@ export const OrganismMutations = extendType({
 
 					return await context.prisma.$transaction(async (tx) => {
 						if (!args.id) {
-							throw new Error(`Not allowed to update room`);
+							throw new Error(`Not allowed to update organism`);
 						}
 						const id: id = JSON.parse(args.id);
 						if(id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
@@ -180,6 +180,52 @@ export const OrganismMutations = extendType({
 						} else {
 							await createNewMutationLog(tx, context, tx.bio_org.name, updatedOrganism.id_bio_org, '', org, updatedOrganism, 'UPDATE');
 							await updateBioOrg(org, updatedOrganism, tx, context);
+						}
+						return mutationStatusType.success();
+					});
+				} catch ( e ) {
+					return mutationStatusType.error(e.message);
+				}
+			}
+		});
+		t.nonNull.field('deleteOrganism', {
+			description: `Delete organism details.`,
+			args: newOrganismType,
+			type: "OrganismStatus",
+			async resolve(root, args, context) {
+				try {
+					if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
+						throw new Error(`Permission denied`);
+					}
+
+					return await context.prisma.$transaction(async (tx) => {
+						if (!args.id) {
+							throw new Error(`Not allowed to delete organism`);
+						}
+						const id: id = JSON.parse(args.id);
+						if(id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
+							throw new Error(`Not allowed to delete organism`);
+						}
+
+						if(!IDObfuscator.checkSalt(id)) {
+							throw new Error(`Bad descrypted request`);
+						}
+						const idDeobfuscated = IDObfuscator.deobfuscateId(id);
+						const org = await tx.bio_org.findUnique({where: {id_bio_org: idDeobfuscated}});
+						if (! org) {
+							throw new Error(`Organism ${args.organismName} not found.`);
+						}
+						const organismObject =  getSHA256(JSON.stringify(getBioOrgToString(org)), id.salt);
+						if (IDObfuscator.getDataSHA256(id) !== organismObject) {
+							throw new Error(`Organism ${args.organismName} has been changed from another user. Please reload the page to make modifications`);
+						}
+
+						const deletedOrganism = await tx.bio_org.delete({ where: { id_bio_org: org.id_bio_org }});
+
+						if ( !deletedOrganism ) {
+							throw new Error(`Organism ${args.organismName} not deleted.`);
+						} else {
+							await createNewMutationLog(tx, context, tx.bio_org.name, 0, '', deletedOrganism, {}, 'DELETE');
 						}
 						return mutationStatusType.success();
 					});
