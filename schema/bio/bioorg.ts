@@ -220,6 +220,7 @@ export const OrganismMutations = extendType({
 							throw new Error(`Organism ${args.organismName} has been changed from another user. Please reload the page to make modifications`);
 						}
 
+						const deletedOrganismLab = await tx.bio_org_lab.deleteMany({ where: { id_bio_org: org.id_bio_org }});
 						const deletedOrganism = await tx.bio_org.delete({ where: { id_bio_org: org.id_bio_org }});
 
 						if ( !deletedOrganism ) {
