@@ -1,13 +1,12 @@
 import {extendType, intArg, objectType, stringArg} from 'nexus';
 import {bio_org, lab_has_hazards_child} from 'nexus-prisma';
-import {HazardFormHistoryStruct} from "./hazardFormHistory";
 import {mutationStatusType} from "../statuses";
 import {getSHA256} from "../../utils/HashingTools";
-import {IDObfuscator, submission} from "../../utils/IDObfuscator";
+import {id, IDObfuscator, submission} from "../../utils/IDObfuscator";
 import {HazardFormChildHistoryStruct} from "./hazardFormChildHistory";
 import {createNewMutationLog} from "../global/mutationLogs";
 import {LabHazardStruct} from "./labHazard";
-import { Prisma } from '@prisma/client';
+import {Prisma} from '@prisma/client';
 
 export const LabHazardChildStruct = objectType({
 	name: lab_has_hazards_child.$name,
@@ -167,7 +166,7 @@ export const HazardFlat = objectType({
 		t.string("hazard_category_name");
 		t.string("parent_submission");
 		t.string("child_submission");
-		t.int("id_lab_has_hazards_child");
+		t.string("id_lab_has_hazards_child");
 		t.int("id_lab_has_hazards");
 	}
 });
@@ -228,7 +227,8 @@ hc.hazard_category_name,
 lhh.submission as parent_submission, 
 lhhc.submission as child_submission,
 lhhc.id_lab_has_hazards_child,
-lhh.id_lab_has_hazards
+lhh.id_lab_has_hazards,
+lhhc.id_hazard_form_child_history
 from lab_has_hazards_child lhhc 
 right join lab_has_hazards lhh on lhh.id_lab_has_hazards = lhhc.id_lab_has_hazards
 inner join hazard_form_history hfh on hfh.id_hazard_form_history =lhh.id_hazard_form_history
@@ -240,11 +240,98 @@ and ${jsonCondition}
 order by l.lab_display asc
 `;
 				const hazardList = await context.prisma.$queryRaw(rawQuery);
-				const hazards = hazardList.slice(args.skip, args.skip + args.take);
+				const hazardsFiltered = hazardList.slice(args.skip, args.skip + args.take);
+				const hazards = hazardsFiltered.map(h => {
+					if (h.id_lab_has_hazards_child) {
+						h.submission = h.child_submission;
+						const encryptedID = IDObfuscator.obfuscate({id: h.id_lab_has_hazards_child, obj: getLabHasHazardChildToString(h)});
+						h.id_lab_has_hazards_child = JSON.stringify(encryptedID);
+					}
+					return h;
+				});
 				const totalCount = hazardList.length;
 
 				return { hazards, totalCount };
 			}
 		});
 	},
+});
+
+const hazardChildMutationsType = {
+	id: stringArg(),
+};
+
+export const HazardChildStatus = mutationStatusType({
+	name: "HazardChildStatus",
+	definition(t) {
+		t.string('name', { description: `A string representation of the hazard child mutation status.`});
+	}
+});
+
+export const HazardChildMutations = extendType({
+	type: 'Mutation',
+	definition(t) {
+		t.nonNull.field('deleteHazardChild', {
+			description: `Delete an Hazard child`,
+			args: hazardChildMutationsType,
+			type: "HazardChildStatus",
+			async resolve(root, args, context) {
+				try {
+					if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
+						throw new Error(`Permission denied`);
+					}
+
+					return await context.prisma.$transaction(async (tx) => {
+						if (!args.id) {
+							throw new Error(`Not allowed to delete hazard child`);
+						}
+						const id: id = JSON.parse(args.id);
+						if(id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
+							throw new Error(`Not allowed to delete hazard child`);
+						}
+
+						if(!IDObfuscator.checkSalt(id)) {
+							throw new Error(`Bad descrypted request`);
+						}
+						const idDeobfuscated = IDObfuscator.deobfuscateId(id);
+						const child = await tx.lab_has_hazards_child.findUnique({where: {id_lab_has_hazards_child: idDeobfuscated}});
+						if (! child) {
+							throw new Error(`Hazard child not found.`);
+						}
+						const childObject =  getSHA256(JSON.stringify(getLabHasHazardChildToString(child)), id.salt);
+						if (IDObfuscator.getDataSHA256(id) !== childObject) {
+							throw new Error(`Hazard child has been changed from another user. Please reload the page to make modifications`);
+						}
+
+						const hazardChild = await tx.lab_has_hazards_child.delete({
+							where: {
+									id_lab_has_hazards_child: idDeobfuscated
+							}
+						});
+						const lab_has_hazardsList = await tx.lab_has_hazards_child.findMany({where: {id_lab_has_hazards: child.id_lab_has_hazards}});
+						if (lab_has_hazardsList.length == 0) {
+							const hazard = await tx.lab_has_hazards.delete({
+								where: {
+									id_lab_has_hazards: child.id_lab_has_hazards
+								}
+							});
+							if ( !hazard ) {
+								throw new Error(`Hazard not deleted.`);
+							} else {
+								await createNewMutationLog(tx, context, tx.lab_has_hazards.name, 0, '', hazard, {}, 'DELETE');
+							}
+						}
+						if ( !hazardChild ) {
+							throw new Error(`Hazard child not deleted.`);
+						} else {
+							await createNewMutationLog(tx, context, tx.lab_has_hazards_child.name, 0, '', hazardChild, {}, 'DELETE');
+						}
+						return mutationStatusType.success();
+					});
+				} catch ( e ) {
+					return mutationStatusType.error(e.message);
+				}
+			}
+		});
+	}
 });
