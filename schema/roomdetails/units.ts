@@ -539,6 +539,18 @@ export const UnitMutations = extendType({
 async function deleteUnit(tx, context, u:Unit) {
 	const errors: string[] = [];
 	try {
+		const aa = await tx.aa.deleteMany({
+			where: {
+				id_unit: u.id,
+			}
+		});
+		if ( !aa ) {
+			errors.push(`Error deleting aa for ${u.name}.`);
+		} else if (aa.count > 0) {
+			await createNewMutationLog(tx, context, tx.aa.name, 0,'', {name: u.name, id: u.id}, {}, 'DELETE');
+		}
+
+
 		const uHc = await tx.unit_has_cosec.deleteMany({
 			where: {
 				id_unit: u.id,
@@ -549,6 +561,8 @@ async function deleteUnit(tx, context, u:Unit) {
 		} else if (uHc.count > 0) {
 			await createNewMutationLog(tx, context, tx.unit_has_cosec.name, 0,'', {name: u.name, id: u.id}, {}, 'DELETE');
 		}
+
+
 		const uHr = await tx.unit_has_room.deleteMany({
 			where: {
 				id_unit: u.id,
@@ -559,6 +573,8 @@ async function deleteUnit(tx, context, u:Unit) {
 		} else if(uHr.count > 0) {
 			await createNewMutationLog(tx, context, tx.unit_has_room.name, 0, '', {name: u.name, id: u.id}, {}, 'DELETE');
 		}
+
+
 		const sub = await tx.subunpro.deleteMany({
 			where: {
 				id_unit: u.id,
@@ -569,6 +585,8 @@ async function deleteUnit(tx, context, u:Unit) {
 		} else if(sub.count > 0) {
 			await createNewMutationLog(tx, context, tx.subunpro.name, 0, '', {name: u.name, id: u.id}, {}, 'DELETE');
 		}
+
+
 		const storages = await tx.unit_has_storage_for_room.deleteMany({
 			where: {
 				id_unit: u.id,
@@ -579,6 +597,8 @@ async function deleteUnit(tx, context, u:Unit) {
 		} else if(storages.count > 0) {
 			await createNewMutationLog(tx, context, tx.unit_has_storage_for_room.name, 0, '', {name: u.name, id: u.id}, {}, 'DELETE');
 		}
+
+
 		const subUnitList = await tx.Unit.findMany({
 			where: {
 				name: { startsWith: u.name },
@@ -588,6 +608,8 @@ async function deleteUnit(tx, context, u:Unit) {
 		for await (const subUnit of subUnitList) {
 			await deleteUnit(tx, context, subUnit);
 		}
+
+
 		const unit = await tx.Unit.delete({
 			where: {
 				id: u.id,
