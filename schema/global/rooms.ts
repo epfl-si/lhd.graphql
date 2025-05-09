@@ -290,7 +290,7 @@ export const RoomsWithPaginationQuery = extendType({
 								]
 							})
 						} else if (query[0] == 'Volume' && !isNaN(parseFloat(value))) {
-							whereCondition.push({ vol: parseFloat(value) })
+							whereCondition.push({ vol: { gt: parseFloat(value) - 10, lt: parseFloat(value) + 10 } })
 						}
 					})
 				}
