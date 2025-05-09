@@ -289,6 +289,8 @@ export const RoomsWithPaginationQuery = extendType({
 									{ unit_has_room: { some: {unit: {is: {institute: {is: {school: {is: {name: {contains: value}}}}}}}} }}
 								]
 							})
+						} else if (query[0] == 'Volume' && !isNaN(parseFloat(value))) {
+							whereCondition.push({ vol: parseFloat(value) })
 						}
 					})
 				}
