@@ -1,4 +1,4 @@
-import {extendType, intArg, objectType, stringArg} from 'nexus';
+import {booleanArg, extendType, intArg, list, objectType, stringArg} from 'nexus';
 import {bio_org, lab_has_hazards_child} from 'nexus-prisma';
 import {mutationStatusType} from "../statuses";
 import {getSHA256} from "../../utils/HashingTools";
@@ -252,6 +252,108 @@ order by l.lab_display asc
 				const totalCount = hazardList.length;
 
 				return { hazards, totalCount };
+			}
+		});
+	},
+});
+
+export const HazardFlatForExport = objectType({
+	name: "HazardFlatForExport",
+	definition(t) {
+		t.string("lab_display");
+		t.string("site");
+		t.string("building");
+		t.string("sector");
+		t.string("floor");
+		t.string("vol");
+		t.string("labType");
+		t.string("unit");
+		t.string("institut");
+		t.string("faculty");
+		t.string("cosec");
+		t.string("email_cosec");
+		t.string("professor");
+		t.string("email_professor");
+		t.string("hazard");
+		t.string("parent_submission");
+		t.string("child_submission");
+	}
+});
+
+export const HazardFetchForExportQuery = extendType({
+	type: 'Query',
+	definition(t) {
+		t.field("hazardFetchForExport", {
+			type: list("HazardFlatForExport"),
+			args: {
+				hazardCategory: stringArg(),
+				units: booleanArg(),
+				cosecs: booleanArg(),
+				profs: booleanArg()
+			},
+			async resolve(parent, args, context) {
+				if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
+					throw new Error(`Permission denied`);
+				}
+
+				let selectedFieldForUnits = Prisma.raw(``);
+				let selectedFieldsForCosecs = Prisma.raw(``);
+				let selectedFieldsForProfs = Prisma.raw(``);
+				let joinForUnits = Prisma.raw(``);
+				let joinForCosecs = Prisma.raw(``);
+				let joinDForProfs = Prisma.raw(``);
+
+				if (args.units) {
+						selectedFieldForUnits = Prisma.sql`u.name_unit as unit,i.name_institut as institut,f.name_faculty as faculty,`;
+						joinForUnits = Prisma.sql`
+left join unit_has_room uhr on uhr.id_lab = l.id_lab
+left join unit u on u.id_unit = uhr.id_unit
+left join institut i on i.id_institut = u.id_institut
+left join faculty f on f.id_faculty = i.id_faculty`
+				}
+				if (args.cosecs) {
+					selectedFieldsForCosecs = Prisma.sql`
+CONCAT(cos.name_person, ' ', cos.surname_person) as cosec,
+cos.email_person as email_cosec,`;
+					joinForCosecs = Prisma.sql`
+left join unit_has_cosec uhc on uhc.id_unit = u.id_unit
+left join person cos on cos.id_person = uhc.id_person`
+				}
+				if (args.profs) {
+					selectedFieldsForProfs = Prisma.sql`
+CONCAT(prof.name_person, ' ', prof.surname_person) as professor,
+prof.email_person as email_professor,`;
+					joinDForProfs = Prisma.sql`
+left join subunpro s on s.id_unit = u.id_unit
+left join person prof on s.id_person = prof.id_person`
+				}
+
+				const selectedFields = Prisma.sql`${Prisma.join([selectedFieldForUnits, selectedFieldsForCosecs, selectedFieldsForProfs], ``)}`;
+				const joins = Prisma.sql`${Prisma.join([joinForUnits, joinForCosecs, joinDForProfs], ``)}`;
+				const rawQuery = Prisma.sql`select l.lab_display,
+l.site,
+l.building,
+l.sector,
+l.floor,
+l.vol,
+lt.labType,
+${selectedFields}
+hc.hazard_category_name as hazard,
+lhh.submission as parent_submission,
+lhhc.submission as child_submission
+from lab l ${joins}
+left join labType lt on lt.id_labType = l.id_labType
+left join lab_has_hazards lhh on lhh.id_lab = l.id_lab
+left join hazard_form_history hfh on hfh.id_hazard_form_history = lhh.id_hazard_form_history
+left join hazard_form hf on hf.id_hazard_form = hfh.id_hazard_form
+left join hazard_category hc on hc.id_hazard_category = hf.id_hazard_category
+left join lab_has_hazards_child lhhc on lhh.id_lab_has_hazards = lhhc.id_lab_has_hazards
+where hc.hazard_category_name = ${args.hazardCategory}
+order by l.lab_display asc`;
+
+				const hazardList = await context.prisma.$queryRaw(rawQuery);
+
+				return hazardList;
 			}
 		});
 	},
