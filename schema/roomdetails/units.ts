@@ -654,6 +654,10 @@ export const UnitFullTextQuery = extendType({
 							{ name: { contains: args.search }},
 							{ institute : { name: { contains: args.search } }},
 							{ institute : { school: { name: { contains: args.search } } }},
+							{ unit_has_cosec: { some: { cosec: { name: { contains: args.search }}}}},
+							{ unit_has_cosec: { some: { cosec: { surname: { contains: args.search }}}}},
+							{ subunpro: { some: { person: { name: { contains: args.search }}}}},
+							{ subunpro: { some: { person: { surname: { contains: args.search }}}}},
 						]
 					},
 					orderBy: [
