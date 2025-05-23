@@ -84,6 +84,18 @@ export const RoomStruct = objectType({
 			},
 		});
 
+		t.string('assignedTo',  {
+			resolve: async (parent, _, context) => {
+				const rooms = await getRoomsFromApi(parent.name);
+				if (rooms && rooms["rooms"].length > 0) {
+					const room = rooms["rooms"][0];
+					return room['unit'] ? room['unit']['name'] : '';
+				} else {
+					return '';
+				}
+			},
+		});
+
 		t.field('catalyseType', {
 			type: 'CatalyseType',
 			resolve(room) {
