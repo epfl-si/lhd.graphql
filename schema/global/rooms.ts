@@ -384,6 +384,10 @@ export const RoomStatus = mutationStatusType({
 	}
 });
 
+const roomDeleteType = {
+	id: stringArg()
+};
+
 export const RoomMutations = extendType({
 	type: 'Mutation',
 	definition(t) {
@@ -538,8 +542,149 @@ export const RoomMutations = extendType({
 				}
 			}
 		});
+		t.nonNull.field('deleteRoom', {
+			description: `Delete room details by room id (units and hazards too).`,
+			args: roomDeleteType,
+			type: "RoomStatus",
+			async resolve(root, args, context) {
+				try {
+					if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1) {
+						throw new Error('Permission denied');
+					}
+					return await context.prisma.$transaction(async (tx) => {
+						if (!args.id) {
+							throw new Error(`Not allowed to update unit`);
+						}
+						const id: id = JSON.parse(args.id);
+						if(id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
+							throw new Error(`Not allowed to delete unit`);
+						}
+
+						if(!IDObfuscator.checkSalt(id)) {
+							throw new Error(`Bad descrypted request`);
+						}
+						const idDeobfuscated = IDObfuscator.deobfuscateId(id);
+						const room = await tx.Room.findUnique({where: {id: idDeobfuscated}});
+						if (! room) {
+							throw new Error(`Room not found.`);
+						}
+						const roomObject =  getSHA256(JSON.stringify(getRoomToString(room)), id.salt);
+						if (IDObfuscator.getDataSHA256(id) !== roomObject) {
+							throw new Error(`Room has been changed from another user. Please reload the page to make modifications`);
+						}
+
+						const errors: string[] = [];
+						try {
+							errors.push(...await deleteRoom(tx, context, room));
+						} catch ( e ) {
+							errors.push(`Error updating unit.`)
+						}
+
+						if (errors.length > 0) {
+							throw new Error(`${errors.join('\n')}`);
+						} else {
+							return mutationStatusType.success();
+						}
+					});
+				} catch ( e ) {
+					return mutationStatusType.error(e.message);
+				}
+			}
+		});
 	}
 });
+
+async function writeDeletionLog(obj: any, tx, context, objName: string, r: Room) {
+	const errors: string[] = [];
+	if ( !obj ) {
+		errors.push(`Error deleting ${objName} for ${r.name}.`);
+	} else if (obj.count > 0) {
+		await createNewMutationLog(tx, context, objName, 0,'', {name: r.name, id: r.id}, {}, 'DELETE');
+	}
+	return errors;
+}
+
+async function deleteRoomObject(obj: any, r: Room, tx, context) {
+	const objDeleted = await obj.deleteMany({
+		where: {
+			id_lab: r.id,
+		}
+	});
+	return await writeDeletionLog(objDeleted, tx, context, obj.name, r);
+}
+
+async function deleteRoom(tx, context, r:Room) {
+	let errors: string[] = [];
+	try {
+		const where = { where: { id_lab: r.id } }
+
+		const bioOrg = await context.prisma.bio.findMany({ where: { id_lab: r.id } });
+		bioOrg.forEach(async (h) => {
+			const child = await tx.bio_org_lab.deleteMany({
+				where: {
+					id_bio: h.id_bio
+				}
+			});
+			errors.push(...await writeDeletionLog(child, tx, context, tx.bio_org_lab.name, r));
+		})
+
+		const hazards = await context.prisma.lab_has_hazards.findMany({ where: { id_lab: r.id } });
+		hazards.forEach(async (h) => {
+			const child = await tx.lab_has_hazards_child.deleteMany({
+				where: {
+					id_lab_has_hazards: h.id_lab_has_hazards
+				}
+			});
+			errors.push(...await writeDeletionLog(child, tx, context, tx.lab_has_hazards_child.name, r));
+		})
+
+		errors.push(...await writeDeletionLog(await tx.aa.deleteMany(where), tx, context, tx.aa.name, r));
+		errors.push(...await writeDeletionLog(await tx.auth_lab.deleteMany(where), tx, context, tx.auth_lab.name, r));
+		errors.push(...await writeDeletionLog(await tx.bio.deleteMany(where), tx, context, tx.bio.name, r));
+		errors.push(...await writeDeletionLog(await tx.cad_corr.deleteMany(where), tx, context, tx.cad_corr.name, r));
+		errors.push(...await writeDeletionLog(await tx.cad_lab.deleteMany(where), tx, context, tx.cad_lab.name, r));
+		errors.push(...await writeDeletionLog(await tx.cut.deleteMany(where), tx, context, tx.cut.name, r));
+		errors.push(...await writeDeletionLog(await tx.dewar.deleteMany(where), tx, context, tx.dewar.name, r));
+		errors.push(...await writeDeletionLog(await tx.elec.deleteMany(where), tx, context, tx.elec.name, r));
+		errors.push(...await writeDeletionLog(await tx.mag_f.deleteMany(where), tx, context, tx.mag_f.name, r));
+		errors.push(...await writeDeletionLog(await tx.mag.deleteMany(where), tx, context, tx.mag.name, r));
+		errors.push(...await writeDeletionLog(await tx.gaschem.deleteMany(where), tx, context, tx.gaschem.name, r));
+		errors.push(...await writeDeletionLog(await tx.gnb_labsto.deleteMany(where), tx, context, tx.gnb_labsto.name, r));
+		errors.push(...await writeDeletionLog(await tx.haz_date.deleteMany(where), tx, context, tx.haz_date.name, r));
+		errors.push(...await writeDeletionLog(await tx.irad.deleteMany(where), tx, context, tx.irad.name, r));
+		errors.push(...await writeDeletionLog(await tx.lab_has_hazards.deleteMany(where), tx, context, tx.lab_has_hazards.name, r));
+		errors.push(...await writeDeletionLog(await tx.lab_has_hazards_additional_info.deleteMany(where), tx, context, tx.lab_has_hazards_additional_info.name, r));
+		errors.push(...await writeDeletionLog(await tx.laser.deleteMany(where), tx, context, tx.laser.name, r));
+		errors.push(...await writeDeletionLog(await tx.nano.deleteMany(where), tx, context, tx.nano.name, r));
+		errors.push(...await writeDeletionLog(await tx.naudits.deleteMany(where), tx, context, tx.naudits.name, r));
+		errors.push(...await writeDeletionLog(await tx.nirad.deleteMany(where), tx, context, tx.nirad.name, r));
+		errors.push(...await writeDeletionLog(await tx.noise.deleteMany(where), tx, context, tx.noise.name, r));
+		errors.push(...await writeDeletionLog(await tx.tdegree.deleteMany(where), tx, context, tx.tdegree.name, r));
+		errors.push(...await writeDeletionLog(await tx.unit_has_room.deleteMany(where), tx, context, tx.unit_has_room.name, r));
+		errors.push(...await writeDeletionLog(await tx.unit_has_storage_for_room.deleteMany(where), tx, context, tx.unit_has_storage_for_room.name, r));
+
+		const disp = await tx.DispensationInRoomRelation.deleteMany({
+			where: {
+				id_room: r.id,
+			}
+		});
+		errors.push(...await writeDeletionLog(disp, tx, context, tx.DispensationInRoomRelation.name, r));
+
+		const room = await tx.Room.delete({
+			where: {
+				id: r.id,
+			},
+		});
+		if ( !room ) {
+			errors.push(`Error deleting ${r.name}.`);
+		} else {
+			await createNewMutationLog(tx, context, tx.Unit.name, 0, '', room, {}, 'DELETE');
+		}
+	} catch ( e ) {
+		errors.push(`Error deleting ${r.name}: ${e.message}.`);
+	}
+	return errors;
+}
 
 export const RoomFromAPI = objectType({
 	name: "RoomFromAPI",
