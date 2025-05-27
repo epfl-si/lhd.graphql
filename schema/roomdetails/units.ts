@@ -463,7 +463,7 @@ export const UnitMutations = extendType({
 								else if (subunit.status == 'Deleted') {
 									const u = await tx.Unit.findFirst({ where: { name: subunit.name }});
 									if (u) {
-										errors.concat(await deleteUnit(tx, context, u));
+										errors.push(...await deleteUnit(tx, context, u));
 									} else {
 										errors.push(`Error deleting sub-unit ${subunit.name}.`)
 									}
@@ -517,7 +517,7 @@ export const UnitMutations = extendType({
 
 						const errors: string[] = [];
 						try {
-							errors.concat(await deleteUnit(tx, context, unit));
+							errors.push(...await deleteUnit(tx, context, unit));
 						} catch ( e ) {
 							errors.push(`Error updating unit.`)
 						}
