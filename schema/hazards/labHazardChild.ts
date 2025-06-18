@@ -240,7 +240,7 @@ and ${jsonCondition}
 order by l.lab_display asc
 `;
 				const hazardList = await context.prisma.$queryRaw(rawQuery);
-				const hazardsFiltered = hazardList.slice(args.skip, args.skip + args.take);
+				const hazardsFiltered = args.take == 0 ? hazardList : hazardList.slice(args.skip, args.skip + args.take);
 				const hazards = hazardsFiltered.map(h => {
 					if (h.id_lab_has_hazards_child) {
 						h.submission = h.child_submission;
