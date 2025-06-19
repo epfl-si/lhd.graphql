@@ -289,7 +289,8 @@ export const HazardFetchForExportQuery = extendType({
 				hazardCategory: stringArg(),
 				units: booleanArg(),
 				cosecs: booleanArg(),
-				profs: booleanArg()
+				profs: booleanArg(),
+				search: stringArg()
 			},
 			async resolve(parent, args, context) {
 				if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
@@ -303,7 +304,32 @@ export const HazardFetchForExportQuery = extendType({
 				let joinForCosecs = Prisma.raw(``);
 				let joinDForProfs = Prisma.raw(``);
 
-				if (args.units) {
+				const queryArray = args.search.split("&");
+				const dictionary = queryArray.map(query => query.split("="));
+				const whereCondition = [];
+				whereCondition.push(Prisma.sql`hc.hazard_category_name = ${args.hazardCategory}`)
+				if (dictionary.length > 0) {
+					dictionary.forEach(query => {
+						const value = decodeURIComponent(query[1]);
+						if (query[0] == 'Room') {
+							whereCondition.push(Prisma.sql`l.lab_display like ${'%' + value + '%'}`)
+						} else if (query[0] == 'Designation') {
+							whereCondition.push(Prisma.sql`lt.labType like ${'%' + value + '%'}`)
+						} else if (query[0] == 'Floor') {
+							whereCondition.push(Prisma.sql`l.floor like ${'%' + value + '%'}`)
+						} else if (query[0] == 'Sector') {
+							whereCondition.push(Prisma.sql`l.sector like ${'%' + value + '%'}`)
+						} else if (query[0] == 'Building') {
+							whereCondition.push(Prisma.sql`l.building like ${'%' + value + '%'}`)
+						} else if (query[0] == 'Unit') {
+							//whereCondition.push(Prisma.sql`(u.name_unit like %${'%' + value + '%'}% or i.name_institut like %${'%' + value + '%'}% or f.name_faculty like %${'%' + value + '%'}%)`)
+						} else if (query[0] == 'Volume' && !isNaN(parseFloat(value))) {
+							whereCondition.push(Prisma.sql`l.vol >= (${value} - 10) AND l.vol <= (${value} + 10)`)
+						}
+					})
+				}
+
+				if (args.units || args.search.indexOf('&Unit=') > -1) {
 						selectedFieldForUnits = Prisma.sql`u.name_unit as unit,i.name_institut as institut,f.name_faculty as faculty,`;
 						joinForUnits = Prisma.sql`
 left join unit_has_room uhr on uhr.id_lab = l.id_lab
@@ -328,6 +354,7 @@ left join subunpro s on s.id_unit = u.id_unit
 left join person prof on s.id_person = prof.id_person`
 				}
 
+				const whereConditionRaw = Prisma.sql`${Prisma.join(whereCondition, ` AND `)}`;
 				const selectedFields = Prisma.sql`${Prisma.join([selectedFieldForUnits, selectedFieldsForCosecs, selectedFieldsForProfs], ``)}`;
 				const joins = Prisma.sql`${Prisma.join([joinForUnits, joinForCosecs, joinDForProfs], ``)}`;
 				const rawQuery = Prisma.sql`select l.lab_display,
@@ -336,8 +363,7 @@ l.building,
 l.sector,
 l.floor,
 l.vol,
-lt.labType,
-${selectedFields}
+lt.labType,${selectedFields}
 hc.hazard_category_name as hazard,
 lhh.submission as parent_submission,
 lhhc.submission as child_submission
@@ -348,7 +374,7 @@ left join hazard_form_history hfh on hfh.id_hazard_form_history = lhh.id_hazard_
 left join hazard_form hf on hf.id_hazard_form = hfh.id_hazard_form
 left join hazard_category hc on hc.id_hazard_category = hf.id_hazard_category
 left join lab_has_hazards_child lhhc on lhh.id_lab_has_hazards = lhhc.id_lab_has_hazards
-where hc.hazard_category_name = ${args.hazardCategory}
+where ${whereConditionRaw}
 order by l.lab_display asc`;
 
 				const hazardList = await context.prisma.$queryRaw(rawQuery);
