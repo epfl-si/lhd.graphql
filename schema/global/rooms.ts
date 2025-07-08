@@ -318,7 +318,7 @@ export const RoomsWithPaginationQuery = extendType({
 					]
 				});
 
-				const rooms = roomsList.slice(args.skip, args.skip + args.take);
+				const rooms = args.take == 0 ? roomsList : roomsList.slice(args.skip, args.skip + args.take);
 				const totalCount = roomsList.length;
 
 				return { rooms, totalCount };
