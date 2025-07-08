@@ -218,6 +218,10 @@ export const HazardsWithPaginationQuery = extendType({
 							return Prisma.sql`(prof.email_person like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} 
 							or prof.name_person like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} 
 							or prof.surname_person like ${Prisma.raw(`'%${queryStringMap[1]}%'`)})`;
+						} else if (queryStringMap[0] == 'Unit') {
+							return Prisma.sql`(u.name_unit like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} 
+							or i.name_institut like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} 
+							or f.name_faculty like ${Prisma.raw(`'%${queryStringMap[1]}%'`)})`;
 						} else {
 							return Prisma.sql`
     (JSON_VALUE(lhhc.submission, ${Prisma.raw(`'$.data.${queryStringMap[0]}'`)}) like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} OR 
@@ -249,6 +253,8 @@ left join unit_has_cosec uhc on uhc.id_unit = u.id_unit
 left join person cos on cos.id_person = uhc.id_person
 left join subunpro s on s.id_unit = u.id_unit
 left join person prof on s.id_person = prof.id_person
+left join institut i on i.id_institut = u.id_institut
+left join faculty f on f.id_faculty = i.id_faculty
 where hc.hazard_category_name = ${args.search}
 and ${jsonCondition}
 order by l.lab_display asc
