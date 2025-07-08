@@ -208,8 +208,16 @@ export const HazardsWithPaginationQuery = extendType({
 						else if (queryStringMap[0] == 'container')
 							queryStringMap[0] = 'container.name';
 
-						if (queryStringMap[0] == 'lab_display') {
+						if (queryStringMap[0] == 'Room') {
 							return Prisma.sql`l.lab_display like ${Prisma.raw(`'%${queryStringMap[1]}%'`)}`;
+						} else if (queryStringMap[0] == 'Cosec') {
+							return Prisma.sql`(cos.email_person like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} 
+							or cos.name_person like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} 
+							or cos.surname_person like ${Prisma.raw(`'%${queryStringMap[1]}%'`)})`;
+						} else if (queryStringMap[0] == 'Prof') {
+							return Prisma.sql`(prof.email_person like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} 
+							or prof.name_person like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} 
+							or prof.surname_person like ${Prisma.raw(`'%${queryStringMap[1]}%'`)})`;
 						} else {
 							return Prisma.sql`
     (JSON_VALUE(lhhc.submission, ${Prisma.raw(`'$.data.${queryStringMap[0]}'`)}) like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} OR 
@@ -222,7 +230,7 @@ export const HazardsWithPaginationQuery = extendType({
 				}
 
 
-				const rawQuery = Prisma.sql`select l.lab_display, 
+				const rawQuery = Prisma.sql`select distinct l.lab_display, 
 hc.hazard_category_name, 
 lhh.submission as parent_submission, 
 lhhc.submission as child_submission,
@@ -235,6 +243,12 @@ inner join hazard_form_history hfh on hfh.id_hazard_form_history =lhh.id_hazard_
 inner join hazard_form hf on hf.id_hazard_form = hfh.id_hazard_form
 inner join hazard_category hc on hc.id_hazard_category = hf.id_hazard_category 
 inner join lab l on l.id_lab = lhh.id_lab
+left join unit_has_room uhr on uhr.id_lab = l.id_lab
+left join unit u on u.id_unit = uhr.id_unit
+left join unit_has_cosec uhc on uhc.id_unit = u.id_unit
+left join person cos on cos.id_person = uhc.id_person
+left join subunpro s on s.id_unit = u.id_unit
+left join person prof on s.id_person = prof.id_person
 where hc.hazard_category_name = ${args.search}
 and ${jsonCondition}
 order by l.lab_display asc

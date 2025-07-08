@@ -303,6 +303,46 @@ export const RoomsWithPaginationQuery = extendType({
 							})
 						} else if (query[0] == 'Volume' && !isNaN(parseFloat(value))) {
 							whereCondition.push({ vol: { gt: parseFloat(value) - 10, lt: parseFloat(value) + 10 } })
+						} else if (query[0] == 'Cosec') {
+							whereCondition.push({
+								unit_has_room: {
+									some: {
+										unit: {
+											unit_has_cosec: {
+												some: {
+													cosec: {
+														OR: [
+															{ name: { contains: value } },
+															{ surname: { contains: value } },
+															{ email: { contains: value } },
+														],
+													},
+												},
+											},
+										},
+									},
+								},
+							})
+						} else if (query[0] == 'Prof') {
+							whereCondition.push({
+								unit_has_room: {
+									some: {
+										unit: {
+											subunpro: {
+												some: {
+													person: {
+														OR: [
+															{ name: { contains: value } },
+															{ surname: { contains: value } },
+															{ email: { contains: value } },
+														],
+													},
+												},
+											},
+										},
+									},
+								},
+							})
 						}
 					})
 				}
