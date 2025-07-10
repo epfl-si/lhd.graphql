@@ -161,7 +161,7 @@ async function issuer() {
 async function getLoggedInUserInfos(req): Promise<loginResponse> {
 	async function getUserAuthentication(access_token: string) {
 		const issuer_ = await issuer();
-		const client = new issuer_.Client({ client_id: 'LHDv3 server' });
+		const client = new issuer_.Client({ client_id: process.env.REACT_CLIENT_ID, client_secret: process.env.REACT_CLIENT_SECRET });
 
 		try {
 			const userinfo: UserInfo = await client.userinfo(access_token);
