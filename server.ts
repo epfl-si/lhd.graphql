@@ -158,6 +158,28 @@ async function issuer() {
 	return _issuer;
 }
 
+async function callMicrosoftAPI(endPoint: string, access_token: string) {
+	const response = await fetch(endPoint, {
+		headers: {
+			accept: 'application/json',
+			authorization: `Bearer ${access_token}`,
+		},
+		method: 'GET'
+	});
+	console.log('Response API call :', response);
+	if (!response.ok) {
+		return {
+			loggedIn: false,
+			user: null,
+			httpCode: 403,
+			message: `Failed to get information : ${response.status}`,
+		};
+	}
+	const result = await response.json();
+	console.log('Result API call :', result);
+	return result;
+}
+
 async function getLoggedInUserInfos(req): Promise<loginResponse> {
 	async function getUserAuthentication(access_token: string) {
 		const issuer_ = await issuer();
@@ -166,9 +188,13 @@ async function getLoggedInUserInfos(req): Promise<loginResponse> {
 		try {
 			const userinfo: UserInfo = await client.userinfo(access_token);
 			const allowedGroups = process.env.ALLOWED_GROUPS.split(',');
-			console.log('Logged in', userinfo);
+			console.log('Logged in', JSON.stringify(userinfo));
 			console.log('Allowed groups', allowedGroups);
-			// TODO: Some pages do not have the same access rights as others. Rewrite this to account for that.
+			if (process.env.REACT_CLIENT_SECRET) {
+				//const userData = await callMicrosoftAPI(`https://graph.microsoft.com/v1.0/users/${userinfo.email}`, access_token);
+				//const groupsData = await callMicrosoftAPI(`https://graph.microsoft.com/v1.0/users/${userData.id}/memberOf`, access_token);
+				//userinfo.groups = groupsData.value;
+			}
 			if (userinfo.groups && userinfo.groups.some(e => allowedGroups.includes(e))) {
 				return {
 					loggedIn: true,
