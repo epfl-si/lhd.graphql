@@ -188,10 +188,10 @@ async function getLoggedInUserInfos(req): Promise<loginResponse> {
 		try {
 			const userinfo: UserInfo = await client.userinfo(access_token);
 			const allowedGroups = process.env.ALLOWED_GROUPS.split(',');
-			console.log('Logged in', JSON.stringify(userinfo));
+			console.log('Logged in', userinfo);
 			console.log('Allowed groups', allowedGroups);
 			if (process.env.REACT_CLIENT_SECRET) {
-				//const userData = await callMicrosoftAPI(`https://graph.microsoft.com/v1.0/users/${userinfo.email}`, access_token);
+				const userData = await callMicrosoftAPI(`https://graph.microsoft.com/v1.0/users/${userinfo.email}`, access_token);
 				//const groupsData = await callMicrosoftAPI(`https://graph.microsoft.com/v1.0/users/${userData.id}/memberOf`, access_token);
 				//userinfo.groups = groupsData.value;
 			}

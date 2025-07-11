@@ -3,6 +3,7 @@ export type UserInfo = {
 	given_name: string;
 	family_name: string;
 	groups: string[];
+	email?: string;
 };
 
 export type loginResponse = {
