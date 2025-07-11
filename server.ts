@@ -193,7 +193,10 @@ async function getLoggedInUserInfos(req): Promise<loginResponse> {
 			if (process.env.REACT_CLIENT_SECRET) {
 				const userData = await callMicrosoftAPI(`https://graph.microsoft.com/v1.0/users/${userinfo.email}`, access_token);
 				const groupsData = await callMicrosoftAPI(`https://graph.microsoft.com/v1.0/users/${userData.id}/memberOf`, access_token);
-				userinfo.groups = groupsData.value;
+				const groupIds = groupsData.value.map(val => val.id);
+				const groups = await callMicrosoftAPI(`https://graph.microsoft.com/v1.0/groups/283d1cb7-ca2c-435d-8a3b-b6a1a229f0af`, access_token);
+				console.log(`The 283d1cb7-ca2c-435d-8a3b-b6a1a229f0af group is ${JSON.stringify(groups)}`)
+				userinfo.groups = groupsData.value.map(g => g.displayName);
 			}
 			if (userinfo.groups && userinfo.groups.some(e => allowedGroups.includes(e))) {
 				return {
