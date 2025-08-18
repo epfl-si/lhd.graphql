@@ -77,6 +77,7 @@ import * as hazardFormChildTypes from '../schema/hazards/hazardFormChild'
 import * as labHazardTypes from '../schema/hazards/labHazard'
 import * as labHazardChildTypes from '../schema/hazards/labHazardChild'
 import * as bioOrgTypes from '../schema/bio/bioorg'
+import * as chemicalTypes from '../schema/authorization/chemicals'
 import * as mutationLogs from '../schema/global/mutationLogs'
 import * as hazardsAdditionalInfo from '../schema/hazards/hazardsAdditionalInfo'
 
@@ -96,7 +97,8 @@ const types = [
 	bioOrgTypes,
 	hazardFormChildTypes,
 	mutationLogs,
-	hazardsAdditionalInfo
+	hazardsAdditionalInfo,
+	chemicalTypes
 ];
 
 // No user-serviceable parts below /////////////////////////////////////////////////
