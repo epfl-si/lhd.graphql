@@ -1,11 +1,9 @@
 import {booleanArg, extendType, intArg, objectType, stringArg} from "nexus";
 import {id, IDObfuscator} from "../../utils/IDObfuscator";
-import { auth_chem } from "nexus-prisma";
+import {auth_chem} from "nexus-prisma";
 import {mutationStatusType} from "../statuses";
-import {saveBase64File} from "../../utils/File";
 import {createNewMutationLog} from "../global/mutationLogs";
 import {getSHA256} from "../../utils/HashingTools";
-import {updateBioOrg} from "../hazards/labHazardChild";
 
 export const ChemicalStruct = objectType({
 	name: auth_chem.$name,
@@ -15,6 +13,8 @@ export const ChemicalStruct = objectType({
 		t.field(auth_chem.auth_chem_en);
 		t.field(auth_chem.auth_chem_fr);
 		t.field(auth_chem.flag_auth_chem);
+		t.field(auth_chem.fastway);
+		t.field(auth_chem.auth_code);
 		t.string('id', {
 			resolve: async (parent, _, context) => {
 				const encryptedID = IDObfuscator.obfuscate({id: parent.id_auth_chem, obj: getChemicalToString(parent)});
@@ -30,7 +30,9 @@ function getChemicalToString(parent) {
 		cas_auth_chem: parent.cas_auth_chem,
 		auth_chem_en: parent.auth_chem_en,
 		auth_chem_fr: parent.auth_chem_fr,
-		flag_auth_chem: parent.flag_auth_chem
+		flag_auth_chem: parent.flag_auth_chem,
+		fastway: parent.fastway,
+		auth_code: parent.auth_code
 	};
 }
 

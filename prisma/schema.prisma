@@ -48,6 +48,8 @@ model auth_chem {
   auth_chem_en   String          @unique(map: "auth_chem_en") @db.VarChar(500)
   auth_chem_fr   String?         @db.VarChar(500)
   flag_auth_chem Boolean
+  fastway        Boolean?
+  auth_code      String?
   auth_chem_log  auth_chem_log[]
   auth_rchem     auth_rchem[]
 }
