@@ -52,6 +52,7 @@ model auth_chem {
   auth_code      String?
   auth_chem_log  auth_chem_log[]
   auth_rchem     auth_rchem[]
+  authorization_has_chemical  authorization_has_chemical[]
 }
 
 model auth_chem_log {
@@ -508,6 +509,7 @@ model Room {
   unit_has_storage_for_room unit_has_storage_for_room[]
   lab_has_hazards           lab_has_hazards[]
   lab_has_hazards_additional_info lab_has_hazards_additional_info[]
+  authorization_has_room      authorization_has_room[]
 
   @@unique([building, sector, floor, roomNo], name: "unique_lab", map: "unique_lab")
   @@unique([sciper_lab, building, sector, floor, roomNo], name: "unique_labo", map: "unique_labo")
@@ -665,6 +667,7 @@ model Person {
   subunpro               subunpro[]
   unit_has_cosec         unit_has_cosec[]
   responsible_for_units   Unit[]
+  authorization_has_holder authorization_has_holder[]
 
   @@unique([name, surname, email], name: "unique_per", map: "unique_per")
   @@unique([sciper, name, surname, email], name: "unique_person", map: "unique_person")
@@ -787,6 +790,7 @@ model Unit {
   unit_has_cosec            unit_has_cosec[]
   unit_has_room             unit_has_room[]
   unit_has_storage_for_room unit_has_storage_for_room[]
+  authorization             authorization[]
   responsible               Person? @relation(fields: [responsible_id], references: [id_person], onUpdate: Restrict, map: "unit_has_responsible")
 
   @@unique([name, id_institute], name: "unique_un", map: "unique_un")
@@ -920,4 +924,54 @@ model lab_has_hazards_additional_info {
 
   @@index([id_lab], name: "id_lab")
   @@index([id_hazard_category], name: "id_hazard_category")
+}
+
+model authorization {
+  id_authorization            Int           @id @default(autoincrement())
+  authorization               String        @unique(map: "authorization") @db.VarChar(50)
+  renewals                    Int
+  id_unit                     Int?
+  expiration_date             DateTime?     @db.Date
+  status                      String        @db.VarChar(30)
+  creation_date               DateTime      @db.Date
+  type                        String
+
+  unit                        Unit?     @relation(fields: [id_unit], references: [id], onUpdate: Restrict, map: "authorization_unit_ibfk_1")
+  authorization_has_room      authorization_has_room[]
+  authorization_has_holder    authorization_has_holder[]
+  authorization_has_chemical  authorization_has_chemical[]
+}
+
+model authorization_has_room {
+  id_authorization Int
+  id_lab           Int
+  authorization    authorization @relation(fields: [id_authorization], references: [id_authorization], onUpdate: Restrict, map: "authorization_has_room_ibfk_1")
+  room             Room @relation(fields: [id_lab], references: [id], onUpdate: Restrict, map: "authorization_has_room_ibfk_2")
+
+  @@unique([id_authorization, id_lab], name: "unique_authorization_has_room", map: "unique_authorization_has_room")
+  @@index([id_lab], map: "id_lab")
+  @@map("authorization_has_room")
+}
+
+model authorization_has_holder {
+  id_authorization   Int
+  id_person          Int
+  authorization      authorization @relation(fields: [id_authorization], references: [id_authorization], onUpdate: Restrict, map: "authorization_has_holder_ibfk_1")
+  holder             Person @relation(fields: [id_person], references: [id_person], onUpdate: Restrict, map: "authorization_has_holder_ibfk_2")
+
+  @@unique([id_authorization, id_person], name: "unique_authorization_has_holder", map: "unique_authorization_has_holder")
+  @@index([id_person], map: "id_person")
+  @@map("authorization_has_holder")
+}
+
+model authorization_has_chemical {
+  id_authorization   Int
+  id_chemical        Int
+  authorization      authorization @relation(fields: [id_authorization], references: [id_authorization], onUpdate: Restrict, map: "authorization_has_chemical_ibfk_1")
+  chemical           auth_chem @relation(fields: [id_chemical], references: [id_auth_chem], onUpdate: Restrict, map: "authorization_has_chemical_ibfk_2")
+
+  @@unique([id_authorization, id_chemical], name: "unique_authorization_has_chemical", map: "unique_authorization_has_chemical")
+  @@index([id_chemical], map: "id_chemical")
+
+  @@map("authorization_has_chemical")
 }
