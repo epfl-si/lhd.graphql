@@ -182,6 +182,57 @@ export const AuthorizationsWithPaginationQuery = extendType({
 	},
 });
 
+export const AuthorizationsByRoom = extendType({
+	type: 'Query',
+	definition(t) {
+		t.field("authorizationsByRoom", {
+			type: list('authorization'),
+			args: {
+				skip: intArg({ default: 0 }),
+				take: intArg({ default: 20 }),
+				roomId: stringArg(),
+				type: stringArg()
+			},
+			async resolve(parent, args, context) {
+				if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
+					throw new Error(`Permission denied`);
+				}
+				if (args.roomId) {
+					const id: id = JSON.parse(args.roomId);
+					if(id && id.eph_id && id.eph_id != '' && id.salt && id.salt != '' && IDObfuscator.checkSalt(id)) {
+						const idDeobfuscated = IDObfuscator.deobfuscateId(id);
+						const auths = await context.prisma.authorization.findMany({
+							where: {
+								AND: [
+									{type: args.type},
+									{
+										authorization_has_room: {
+											some: {
+												room: {
+													is: {
+														id: idDeobfuscated
+													}
+												}
+											}
+										}
+									}
+								]
+							},
+							orderBy: [
+								{
+									authorization: 'asc',
+								},
+							]
+						});
+						return auths
+					}
+				}
+				return [];
+			}
+		});
+	},
+});
+
 const newAuthorizationType = {
 	id: stringArg(),
 	authorization: stringArg(),
