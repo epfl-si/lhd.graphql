@@ -935,11 +935,13 @@ model authorization {
   status                      String        @db.VarChar(30)
   creation_date               DateTime      @db.Date
   type                        String
+  authority                   String?
 
   unit                        Unit?     @relation(fields: [id_unit], references: [id], onUpdate: Restrict, map: "authorization_unit_ibfk_1")
   authorization_has_room      authorization_has_room[]
   authorization_has_holder    authorization_has_holder[]
   authorization_has_chemical  authorization_has_chemical[]
+  authorization_has_radiation  authorization_has_radiation[]
 }
 
 model authorization_has_room {
@@ -974,4 +976,14 @@ model authorization_has_chemical {
   @@index([id_chemical], map: "id_chemical")
 
   @@map("authorization_has_chemical")
+}
+
+model authorization_has_radiation {
+  id_authorization   Int
+  source             String
+  authorization      authorization @relation(fields: [id_authorization], references: [id_authorization], onUpdate: Restrict, map: "authorization_has_radiation_ibfk_1")
+
+  @@unique([id_authorization, source], name: "unique_authorization_has_radiation", map: "unique_authorization_has_radiation")
+
+  @@map("authorization_has_radiation")
 }

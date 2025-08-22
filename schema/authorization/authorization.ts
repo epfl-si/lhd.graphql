@@ -20,6 +20,7 @@ export const AuthorizationStruct = objectType({
 		t.field(authorization.renewals);
 		t.field(authorization.type);
 		t.field(authorization.creation_date);
+		t.field(authorization.authority);
 
 
 		t.nonNull.list.nonNull.field('authorization_rooms', {
@@ -58,6 +59,16 @@ export const AuthorizationStruct = objectType({
 				return await context.prisma.auth_chem.findMany({
 					where: { id_auth_chem: { in: [...chemicalIDs] }}
 				})
+			},
+		});
+
+		t.nonNull.list.nonNull.field('authorization_radiations', {
+			type: "String",
+			resolve: async (parent, _, context) => {
+				const authorizationsAndRadiation = await context.prisma.authorization_has_radiation.findMany({
+					where: { id_authorization: parent.id_authorization }
+				});
+				return authorizationsAndRadiation.map((authorizationAndRadiation) => authorizationAndRadiation.source);
 			},
 		});
 
@@ -241,8 +252,10 @@ const newAuthorizationType = {
 	status: stringArg(),
 	rooms: list(intArg()),
 	holders: list(stringArg()),
+	radiations: list(stringArg()),
 	cas: list(stringArg()),
-	type: stringArg()
+	type: stringArg(),
+	authority: stringArg()
 };
 
 export const AuthorizationStatus = mutationStatusType({
@@ -274,7 +287,8 @@ export const AuthorizationMutations = extendType({
 								expiration_date: new Date(args.expiration_date),
 								id_unit: args.id_unit,
 								renewals: 0,
-								type: args.type
+								type: args.type,
+								authority: args.authority
 							}
 						});
 
@@ -367,6 +381,25 @@ export const AuthorizationMutations = extendType({
 									}
 								} catch ( e ) {
 									throw new Error(`Relation not update between ${authorization.authorizations} and ${cas}.`);
+								}
+							}
+
+							for (const source of args.radiations) {
+								try {
+									const relation = {
+										id_authorization: authorization.id_authorization,
+										source: source
+									};
+									const relationSource = await tx.authorization_has_radiation.create({
+										data: relation
+									});
+									if ( !relationSource ) {
+										throw new Error(`Relation not update between ${authorization.authorizations} and ${source}.`);
+									} else {
+										await createNewMutationLog(tx, context, tx.authorization_has_chemical.name, 0,'', {}, relation, 'CREATE');
+									}
+								} catch ( e ) {
+									throw new Error(`Relation not update between ${authorization.authorizations} and ${source}.`);
 								}
 							}
 						}
