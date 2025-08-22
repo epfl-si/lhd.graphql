@@ -143,7 +143,6 @@ export const ChemicalMutations = extendType({
 							throw new Error(`Chemical not created`);
 						} else {
 							await createNewMutationLog(tx, context, tx.auth_chem.name, chemical.id_auth_chem, '', {}, chemical, 'CREATE');
-							//TODO Add History
 						}
 
 						return mutationStatusType.success();
@@ -198,8 +197,6 @@ export const ChemicalMutations = extendType({
 							throw new Error(`Chemical ${args.cas_auth_chem} not updated.`);
 						} else {
 							await createNewMutationLog(tx, context, tx.auth_chem.name, updatedChemical.id_auth_chem, '', chem, updatedChemical, 'UPDATE');
-							//TODO Add History
-							//TODO update authorizations?
 						}
 						return mutationStatusType.success();
 					});
@@ -244,6 +241,7 @@ export const ChemicalMutations = extendType({
 						await tx.auth_rchem.deleteMany({ where: { id_auth_chem: chem.id_auth_chem }});
 						const deletedChemical = await tx.auth_chem.delete({ where: { id_auth_chem: chem.id_auth_chem }});
 
+						//TODO delete authorizations?
 						if ( !deletedChemical ) {
 							throw new Error(`Chemical ${args.cas_auth_chem} not deleted.`);
 						} else {
