@@ -689,7 +689,12 @@ export const UnitFullTextQuery = extendType({
 							{ institute : { name: { contains: args.search } }},
 							{ institute : { school: { name: { contains: args.search } } }},
 						]
-					}
+					},
+					orderBy: [
+						{
+							name: 'asc',
+						},
+					]
 				});
 			}
 		})
