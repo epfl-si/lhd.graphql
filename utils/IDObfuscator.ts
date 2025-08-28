@@ -6,7 +6,7 @@ export class Data {
 }
 
 export type id = {
-	salt: string, 
+	salt: string,
 	eph_id: string
 }
 
@@ -15,7 +15,7 @@ export type data = {
 }
 
 export type submission = {
-	id: id, 
+	id: id,
 	submission: data,
 	formName?: string,
 	children?: submission[]
@@ -43,7 +43,7 @@ export class IDObfuscator {
 		}
 		return true;
 	}
-	
+
 	static deobfuscateId(s: id) {
 		const firstPart = s.eph_id.substring(0,s.eph_id.indexOf('-'));
 		const decrypted = decrypt(firstPart);
@@ -52,5 +52,23 @@ export class IDObfuscator {
 
 	static getDataSHA256(s: id) {
 		return s.eph_id.substring(s.eph_id.indexOf('-')+1);
+	}
+
+	static getId (argId: string): id {
+		if (!argId) {
+			throw new Error(`Not allowed to update`);
+		}
+		return JSON.parse(argId);
+	}
+
+	static getIdDeobfuscated (id: id) {
+		if(id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
+			throw new Error(`Not allowed to update`);
+		}
+
+		if(!IDObfuscator.checkSalt(id)) {
+			throw new Error(`Bad descrypted request`);
+		}
+		return IDObfuscator.deobfuscateId(id);
 	}
 }
