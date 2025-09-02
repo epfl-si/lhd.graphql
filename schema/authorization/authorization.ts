@@ -386,6 +386,46 @@ export const AuthorizationMutations = extendType({
 				}
 			}
 		});
+		t.nonNull.field('deleteAuthorization', {
+			description: `Delete authorization details.`,
+			args: newAuthorizationType,
+			type: "AuthorizationStatus",
+			async resolve(root, args, context) {
+				try {
+					if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
+						throw new Error(`Permission denied`);
+					}
+
+					return await context.prisma.$transaction(async (tx) => {
+						const id = IDObfuscator.getId(args.id);
+						const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
+						const auth = await tx.authorization.findUnique({where: {id_authorization: idDeobfuscated}});
+						if (! auth) {
+							throw new Error(`Authorization ${args.authorization} not found.`);
+						}
+						const authorizationObject =  getSHA256(JSON.stringify(getAuthorizationToString(auth)), id.salt);
+						if (IDObfuscator.getDataSHA256(id) !== authorizationObject) {
+							throw new Error(`Authorization ${args.authorization} has been changed from another user. Please reload the page to make modifications`);
+						}
+
+						await tx.authorization_has_room.deleteMany({ where: { id_authorization: auth.id_authorization }});
+						await tx.authorization_has_chemical.deleteMany({ where: { id_authorization: auth.id_authorization }});
+						await tx.authorization_has_holder.deleteMany({ where: { id_authorization: auth.id_authorization }});
+						await tx.authorization_has_radiation.deleteMany({ where: { id_authorization: auth.id_authorization }});
+						const deleteAuth = await tx.authorization.delete({ where: { id_authorization: auth.id_authorization }});
+
+						if ( !deleteAuth ) {
+							throw new Error(`Authorization ${args.authorization} not deleted.`);
+						} else {
+							await createNewMutationLog(tx, context, tx.authorization.name, 0, '', deleteAuth, {}, 'DELETE');
+						}
+						return mutationStatusType.success();
+					});
+				} catch ( e ) {
+					return mutationStatusType.error(e.message);
+				}
+			}
+		});
 	}
 });
 
