@@ -266,6 +266,7 @@ const newAuthorizationType = {
 	id: stringArg(),
 	authorization: stringArg(),
 	id_unit: stringArg(),
+	creation_date: stringArg(),
 	expiration_date: stringArg(),
 	status: stringArg(),
 	rooms: list(OthersMutationType),
@@ -302,13 +303,14 @@ export const AuthorizationMutations = extendType({
 					if (!unit) throw new Error(`Authorization not created`);
 
 					return await context.prisma.$transaction(async (tx) => {
+						const [dayCrea, monthCrea, yearCrea] = args.creation_date.split("/").map(Number);
 						const [day, month, year] = args.expiration_date.split("/").map(Number);
 						const authorization = await tx.authorization.create({
 							data: {
 								authorization: args.authorization,
 								status: args.status,
-								creation_date: new Date(),
-								expiration_date: new Date(year, month - 1, day),
+								creation_date: new Date(yearCrea, monthCrea - 1, dayCrea, 12),
+								expiration_date: new Date(year, month - 1, day, 12),
 								id_unit: unit.id,
 								renewals: 0,
 								type: args.type,
