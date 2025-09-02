@@ -360,14 +360,16 @@ export const AuthorizationMutations = extendType({
 						if (!unit) throw new Error(`Authorization not created`);
 
 						const [day, month, year] = args.expiration_date.split("/").map(Number);
+						const newExpDate = new Date(year, month - 1, day, 12);
+						const ren = newExpDate > auth.expiration_date ? (auth.renewals + 1) : auth.renewals;
 						const updatedAuthorization = await tx.authorization.update(
 							{ where: { id_authorization: auth.id_authorization },
 								data: {
 									status: args.status,
-									expiration_date: new Date(year, month - 1, day),
+									expiration_date: newExpDate,
 									id_unit: unit.id,
 									authority: args.authority,
-									renewals: auth.renewals + 1
+									renewals: ren
 								}
 							});
 
