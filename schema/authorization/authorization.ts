@@ -445,7 +445,7 @@ async function checkRelations(tx, context, args, authorization) {
 							surname: ldapUser.lastname,
 							name: ldapUser.firstname,
 							email: ldapUser.email,
-							sciper: Number(ldapUser.id)
+							sciper: parseInt(ldapUser.id)
 						}
 					});
 
@@ -475,25 +475,23 @@ async function checkRelations(tx, context, args, authorization) {
 			}
 		} else if (holder.status == 'Deleted') {
 			let p = await tx.Person.findUnique({ where: { sciper: holder.sciper }});
-			if (!p) {
-				errors.push(`Person ${holder.sciper} not found.`);
-				continue;
-			}
-			try {
-				const whereCondition = {
-					id_authorization: authorization.id_authorization,
-					id_person: p.id_person
-				};
-				const del = await tx.authorization_has_holder.deleteMany({
-					where: whereCondition
-				});
-				if (!del) {
-					errors.push(`Relation authorization-holder not deleted between ${authorization.authorizations} and ${holder.sciper}.`)
-				} else {
-					await createNewMutationLog(tx, context, tx.authorization_has_holder.name, 0,'', whereCondition, {}, 'DELETE');
+			if (p) {
+				try {
+					const whereCondition = {
+						id_authorization: authorization.id_authorization,
+						id_person: p.id_person
+					};
+					const del = await tx.authorization_has_holder.deleteMany({
+						where: whereCondition
+					});
+					if ( !del ) {
+						errors.push(`Relation authorization-holder not deleted between ${authorization.authorizations} and ${holder.sciper}.`)
+					} else {
+						await createNewMutationLog(tx, context, tx.authorization_has_holder.name, 0, '', whereCondition, {}, 'DELETE');
+					}
+				} catch ( e ) {
+					errors.push(`DB error: relation authorization-holder not deleted between ${authorization.authorizations} and ${holder.sciper}.`)
 				}
-			} catch ( e ) {
-				errors.push(`DB error: relation authorization-holder not deleted between ${authorization.authorizations} and ${holder.sciper}.`)
 			}
 		}
 	}
@@ -520,25 +518,23 @@ async function checkRelations(tx, context, args, authorization) {
 			}
 		} else if (room.status == 'Deleted') {
 			let p = await tx.Room.findFirst({ where: { name: room.name}});
-			if (!p) {
-				errors.push(`Room ${room.name} not found.`);
-				continue;
-			}
-			try {
-				const whereCondition = {
-					id_authorization: authorization.id_authorization,
-					id_lab: p.id_lab
-				};
-				const del = await tx.authorization_has_room.deleteMany({
-					where: whereCondition
-				});
-				if (!del) {
-					errors.push(`Relation authorization-room not deleted between ${authorization.authorizations} and ${room.name}.`)
-				} else {
-					await createNewMutationLog(tx, context, tx.authorization_has_room.name, 0,'', whereCondition, {}, 'DELETE');
+			if (p) {
+				try {
+					const whereCondition = {
+						id_authorization: authorization.id_authorization,
+						id_lab: p.id_lab
+					};
+					const del = await tx.authorization_has_room.deleteMany({
+						where: whereCondition
+					});
+					if ( !del ) {
+						errors.push(`Relation authorization-room not deleted between ${authorization.authorizations} and ${room.name}.`)
+					} else {
+						await createNewMutationLog(tx, context, tx.authorization_has_room.name, 0, '', whereCondition, {}, 'DELETE');
+					}
+				} catch ( e ) {
+					errors.push(`DB error: relation authorization-room not deleted between ${authorization.authorizations} and ${room.name}.`)
 				}
-			} catch ( e ) {
-				errors.push(`DB error: relation authorization-room not deleted between ${authorization.authorizations} and ${room.name}.`)
 			}
 		}
 	}
@@ -609,7 +605,7 @@ async function checkRelations(tx, context, args, authorization) {
 			}
 		}
 	}
-	
+
 	if (errors.length > 0) {
 		throw new Error(`${errors.join('\n')}`);
 	}
