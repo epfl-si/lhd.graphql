@@ -357,7 +357,7 @@ export const AuthorizationMutations = extendType({
 						const idunit = IDObfuscator.getId(args.id_unit);
 						const idDeobfuscatedForUnit = IDObfuscator.getIdDeobfuscated(idunit);
 						const unit = await context.prisma.Unit.findUnique({where: {id: idDeobfuscatedForUnit}})
-						if (!unit) throw new Error(`Authorization not created`);
+						if (!unit) throw new Error(`Authorization not updated`);
 
 						const [day, month, year] = args.expiration_date.split("/").map(Number);
 						const newExpDate = new Date(year, month - 1, day, 12);
