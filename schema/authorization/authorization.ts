@@ -539,7 +539,7 @@ async function checkRelations(tx, context, args, authorization) {
 					try {
 						const whereCondition = {
 							id_authorization: authorization.id_authorization,
-							id_lab: p.id_lab
+							id_lab: p.id
 						};
 						const del = await tx.authorization_has_room.deleteMany({
 							where: whereCondition
