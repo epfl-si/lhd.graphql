@@ -4,6 +4,7 @@ import {auth_chem} from "nexus-prisma";
 import {mutationStatusType} from "../statuses";
 import {createNewMutationLog} from "../global/mutationLogs";
 import {getSHA256} from "../../utils/HashingTools";
+import {checkToken} from "./lib/authentication";
 
 export const ChemicalStruct = objectType({
 	name: auth_chem.$name,
@@ -60,11 +61,11 @@ export const ChemicalsWithPaginationQuery = extendType({
 				skip: intArg({ default: 0 }),
 				take: intArg({ default: 20 }),
 				search: stringArg(),
+				token: stringArg()
 			},
 			async resolve(parent, args, context) {
-				if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
-					throw new Error(`Permission denied`);
-				}
+				checkToken(args.token, context.user);
+
 				const queryArray = args.search.split("&");
 				const dictionary = queryArray.map(query => query.split("="));
 				const whereCondition = [];
