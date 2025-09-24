@@ -13,6 +13,7 @@ import {schema} from './nexus/schema';
 import {errors, Issuer} from 'openid-client';
 import {loginResponse, UserInfo} from './serverTypes';
 import * as path from "node:path";
+import {registerLegacyApi} from "./api";
 
 type TestInjections = {
 	insecure?: boolean;
@@ -58,6 +59,8 @@ export async function makeServer(
 
 	app.use(express.json({ limit: '50mb' }));
 	app.use(cors());
+	registerLegacyApi(app);
+
 	if (! insecure) {
 		app.use(async function (req, res, next) {
 			try {

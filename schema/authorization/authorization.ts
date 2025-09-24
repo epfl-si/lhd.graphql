@@ -127,12 +127,12 @@ export const AuthorizationsWithPaginationQuery = extendType({
 				skip: intArg({ default: 0 }),
 				take: intArg({ default: 20 }),
 				search: stringArg(),
-				type: stringArg()
+				type: stringArg(),
+				token: stringArg()
 			},
 			async resolve(parent, args, context) {
-				if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
-					throw new Error(`Permission denied`);
-				}
+				checkToken(args.token, context.user);
+
 				const queryArray = args.search.split("&");
 				const dictionary = queryArray.map(query => query.split("="));
 				const whereCondition = [];
@@ -157,6 +157,7 @@ export const AuthorizationsWithPaginationQuery = extendType({
 												{ name: { contains: value } },
 												{ surname: { contains: value } },
 												{ email: { contains: value } },
+												{ sciper: parseInt(value) },
 											],
 										},
 									},
@@ -250,7 +251,8 @@ const OthersMutationType = inputObjectType({
 	name: "OthersMutationType",
 	definition(t) {
 		t.nonNull.string('status');
-		t.nonNull.string('name');
+		t.string('name');
+		t.int('id');
 	}
 });
 
@@ -263,6 +265,7 @@ const HolderMutationType = inputObjectType({
 });
 
 const newAuthorizationType = {
+	token: stringArg(),
 	id: stringArg(),
 	authorization: stringArg(),
 	id_unit: stringArg(),
@@ -272,9 +275,10 @@ const newAuthorizationType = {
 	rooms: list(OthersMutationType),
 	holders: list(HolderMutationType),
 	radiations: list(OthersMutationType),
-	cas: list(stringArg()),
+	cas: list(OthersMutationType),
 	type: stringArg(),
-	authority: stringArg()
+	authority: stringArg(),
+	renewals: intArg()
 };
 
 export const AuthorizationStatus = mutationStatusType({
@@ -293,14 +297,16 @@ export const AuthorizationMutations = extendType({
 			type: "AuthorizationStatus",
 			async resolve(root, args, context) {
 				try {
-					if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
-						throw new Error(`Permission denied`);
-					}
+					const hasUserAccess = checkToken(args.token, context.user);
 
-					const id = IDObfuscator.getId(args.id_unit);
-					const idDeobfuscatedForUnit = IDObfuscator.getIdDeobfuscated(id);
-					const unit = await context.prisma.Unit.findUnique({where: {id: idDeobfuscatedForUnit}})
-					if (!unit) throw new Error(`Authorization not created`);
+					let unitId = parseInt(args.id_unit);
+					if (hasUserAccess) {
+						const id = IDObfuscator.getId(args.id_unit);
+						const idDeobfuscatedForUnit = IDObfuscator.getIdDeobfuscated(id);
+						const unit = await context.prisma.Unit.findUnique({where: {id: idDeobfuscatedForUnit}})
+						if (!unit) throw new Error(`Authorization not created`);
+						unitId = unit.id;
+					}
 
 					return await context.prisma.$transaction(async (tx) => {
 						const [dayCrea, monthCrea, yearCrea] = args.creation_date.split("/").map(Number);
@@ -311,7 +317,7 @@ export const AuthorizationMutations = extendType({
 								status: args.status,
 								creation_date: new Date(yearCrea, monthCrea - 1, dayCrea, 12),
 								expiration_date: new Date(year, month - 1, day, 12),
-								id_unit: unit.id,
+								id_unit: unitId,
 								renewals: 0,
 								type: args.type,
 								authority: args.authority
@@ -338,9 +344,7 @@ export const AuthorizationMutations = extendType({
 			type: "AuthorizationStatus",
 			async resolve(root, args, context) {
 				try {
-					if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
-						throw new Error(`Permission denied`);
-					}
+					checkToken(args.token, context.user);
 
 					return await context.prisma.$transaction(async (tx) => {
 						const id = IDObfuscator.getId(args.id);
@@ -354,23 +358,28 @@ export const AuthorizationMutations = extendType({
 							throw new Error(`Authorization ${args.authorization} has been changed from another user. Please reload the page to make modifications`);
 						}
 
-						const idunit = IDObfuscator.getId(args.id_unit);
-						const idDeobfuscatedForUnit = IDObfuscator.getIdDeobfuscated(idunit);
-						const unit = await context.prisma.Unit.findUnique({where: {id: idDeobfuscatedForUnit}})
-						if (!unit) throw new Error(`Authorization not updated`);
-
 						const [day, month, year] = args.expiration_date.split("/").map(Number);
 						const newExpDate = new Date(year, month - 1, day, 12);
-						const ren = newExpDate > auth.expiration_date ? (auth.renewals + 1) : auth.renewals;
+						const ren = args.renewals ?? (newExpDate > auth.expiration_date ? (auth.renewals + 1) : auth.renewals);
+						const data = {
+							status: args.status,
+							expiration_date: newExpDate,
+							authority: args.authority ?? auth.authority,
+							renewals: ren
+						}
+						if (args.id_unit) {
+							const idunit = IDObfuscator.getId(args.id_unit);
+							const idDeobfuscatedForUnit = IDObfuscator.getIdDeobfuscated(idunit);
+							const unit = await context.prisma.Unit.findUnique({where: {id: idDeobfuscatedForUnit}})
+							if ( !unit ) {
+								throw new Error(`Authorization not updated`);
+							}
+							data['id_unit'] = unit.id;
+						}
+
 						const updatedAuthorization = await tx.authorization.update(
 							{ where: { id_authorization: auth.id_authorization },
-								data: {
-									status: args.status,
-									expiration_date: newExpDate,
-									id_unit: unit.id,
-									authority: args.authority,
-									renewals: ren
-								}
+								data: data
 							});
 
 						if (!updatedAuthorization) {
@@ -431,109 +440,118 @@ export const AuthorizationMutations = extendType({
 
 async function checkRelations(tx, context, args, authorization) {
 	const errors: string[] = [];
-	for (const holder of args.holders) {
-		if (holder.status == 'New') {
-			let p = await tx.Person.findUnique({ where: { sciper: holder.sciper }});
+	if (args.holders) {
+		for ( const holder of args.holders ) {
+			if ( holder.status == 'New' ) {
+				let p = await tx.Person.findUnique({where: {sciper: holder.sciper}});
 
-			if (!p) {
-				try {
-					const ldapUsers = await getUsersFromApi(holder.sciper + "");
-					const ldapUser = ldapUsers["persons"].find(p => p.id == holder.sciper + "");
+				if ( !p ) {
+					try {
+						const ldapUsers = await getUsersFromApi(holder.sciper + "");
+						const ldapUser = ldapUsers["persons"].find(p => p.id == holder.sciper + "");
 
-					p = await tx.Person.create({
-						data: {
-							surname: ldapUser.lastname,
-							name: ldapUser.firstname,
-							email: ldapUser.email,
-							sciper: parseInt(ldapUser.id)
+						p = await tx.Person.create({
+							data: {
+								surname: ldapUser.lastname,
+								name: ldapUser.firstname,
+								email: ldapUser.email,
+								sciper: parseInt(ldapUser.id)
+							}
+						});
+
+						if ( p ) {
+							await createNewMutationLog(tx, context, tx.Person.name, p.id_person, '', {}, p, 'CREATE');
 						}
-					});
-
-					if (p) {
-						await createNewMutationLog(tx, context, tx.Person.name, p.id_person, '', {}, p, 'CREATE');
+					} catch ( e ) {
+						throw new Error(`Sciper ${holder} not found`);
 					}
-				} catch ( e ) {
-					throw new Error(`Sciper ${holder} not found`);
 				}
-			}
 
-			try {
-				const relation = {
-					id_person: Number(p.id_person),
-					id_authorization: Number(authorization.id_authorization)
-				};
-				const relationHolders = await tx.authorization_has_holder.create({
-					data: relation
-				});
-				if ( !relationHolders ) {
-					throw new Error(`Relation not update between ${authorization.authorization} and ${holder.sciper}.`);
-				} else {
-					await createNewMutationLog(tx, context, tx.authorization_has_holder.name, 0,'', {}, relation, 'CREATE');
-				}
-			} catch ( e ) {
-				throw new Error(`Relation not update between ${authorization.authorization} and ${holder}.`);
-			}
-		} else if (holder.status == 'Deleted') {
-			let p = await tx.Person.findUnique({ where: { sciper: holder.sciper }});
-			if (p) {
 				try {
-					const whereCondition = {
-						id_authorization: authorization.id_authorization,
-						id_person: p.id_person
+					const relation = {
+						id_person: Number(p.id_person),
+						id_authorization: Number(authorization.id_authorization)
 					};
-					const del = await tx.authorization_has_holder.deleteMany({
-						where: whereCondition
+					const relationHolders = await tx.authorization_has_holder.create({
+						data: relation
 					});
-					if ( !del ) {
-						errors.push(`Relation authorization-holder not deleted between ${authorization.authorizations} and ${holder.sciper}.`)
+					if ( !relationHolders ) {
+						throw new Error(`Relation not update between ${authorization.authorization} and ${holder.sciper}.`);
 					} else {
-						await createNewMutationLog(tx, context, tx.authorization_has_holder.name, 0, '', whereCondition, {}, 'DELETE');
+						await createNewMutationLog(tx, context, tx.authorization_has_holder.name, 0, '', {}, relation, 'CREATE');
 					}
 				} catch ( e ) {
-					errors.push(`DB error: relation authorization-holder not deleted between ${authorization.authorizations} and ${holder.sciper}.`)
+					throw new Error(`Relation not update between ${authorization.authorization} and ${holder}.`);
+				}
+			} else if ( holder.status == 'Deleted' ) {
+				let p = await tx.Person.findUnique({where: {sciper: holder.sciper}});
+				if ( p ) {
+					try {
+						const whereCondition = {
+							id_authorization: authorization.id_authorization,
+							id_person: p.id_person
+						};
+						const del = await tx.authorization_has_holder.deleteMany({
+							where: whereCondition
+						});
+						if ( !del ) {
+							errors.push(`Relation authorization-holder not deleted between ${authorization.authorizations} and ${holder.sciper}.`)
+						} else {
+							await createNewMutationLog(tx, context, tx.authorization_has_holder.name, 0, '', whereCondition, {}, 'DELETE');
+						}
+					} catch ( e ) {
+						errors.push(`DB error: relation authorization-holder not deleted between ${authorization.authorizations} and ${holder.sciper}.`)
+					}
 				}
 			}
 		}
 	}
 
-	for (const room of args.rooms) {
-		if (room.status == 'New') {
-			const r = await tx.Room.findFirst({where: {name: room.name}})
-			if (!r) throw new Error(`Authorization not created`);
-			try {
-				const relation = {
-					id_lab: Number(r.id),
-					id_authorization: Number(authorization.id_authorization)
-				};
-				const relationRooms = await tx.authorization_has_room.create({
-					data: relation
-				});
-				if ( !relationRooms ) {
-					throw new Error(`Relation not update between ${authorization.authorization} and ${room.name}.`);
-				} else {
-					await createNewMutationLog(tx, context, tx.authorization_has_room.name, 0,'', {}, relation, 'CREATE');
+	if (args.rooms) {
+		for ( const room of args.rooms ) {
+			if ( room.status == 'New' ) {
+				let r = undefined;
+				if ( room.name ) {
+					r = await tx.Room.findFirst({where: {name: room.name}})
+				} else if ( room.id ) {
+					r = await tx.Room.findUnique({where: {id: room.id}})
 				}
-			} catch ( e ) {
-				throw new Error(`Relation not update between ${authorization.authorization} and ${room.name}.`);
-			}
-		} else if (room.status == 'Deleted') {
-			let p = await tx.Room.findFirst({ where: { name: room.name}});
-			if (p) {
+				if ( !r ) throw new Error(`Authorization not created`);
 				try {
-					const whereCondition = {
-						id_authorization: authorization.id_authorization,
-						id_lab: p.id_lab
+					const relation = {
+						id_lab: Number(r.id),
+						id_authorization: Number(authorization.id_authorization)
 					};
-					const del = await tx.authorization_has_room.deleteMany({
-						where: whereCondition
+					const relationRooms = await tx.authorization_has_room.create({
+						data: relation
 					});
-					if ( !del ) {
-						errors.push(`Relation authorization-room not deleted between ${authorization.authorizations} and ${room.name}.`)
+					if ( !relationRooms ) {
+						throw new Error(`Relation not update between ${authorization.authorization} and ${room.name}.`);
 					} else {
-						await createNewMutationLog(tx, context, tx.authorization_has_room.name, 0, '', whereCondition, {}, 'DELETE');
+						await createNewMutationLog(tx, context, tx.authorization_has_room.name, 0, '', {}, relation, 'CREATE');
 					}
 				} catch ( e ) {
-					errors.push(`DB error: relation authorization-room not deleted between ${authorization.authorizations} and ${room.name}.`)
+					throw new Error(`Relation not update between ${authorization.authorization} and ${room.name}.`);
+				}
+			} else if ( room.status == 'Deleted' ) {
+				let p = await tx.Room.findFirst({where: {name: room.name}});
+				if ( p ) {
+					try {
+						const whereCondition = {
+							id_authorization: authorization.id_authorization,
+							id_lab: p.id_lab
+						};
+						const del = await tx.authorization_has_room.deleteMany({
+							where: whereCondition
+						});
+						if ( !del ) {
+							errors.push(`Relation authorization-room not deleted between ${authorization.authorizations} and ${room.name}.`)
+						} else {
+							await createNewMutationLog(tx, context, tx.authorization_has_room.name, 0, '', whereCondition, {}, 'DELETE');
+						}
+					} catch ( e ) {
+						errors.push(`DB error: relation authorization-room not deleted between ${authorization.authorizations} and ${room.name}.`)
+					}
 				}
 			}
 		}
@@ -581,27 +599,49 @@ async function checkRelations(tx, context, args, authorization) {
 
 	if (args.cas) {
 		for ( const cas of args.cas ) {
-			let p = await tx.auth_chem.findUnique({where: {cas_auth_chem: cas}});
+			if ( cas.status == 'New' ) {
+				let p = await tx.auth_chem.findUnique({where: {cas_auth_chem: cas.name}});
 
-			if ( !p ) {
-				throw new Error(`CAS ${cas} not found`);
-			}
-
-			try {
-				const relation = {
-					id_chemical: Number(p.id_chemical),
-					id_authorization: Number(authorization.id_authorization)
-				};
-				const relationChemical = await tx.authorization_has_chemical.create({
-					data: relation
-				});
-				if ( !relationChemical ) {
-					throw new Error(`Relation not update between ${authorization.authorizations} and ${cas}.`);
-				} else {
-					await createNewMutationLog(tx, context, tx.authorization_has_chemical.name, 0, '', {}, relation, 'CREATE');
+				if ( !p ) {
+					throw new Error(`CAS ${cas.name} not found`);
 				}
-			} catch ( e ) {
-				throw new Error(`Relation not update between ${authorization.authorizations} and ${cas}.`);
+
+				try {
+					const relation = {
+						id_chemical: Number(p.id_auth_chem),
+						id_authorization: Number(authorization.id_authorization)
+					};
+					const relationChemical = await tx.authorization_has_chemical.create({
+						data: relation
+					});
+					if ( !relationChemical ) {
+						throw new Error(`Relation not update between ${authorization.authorizations} and ${cas.name}.`);
+					} else {
+						await createNewMutationLog(tx, context, tx.authorization_has_chemical.name, 0, '', {}, relation, 'CREATE');
+					}
+				} catch ( e ) {
+					throw new Error(`Relation not update between ${authorization.authorizations} and ${cas.name}.`);
+				}
+			} else if ( cas.status == 'Deleted' ) {
+				let p = await tx.auth_chem.findUnique({where: {cas_auth_chem: cas.name}});
+				if (p) {
+					try {
+						const whereCondition = {
+							id_authorization: authorization.id_authorization,
+							id_chemical: p.id_auth_chem
+						};
+						const del = await tx.authorization_has_chemical.deleteMany({
+							where: whereCondition
+						});
+						if ( !del ) {
+							errors.push(`Relation authorization-chemical not deleted between ${authorization.authorizations} and ${cas.name}.`)
+						} else {
+							await createNewMutationLog(tx, context, tx.authorization_has_chemical.name, 0, '', whereCondition, {}, 'DELETE');
+						}
+					} catch ( e ) {
+						errors.push(`DB error: relation authorization-chemical not deleted between ${authorization.authorizations} and ${cas.name}.`)
+					}
+				}
 			}
 		}
 	}
@@ -609,4 +649,18 @@ async function checkRelations(tx, context, args, authorization) {
 	if (errors.length > 0) {
 		throw new Error(`${errors.join('\n')}`);
 	}
+}
+
+function checkToken (token: string, user) {
+	const hasValidToken = token && token === process.env.SNOW_TOKEN;
+
+	const hasUserAccess =
+		user &&
+		(user.groups.includes("LHD_acces_lecture") ||
+			user.groups.includes("LHD_acces_admin"));
+
+	if (!hasValidToken && !hasUserAccess){
+		throw new Error(`Unauthorized`);
+	}
+	return hasUserAccess;
 }
