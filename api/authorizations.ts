@@ -6,7 +6,7 @@ export function registerAuthApi(app: Express) {
 	app.post("/api/snow.php", async (req, res) => {
 		try {
 			const token = getToken(req, res);
-			if (!authenticate(token)) {
+			if (!authenticate(token, "SNOW")) {
 				return res.status(401).json({ Message: "Unauthorized" });
 			}
 
@@ -118,7 +118,7 @@ export function registerAuthApi(app: Express) {
 	app.get("/api/catalyse.php", async (req, res) => {
 		try {
 			const token = getToken(req, res);
-			if (!authenticate(token)) {
+			if (!authenticate(token, "CATALYSE")) {
 				return res.status(401).json({ Message: "Unauthorized" });
 			}
 

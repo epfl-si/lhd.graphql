@@ -15,8 +15,8 @@ function verifyToken(token: string, hash: string): boolean {
 	return token === hash; //await bcrypt.compare(token, hash);
 }
 
-export function authenticate(token: string) {
-	const hash = process.env.SNOW_TOKEN;
+export function authenticate(token: string, consumer: string) {
+	const hash = consumer == "SNOW" ? process.env.SNOW_TOKEN : process.env.CATALYSE_TOKEN;
 	if (hash === 'DEV') {
 		return true;
 	}

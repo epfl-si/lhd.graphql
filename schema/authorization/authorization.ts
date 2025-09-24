@@ -652,7 +652,7 @@ async function checkRelations(tx, context, args, authorization) {
 }
 
 function checkToken (token: string, user) {
-	const hasValidToken = token && token === process.env.SNOW_TOKEN;
+	const hasValidToken = token && (token === process.env.SNOW_TOKEN || token === process.env.CATALYSE_TOKEN);
 
 	const hasUserAccess =
 		user &&
