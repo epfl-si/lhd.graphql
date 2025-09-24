@@ -115,6 +115,48 @@ export function registerAuthApi(app: Express) {
 			res.status(500).json({Message: err.message});
 		}
 	});
+	app.get("/api/snow.php", async (req, res) => {
+		try {
+			const token = getToken(req, res);
+			if (!authenticate(token, "SNOW")) {
+				return res.status(401).json({ Message: "Unauthorized" });
+			}
+
+			const method = req.query.m as string;
+			if (!method) return res.status(404).json({ Message: "missing <m> command (e.g. m=auth_req)." });
+
+			let query = '';
+
+			switch (method) {
+				case "auth_chem":
+					const cas = (req.query.cas as string);
+
+					query = `query fetchChemicals {
+						chemicalsWithPagination (take: 0, skip: 0, search: ""
+									token: "${token}",) {
+							chemicals {
+								cas_auth_chem
+								auth_chem_en
+								flag_auth_chem
+							}
+						}
+					}`;
+					const resultNew = await makeQuery(query, 'SNOW');
+					if (cas) {
+						const casList = cas.split(',');
+						res.json({Message: "Ok", Data: resultNew.chemicalsWithPagination.chemicals.filter(chem => casList.includes(chem.cas_auth_chem))});
+					} else {
+						res.json({Message: "Ok", Data: resultNew.chemicalsWithPagination.chemicals});
+					}
+					break;
+				default:
+					res.status(404).json({Message: 'Not Found'});
+					break;
+			}
+		} catch (err: any) {
+			res.status(500).json({Message: err.message});
+		}
+	});
 	app.get("/api/catalyse.php", async (req, res) => {
 		try {
 			const token = getToken(req, res);
