@@ -3,9 +3,21 @@ import {authenticate, getToken} from "./libs/authentication";
 import {makeQuery} from "./libs/query";
 
 export function registerAuthApi(app: Express) {
+	app.use('/api', (req, res, next) => {
+		const token = getToken(req, res);
+		if (!authenticate(token)) {
+			return res.status(401).json({ Message: "Unauthorized" });
+		}
+
+		if (req.url.indexOf(".php") > -1) {
+			const method = req.query.m as string;
+			if (!method) return res.status(404).json({ Message: "missing <m> command (e.g. m=auth_req)." });
+		}
+		next();
+	});
 	app.post("/api/snow.php", async (req, res) => {
 		try {
-			const tokenAndMethod = anaylseTokenAndMethod(req, res, "SNOW", "missing <m> command (e.g. m=auth_req).");
+			const token = getToken(req, res);
 			const request = req.query.req as string;
 
 			if (!request) return res.status(404).json({ Message: "missing <req> string for request+authorisation number of the form req=AUTH_SST-AUTH_REQ" });
@@ -14,7 +26,7 @@ export function registerAuthApi(app: Express) {
 
 			let query = '';
 
-			switch (tokenAndMethod.method) {
+			switch (req.query.m as string) {
 				case "auth_req":
 					const idUnit = parseInt(req.query.id_unit as string);
 					if (!idUnit) return res.status(404).json({ Message: "missing <id_unit>" });
@@ -29,7 +41,7 @@ export function registerAuthApi(app: Express) {
 
 					query = `mutation addAuthorizationFromSNow {
 								addAuthorization(
-									token: "${tokenAndMethod.token}",
+									token: "${token}",
 									id_unit: "${idUnit}",
 									authorization: "${request}",
 									creation_date: "${(new Date()).toLocaleDateString("en-GB")}",
@@ -68,7 +80,7 @@ export function registerAuthApi(app: Express) {
 					const reqParts = request.split("-");
 					const requestNumber = `${reqParts[0]}-${reqParts[1]}`;
 					const queryForAuth = `query fetchChemicalAuthorizations {
-							authorizationsWithPagination (take: 0, skip: 0, search: "Authorization=${requestNumber}", type: "Chemical", token: "${tokenAndMethod.token}") {
+							authorizationsWithPagination (take: 0, skip: 0, search: "Authorization=${requestNumber}", type: "Chemical", token: "${token}") {
 								authorizations{
 									id
 								}
@@ -79,7 +91,7 @@ export function registerAuthApi(app: Express) {
 					if (resultForAuth.authorizationsWithPagination.totalCount === 1) {
 						query = `mutation updateRadioprotection {
 								updateAuthorization(
-									token: "${tokenAndMethod.token}",
+									token: "${token}",
 									id: ${JSON.stringify(resultForAuth.authorizationsWithPagination.authorizations[0].id)},
 									expiration_date: "${(new Date(expirationDate)).toLocaleDateString("en-GB")}",
 									status: "Active",
@@ -109,17 +121,12 @@ export function registerAuthApi(app: Express) {
 			res.status(500).json({Message: err.message});
 		}
 	});
-	app.get("/api/snow.php", async (req, res) => {
+	app.get("/api/auth_chem", async (req, res) => {
 		try {
-			const tokenAndMethod = anaylseTokenAndMethod(req, res, "SNOW", "missing <m> command (e.g. m=auth_req).");
-
-			switch (tokenAndMethod.method) {
-				case "auth_chem":
-					const cas = (req.query.cas as string);
-
-					const query = `query fetchChemicals {
+			const cas = (req.query.cas as string);
+			const query = `query fetchChemicals {
 						chemicalsWithPagination (take: 0, skip: 0, search: ""
-									token: "${tokenAndMethod.token}",) {
+									token: "${getToken(req, res)}",) {
 							chemicals {
 								cas_auth_chem
 								auth_chem_en
@@ -127,17 +134,12 @@ export function registerAuthApi(app: Express) {
 							}
 						}
 					}`;
-					const resultNew = await makeQuery(query, 'SNOW');
-					if (cas) {
-						const casList = cas.split(',');
-						res.json({Message: "Ok", Data: resultNew.chemicalsWithPagination.chemicals.filter(chem => casList.includes(chem.cas_auth_chem))});
-					} else {
-						res.json({Message: "Ok", Data: resultNew.chemicalsWithPagination.chemicals});
-					}
-					break;
-				default:
-					res.status(404).json({Message: 'Not Found'});
-					break;
+			const resultNew = await makeQuery(query, 'SNOW');
+			if (cas) {
+				const casList = cas.split(',');
+				res.json({Message: "Ok", Data: resultNew.chemicalsWithPagination.chemicals.filter(chem => casList.includes(chem.cas_auth_chem))});
+			} else {
+				res.json({Message: "Ok", Data: resultNew.chemicalsWithPagination.chemicals});
 			}
 		} catch (err: any) {
 			res.status(500).json({Message: err.message});
@@ -145,17 +147,17 @@ export function registerAuthApi(app: Express) {
 	});
 	app.get("/api/catalyse.php", async (req, res) => {
 		try {
-			const tokenAndMethod = anaylseTokenAndMethod(req, res, "CATALYSE", "Not Found");
-
-			switch (tokenAndMethod.method) {
+			const token = getToken(req, res);
+			switch (req.query.m as string) {
 				case "auth_check":
 					if (!req.query.sciper) return res.status(404).json({ Message: "Missing sciper number" });
+					if (!req.query.cas) return res.status(404).json({ Message: "Missing cas number" });
 					const sciper = (req.query.sciper as string);
 					const cas = (req.query.cas as string).split(',');
 
 					const query = `query fetchChemicalAuthorizations {
 						authorizationsWithPagination (take: 0, skip: 0, search: "Holder=${sciper}", type: "Chemical"
-									token: "${tokenAndMethod.token}",) {
+									token: "${token}",) {
 							authorizations{
 								expiration_date
 								authorization_chemicals {
@@ -189,15 +191,4 @@ export function registerAuthApi(app: Express) {
 			res.status(500).json({Message: err.message});
 		}
 	});
-}
-
-function anaylseTokenAndMethod(req, res, user: string, message: string) {
-	const token = getToken(req, res);
-	if (!authenticate(token, user)) {
-		return res.status(401).json({ Message: "Unauthorized" });
-	}
-
-	const method = req.query.m as string;
-	if (!method) return res.status(404).json({ Message: message });
-	return {token, method};
 }
