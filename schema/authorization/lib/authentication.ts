@@ -1,5 +1,7 @@
+import {authenticate} from "../../../api/libs/authentication";
+
 export function checkToken (token: string, user) {
-	const hasValidToken = token && (token === process.env.SNOW_TOKEN || token === process.env.CATALYSE_TOKEN);
+	const hasValidToken = token && authenticate(token);
 
 	const hasUserAccess =
 		user &&
