@@ -108,7 +108,8 @@ const newChemicalType = {
 	id: stringArg(),
 	cas_auth_chem: stringArg(),
 	auth_chem_en: stringArg(),
-	flag_auth_chem: booleanArg()
+	flag_auth_chem: booleanArg(),
+	token: stringArg()
 };
 
 export const ChemicalStatus = mutationStatusType({
@@ -127,9 +128,7 @@ export const ChemicalMutations = extendType({
 			type: "ChemicalStatus",
 			async resolve(root, args, context) {
 				try {
-					if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
-						throw new Error(`Permission denied`);
-					}
+					checkToken(args.token, context.user);
 
 					return await context.prisma.$transaction(async (tx) => {
 						const chemical = await tx.auth_chem.create({

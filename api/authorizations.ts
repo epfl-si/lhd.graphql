@@ -19,16 +19,17 @@ export function registerAuthApi(app: Express) {
 	});
 	app.post("/api/snow.php", async (req, res) => {
 		try {
+			const method = req.query.m as string;
 			const token = getToken(req, res);
 			const request = req.query.req as string;
 
-			if (!request) return res.status(404).json({ Message: "missing <req> string for request+authorisation number of the form req=AUTH_SST-AUTH_REQ" });
-			if (!req.query.date) return res.status(404).json({ Message: "missing authorisation expiration <date>" });
+			if (!request && method !== 'auth_chem') return res.status(404).json({ Message: "missing <req> string for request+authorisation number of the form req=AUTH_SST-AUTH_REQ" });
+			if (!req.query.date && method !== 'auth_chem') return res.status(404).json({ Message: "missing authorisation expiration <date>" });
 			const expirationDate = new Date(req.query.date as string);
 
 			let query = '';
 
-			switch (req.query.m as string) {
+			switch (method) {
 				case "auth_req":
 					const idUnit = parseInt(req.query.id_unit as string);
 					if (!idUnit) return res.status(404).json({ Message: "missing <id_unit>" });
@@ -114,6 +115,31 @@ export function registerAuthApi(app: Express) {
 						res.json({Message: "Ok"});
 					else
 						res.json({Message: resultRenew.updateAuthorization.errors.map(err => err.message).join(', ')});
+					break;
+				case "auth_chem":
+					if (!req.query.cas) return res.status(404).json({ Message: "missing <cas> code for chemical product" });
+					if (!req.query.en) return res.status(404).json({ Message: "missing <en> english translation of the chemical name or description" });
+					if (!req.query.auth) return res.status(404).json({ Message: "missing <auth> flag for setting if the new chemical requires authorisation" });
+
+					query = `mutation addChemical {
+							addChemical(
+								token: "${token}",
+								auth_chem_en: "${req.query.en as string}",
+								cas_auth_chem: "${req.query.cas as string}",
+								flag_auth_chem: ${(req.query.auth as string).toLowerCase() == 'yes' || (req.query.auth as string) == '1'})
+							{
+								errors {
+									message
+								}
+								isSuccess
+							}
+						}`;
+					const resultNewChem = await makeQuery(query, 'SNOW');
+					if (resultNewChem.addChemical.isSuccess)
+						res.json({Message: "Ok"});
+					else {
+						res.json({Message: resultNewChem.addChemical.errors.map(err => err.message).join(', ')});
+					}
 					break;
 				default:
 					res.status(404).json({Message: 'Not Found'});
