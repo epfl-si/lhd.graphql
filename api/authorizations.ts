@@ -1,9 +1,11 @@
 import {Express} from "express";
 import {authenticate, getToken} from "./libs/authentication";
 import {makeQuery} from "./libs/query";
+import {getNow} from "./libs/date";
 
 export function registerAuthApi(app: Express) {
 	app.use('/api', (req, res, next) => {
+		console.log(`API CALL - [${getNow()}] - ${req.method} - ${req.protocol}://${req.hostname}${req.originalUrl}`);
 		const token = getToken(req, res);
 		if (!authenticate(token)) {
 			return res.status(401).json({ Message: "Unauthorized" });
