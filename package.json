@@ -23,6 +23,7 @@
     "nexus": "^1.2.0",
     "nexus-prisma": "^2.0.5",
     "node-fetch": "^2.6.1",
+    "nodemailer": "^7.0.9",
     "openid-client": "^5.4.0",
     "prisma": "^5.12.1",
     "process-nextick-args": "^2.0.1",
