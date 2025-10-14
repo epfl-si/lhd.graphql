@@ -9,6 +9,8 @@ import {createNewMutationLog} from "../global/mutationLogs";
 import {RoomStruct} from "../global/rooms";
 import * as dotenv from "dotenv";
 import {saveBase64File} from "../../utils/File";
+import {sendEmailsForHazards} from "../../utils/Email/Mailer";
+import {logAction} from "../../utils/Email/EmailTemplates";
 
 dotenv.config();
 const HAZARD_DOCUMENT_FOLDER = process.env.HAZARD_DOCUMENT_FOLDER;
@@ -101,13 +103,20 @@ export const RoomHazardMutations = extendType({
 						throw new Error('Permission denied');
 					}
 					return await context.prisma.$transaction(async (tx) => {
-						const room = await tx.Room.findFirst({ where: { name: args.room }});
+						const room = await tx.Room.findFirst(
+							{
+								where: { name: args.room },
+								include: { unit_has_room: { include: { unit: { include: { unit_has_cosec: { include: { cosec: true } } } } } } }
+							});
+
 						if (! room) {
 							throw new Error(`Room ${args.room} not found.`);
 						}
 						const submissionsHazards: submission[] = JSON.parse(args.submission);
 
 						const category = await tx.hazard_category.findFirst({ where: { hazard_category_name: args.category }});
+
+						const log = [];
 
 						for ( const h of submissionsHazards ) {
 							if(h.id == undefined || h.id.eph_id == undefined || h.id.eph_id == '' || h.id.salt == undefined || h.id.salt == '') {
@@ -140,7 +149,7 @@ export const RoomHazardMutations = extendType({
 								for await (const child of h.children) {
 									await updateHazardFormChild(child, tx, context, args.room, hazard.id_lab_has_hazards)
 								}
-
+								log.push({'status': 'Created', 'submission': h.submission, 'children': h.children});
 							}
 							else if (!h.id.eph_id.startsWith('newHazard')) {
 								if(!IDObfuscator.checkSalt(h.id)) {
@@ -173,8 +182,9 @@ export const RoomHazardMutations = extendType({
 									for await (const child of h.children) {
 										await updateHazardFormChild(child, tx, context, args.room, hazard.id_lab_has_hazards)
 									}
-
-								} else if (h.submission.data['status'] == 'Deleted') {
+									log.push({'status': 'Modified', 'submission': h.submission, 'children': h.children});
+								}
+								else if (h.submission.data['status'] == 'Deleted') {
 									const hazardChildren = await tx.lab_has_hazards_child.deleteMany({
 										where: {
 											id_lab_has_hazards: id
@@ -196,6 +206,7 @@ export const RoomHazardMutations = extendType({
 									} else {
 										await createNewMutationLog(tx, context, tx.lab_has_hazards.name, 0, '', hazard, {}, 'DELETE');
 									}
+									log.push({'status': 'Deleted', 'submission': h.submission, 'children': []});
 								}
 							}
 						}
@@ -245,6 +256,18 @@ export const RoomHazardMutations = extendType({
 								await createNewMutationLog(tx, context, tx.lab_has_hazards_additional_info.name, info.id_lab_has_hazards_additional_info, '', {}, info, 'CREATE');
 							}
 						}
+
+						const cosecs = [];
+
+						room.unit_has_room.forEach(uhr => {
+							uhr.unit.unit_has_cosec.forEach(uhc => {
+								if (!cosecs.includes(uhc.cosec.email))
+									cosecs.push(uhc.cosec.email);
+							})
+						})
+
+						await sendEmailsForHazards(context.user.preferred_username, args.category, args.room,
+							logAction(log), args.additionalInfo.comment, cosecs);
 
 						return mutationStatusType.success();
 					});
