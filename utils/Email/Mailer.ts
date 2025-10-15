@@ -30,10 +30,10 @@ async function sendEmailCAE(modifiedByName: string,
 
 	await mailer.sendMail({
 		from: `"No Reply" <${process.env.SMTP_USER}>`,
-		to: process.env.ENVIRONMENT == 'PROD' ? process.env.CAE_TO : modifiedByEmail,
-		cc: process.env.ENVIRONMENT == 'PROD' ? [modifiedByEmail, process.env.CAE_CC] : modifiedByEmail,
+		to: process.env.ENVIRONMENT == 'prod' ? process.env.CAE_TO : modifiedByEmail,
+		cc: process.env.ENVIRONMENT == 'prod' ? [modifiedByEmail, process.env.CAE_CC] : modifiedByEmail,
 		subject: template.subject,
-		html: process.env.ENVIRONMENT == 'PROD' ? body : `${logRecipients([process.env.CAE_TO], [modifiedByEmail, process.env.CAE_CC], [])}\n${body}`
+		html: process.env.ENVIRONMENT == 'prod' ? body : `${logRecipients([process.env.CAE_TO], [modifiedByEmail, process.env.CAE_CC], [])}\n${body}`
 	});
 }
 
@@ -54,10 +54,10 @@ async function sendEmailCosec(modifiedByName: string,
 
 	await mailer.sendMail({
 		from: `"No Reply" <${process.env.SMTP_USER}>`,
-		to: process.env.ENVIRONMENT == 'PROD' ? cosecs : modifiedByEmail,
-		bcc: process.env.ENVIRONMENT == 'PROD' ? [modifiedByEmail, process.env.COSEC_BCC] : modifiedByEmail,
+		to: process.env.ENVIRONMENT == 'prod' ? cosecs : modifiedByEmail,
+		bcc: process.env.ENVIRONMENT == 'prod' ? [modifiedByEmail, process.env.COSEC_BCC] : modifiedByEmail,
 		subject: template.subject,
-		html: process.env.ENVIRONMENT == 'PROD' ? body : `${logRecipients(cosecs, [], [modifiedByEmail, process.env.COSEC_BCC] )}\n${body}`
+		html: process.env.ENVIRONMENT == 'prod' ? body : `${logRecipients(cosecs, [], [modifiedByEmail, process.env.COSEC_BCC] )}\n${body}`
 	});
 }
 
@@ -83,9 +83,9 @@ export async function sendEmailsForChemical(user: string, tx: any) {
 
 	await mailer.sendMail({
 		from: `"No Reply" <${process.env.SMTP_USER}>`,
-		to: process.env.ENVIRONMENT == 'PROD' ? process.env.CATALYSE_EMAIL : userInfo.userEmail,
+		to: process.env.ENVIRONMENT == 'prod' ? process.env.CATALYSE_EMAIL : userInfo.userEmail,
 		subject: template.subject,
-		html: process.env.ENVIRONMENT == 'PROD' ? template.body : `${logRecipients([process.env.CATALYSE_EMAIL], [], [] )}\n${template.body}`,
+		html: process.env.ENVIRONMENT == 'prod' ? template.body : `${logRecipients([process.env.CATALYSE_EMAIL], [], [] )}\n${template.body}`,
 		attachments: [{raw: ["Content-Type: text/csv; charset=utf-8", 'Content-Disposition: attachment; filename="chemicals.csv"', "", csv].join("\r\n"),}]
 	});
 }
