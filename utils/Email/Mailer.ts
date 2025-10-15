@@ -14,7 +14,6 @@ export const mailer = nodemailer.createTransport({
 
 async function sendEmailCAE(modifiedByName: string,
 														modifiedByEmail: string,
-														modifiedOn: Date,
 														room: string,
 														action: object,
 														hazardType: string,
@@ -22,7 +21,7 @@ async function sendEmailCAE(modifiedByName: string,
 	const template = EMAIL_TEMPLATES.HAZARDS_CAE;
 
 	const body = template.body.replaceAll("{{modifiedByName}}", modifiedByName)
-		.replaceAll("{{modifiedOn}}", modifiedOn.toLocaleDateString("en-GB"))
+		.replaceAll("{{modifiedOn}}", (new Date()).toLocaleDateString("en-GB"))
 		.replaceAll("{{room}}", room)
 		.replaceAll("{{action.fr}}", action['fr'])
 		.replaceAll("{{action.en}}", action['en'])
@@ -40,7 +39,6 @@ async function sendEmailCAE(modifiedByName: string,
 
 async function sendEmailCosec(modifiedByName: string,
 															modifiedByEmail: string,
-															modifiedOn: Date,
 															room: string,
 															action: object,
 															hazardType: string,
@@ -48,7 +46,7 @@ async function sendEmailCosec(modifiedByName: string,
 	const template = EMAIL_TEMPLATES.HAZARDS_COSEC;
 
 	const body = template.body.replaceAll("{{modifiedByName}}", modifiedByName)
-		.replaceAll("{{modifiedOn}}", modifiedOn.toLocaleDateString("en-GB"))
+		.replaceAll("{{modifiedOn}}", (new Date()).toLocaleDateString("en-GB"))
 		.replaceAll("{{room}}", room)
 		.replaceAll("{{action.fr}}", action['fr'])
 		.replaceAll("{{action.en}}", action['en'])
@@ -70,15 +68,36 @@ export async function sendEmailsForHazards(user: string,
 																					 comment: string,
 																					 cosecs: string[]) {
 	if (process.env.HAZARD_TYPES_TO_EMAIL_AFTER_UPDATE.includes(hazardType)) {
-		let userName = user;
-		let userEmail = '';
-		const ldapUsers = await getUsersFromApi(user);
-		const ldapUser = ldapUsers["persons"].filter(u => u.account && u.account.username == user);
-		if (ldapUser.length == 1) {
-			userName = ldapUser.display;
-			userEmail = ldapUser.email;
-		}
-		await sendEmailCAE(userName, userEmail, new Date(), room, action, hazardType, comment);
-		await sendEmailCosec(userName, userEmail, new Date(), room, action, hazardType, cosecs);
+		const userInfo = await getUserInfoFromAPI(user);
+		await sendEmailCAE(userInfo.userFullName, userInfo.userEmail, room, action, hazardType, comment);
+		await sendEmailCosec(userInfo.userFullName, userInfo.userEmail, room, action, hazardType, cosecs);
 	}
+}
+
+export async function sendEmailsForChemical(user: string, tx: any) {
+	const userInfo = await getUserInfoFromAPI(user);
+	const chemicals = await tx.auth_chem.findMany({where: {flag_auth_chem: true}});
+	const template = EMAIL_TEMPLATES.CHEMICAL;
+
+	const csv: string = chemicals.map(chem => `${chem.cas_auth_chem},${chem.auth_chem_en}`).join('\n');
+
+	await mailer.sendMail({
+		from: `"No Reply" <${process.env.SMTP_USER}>`,
+		to: process.env.ENVIRONMENT == 'PROD' ? process.env.CATALYSE_EMAIL : userInfo.userEmail,
+		subject: template.subject,
+		html: process.env.ENVIRONMENT == 'PROD' ? template.body : `${logRecipients([process.env.CATALYSE_EMAIL], [], [] )}\n${template.body}`,
+		attachments: [{raw: ["Content-Type: text/csv; charset=utf-8", 'Content-Disposition: attachment; filename="chemicals.csv"', "", csv].join("\r\n"),}]
+	});
+}
+
+async function getUserInfoFromAPI(username: string) {
+	let userFullName = username;
+	let userEmail = '';
+	const ldapUsers = await getUsersFromApi(username);
+	const ldapUser = ldapUsers["persons"].filter(u => u.account && u.account.username == username);
+	if (ldapUser.length == 1) {
+		userFullName = ldapUser.display;
+		userEmail = ldapUser.email;
+	}
+	return {userFullName, userEmail};
 }

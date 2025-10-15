@@ -5,6 +5,7 @@ import {mutationStatusType} from "../statuses";
 import {createNewMutationLog} from "../global/mutationLogs";
 import {getSHA256} from "../../utils/HashingTools";
 import {checkToken} from "./lib/authentication";
+import {sendEmailsForChemical} from "../../utils/Email/Mailer";
 
 export const ChemicalStruct = objectType({
 	name: auth_chem.$name,
@@ -144,7 +145,7 @@ export const ChemicalMutations = extendType({
 						} else {
 							await createNewMutationLog(tx, context, tx.auth_chem.name, chemical.id_auth_chem, '', {}, chemical, 'CREATE');
 						}
-
+						await sendEmailsForChemical(context.user.preferred_username, tx);
 						return mutationStatusType.success();
 					});
 				} catch ( e ) {
@@ -198,6 +199,7 @@ export const ChemicalMutations = extendType({
 						} else {
 							await createNewMutationLog(tx, context, tx.auth_chem.name, updatedChemical.id_auth_chem, '', chem, updatedChemical, 'UPDATE');
 						}
+						await sendEmailsForChemical(context.user.preferred_username, tx);
 						return mutationStatusType.success();
 					});
 				} catch ( e ) {
@@ -247,6 +249,7 @@ export const ChemicalMutations = extendType({
 						} else {
 							await createNewMutationLog(tx, context, tx.auth_chem.name, 0, '', deletedChemical, {}, 'DELETE');
 						}
+						await sendEmailsForChemical(context.user.preferred_username, tx);
 						return mutationStatusType.success();
 					});
 				} catch ( e ) {

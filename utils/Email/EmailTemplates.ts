@@ -51,6 +51,13 @@ If you have any questions, please open a ticket via <a href="https://go.epfl.ch/
 Thank you for your cooperation,<br/>
 OHS Support`,
 	},
+	CHEMICAL: {
+		subject: 'LHD - Mise à jour de la table des produits chimiques sous autorisation',
+		body: `Bonjour, <br/>
+en pièce jointe vous pouvez trouver la liste des produits chimiques mise à jour.<br/>
+Cordialement,<br/>
+LHD`
+	}
 } as const satisfies Record<string, EmailTemplate>;
 
 export function logRecipients (to: string[], cc: string[], bcc: string[]) {
