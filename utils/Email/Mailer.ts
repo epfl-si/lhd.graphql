@@ -96,8 +96,8 @@ async function getUserInfoFromAPI(username: string) {
 	const ldapUsers = await getUsersFromApi(username);
 	const ldapUser = ldapUsers["persons"].filter(u => u.account && u.account.username == username);
 	if (ldapUser.length == 1) {
-		userFullName = ldapUser.display;
-		userEmail = ldapUser.email;
+		userFullName = ldapUser[0].display;
+		userEmail = ldapUser[0].email;
 	}
 	return {userFullName, userEmail};
 }
