@@ -79,7 +79,7 @@ export async function sendEmailsForChemical(user: string, tx: any) {
 	const chemicals = await tx.auth_chem.findMany({where: {flag_auth_chem: true}});
 	const template = EMAIL_TEMPLATES.CHEMICAL;
 
-	const csv: string = chemicals.map(chem => `${chem.cas_auth_chem},${chem.auth_chem_en}`).join('\n');
+	const csv: string = chemicals.map(chem => `${chem.cas_auth_chem},"${chem.auth_chem_en}"`).join('\n');
 
 	await mailer.sendMail({
 		from: `"No Reply" <${process.env.SMTP_USER}>`,
