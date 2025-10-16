@@ -15,7 +15,7 @@ danger dans le local ci-dessous a été modifié :<br/>
 • <b>Statut</b> : {{action.fr}}<br/>
 • <b>Type de danger</b> : {{hazardType}}<br/>
 • <b>Lien vers LHD</b> : <a href="${process.env.APP_BASE_PATH}/roomdetails?room={{room}}">{{room}}</a><br/>
-• <b>Commentaires</b> : {{comments}}<br/><br/>
+• <b>Commentaires</b> : <i>{{comments}}</i><br/><br/>
 Nous vous remercions de bien vouloir faire les changements nécessaires dans AxS.<br/><br/>
 Pour rappel, voici les étapes qui sont importantes de ne pas oublier :<br/>
 • Mettre à jour le local dans le workflow AxS<br/>
