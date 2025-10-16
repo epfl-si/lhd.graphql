@@ -168,6 +168,9 @@ export const HazardFlat = objectType({
 		t.string("child_submission");
 		t.string("id_lab_has_hazards_child");
 		t.int("id_lab_has_hazards");
+		t.string("global_comment");
+		t.string("modified_by");
+		t.field("modified_on", { type: "DateTime" });
 	}
 });
 
@@ -240,7 +243,10 @@ lhh.submission as parent_submission,
 lhhc.submission as child_submission,
 lhhc.id_lab_has_hazards_child,
 lhh.id_lab_has_hazards,
-lhhc.id_hazard_form_child_history
+lhhc.id_hazard_form_child_history,
+lhhai.comment as global_comment,
+lhhai.modified_by,
+lhhai.modified_on
 from lab_has_hazards_child lhhc 
 right join lab_has_hazards lhh on lhh.id_lab_has_hazards = lhhc.id_lab_has_hazards
 inner join hazard_form_history hfh on hfh.id_hazard_form_history =lhh.id_hazard_form_history
@@ -255,7 +261,9 @@ left join subunpro s on s.id_unit = u.id_unit
 left join person prof on s.id_person = prof.id_person
 left join institut i on i.id_institut = u.id_institut
 left join faculty f on f.id_faculty = i.id_faculty
+left join lab_has_hazards_additional_info lhhai on lhhai.id_lab = l.id_lab
 where hc.hazard_category_name = ${args.search}
+and lhhai.id_hazard_category = hc.id_hazard_category 
 and ${jsonCondition}
 order by l.lab_display asc
 `;
