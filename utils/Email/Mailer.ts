@@ -26,7 +26,7 @@ async function sendEmailCAE(modifiedByName: string,
 		.replaceAll("{{action.fr}}", action['fr'])
 		.replaceAll("{{action.en}}", action['en'])
 		.replaceAll("{{hazardType}}", hazardType)
-		.replaceAll("{{comments}}", comments);
+		.replaceAll("{{comments}}", decodeURIComponent(comments));
 
 	await mailer.sendMail({
 		from: `"No Reply" <${process.env.SMTP_USER}>`,
