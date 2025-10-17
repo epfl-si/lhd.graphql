@@ -6,6 +6,7 @@ import {mutationStatusType} from "../statuses";
 import {getSHA256} from "../../utils/HashingTools";
 import {id, IDObfuscator} from "../../utils/IDObfuscator";
 import {updateBioOrg} from "../hazards/labHazardChild";
+import {getUserInfoFromAPI} from "../../utils/CallAPI";
 
 export const BioOrgStruct = objectType({
 	name: bio_org.$name,
@@ -92,12 +93,13 @@ export const OrganismMutations = extendType({
 					}
 
 					return await context.prisma.$transaction(async (tx) => {
+						const userInfo = await getUserInfoFromAPI(context.user.preferred_username);
 						const organism = await tx.bio_org.create({
 							data: {
 								organism: args.organismName,
 								risk_group: args.risk,
 								updated_on: new Date(),
-								updated_by: context.user.preferred_username
+								updated_by: `${userInfo.userFullName} (${userInfo.sciper})`,
 							}
 						});
 
@@ -164,13 +166,14 @@ export const OrganismMutations = extendType({
 							filePath = saveBase64File(args.fileContent,  'd_bio/' + org.id_bio_org + '/', args.fileName)
 						}
 
+						const userInfo = await getUserInfoFromAPI(context.user.preferred_username);
 						const updatedOrganism = await tx.bio_org.update(
 							{ where: { id_bio_org: org.id_bio_org },
 								data: {
 									organism: args.organismName,
 									risk_group: args.risk,
 									updated_on: new Date(),
-									updated_by: context.user.preferred_username,
+									updated_by: `${userInfo.userFullName} (${userInfo.sciper})`,
 									filePath: filePath
 								}
 							});
@@ -220,7 +223,7 @@ export const OrganismMutations = extendType({
 							throw new Error(`Organism ${args.organismName} has been changed from another user. Please reload the page to make modifications`);
 						}
 
-						const deletedOrganismLab = await tx.bio_org_lab.deleteMany({ where: { id_bio_org: org.id_bio_org }});
+						await tx.bio_org_lab.deleteMany({ where: { id_bio_org: org.id_bio_org }});
 						const deletedOrganism = await tx.bio_org.delete({ where: { id_bio_org: org.id_bio_org }});
 
 						if ( !deletedOrganism ) {

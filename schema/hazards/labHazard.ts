@@ -11,6 +11,7 @@ import * as dotenv from "dotenv";
 import {saveBase64File} from "../../utils/File";
 import {sendEmailsForHazards} from "../../utils/Email/Mailer";
 import {logAction} from "../../utils/Email/EmailTemplates";
+import {getUserInfoFromAPI} from "../../utils/CallAPI";
 
 dotenv.config();
 const HAZARD_DOCUMENT_FOLDER = process.env.HAZARD_DOCUMENT_FOLDER;
@@ -223,10 +224,11 @@ export const RoomHazardMutations = extendType({
 								id_lab: room.id
 							}});
 						if (additionalInfoResult) {
+							const userInfo = await getUserInfoFromAPI(context.user.preferred_username);
 							const info = await tx.lab_has_hazards_additional_info.update(
 								{ where: { id_lab_has_hazards_additional_info: additionalInfoResult.id_lab_has_hazards_additional_info },
 									data: {
-										modified_by: context.user.preferred_username,
+										modified_by: `${userInfo.userFullName} (${userInfo.sciper})`,
 										modified_on: new Date(),
 										comment: args.additionalInfo.comment ? args.additionalInfo.comment : '',
 										filePath: filePath != '' ? filePath : additionalInfoResult.filePath
@@ -239,9 +241,10 @@ export const RoomHazardMutations = extendType({
 								await createNewMutationLog(tx, context, tx.lab_has_hazards_additional_info.name, info.id_lab_has_hazards_additional_info, '', additionalInfoResult, info, 'UPDATE');
 							}
 						} else {
+							const userInfo = await getUserInfoFromAPI(context.user.preferred_username);
 							const info = await tx.lab_has_hazards_additional_info.create({
 								data: {
-									modified_by: context.user.preferred_username,
+									modified_by: `${userInfo.userFullName} (${userInfo.sciper})`,
 									modified_on: new Date(),
 									comment: args.additionalInfo.comment ? args.additionalInfo.comment : '',
 									filePath: filePath,

@@ -1,6 +1,6 @@
 import * as nodemailer from "nodemailer";
 import {EMAIL_TEMPLATES, logRecipients} from "./EmailTemplates";
-import {getUsersFromApi} from "../CallAPI";
+import {getUserInfoFromAPI} from "../CallAPI";
 
 export const mailer = nodemailer.createTransport({
 	host: process.env.SMTP_HOST,
@@ -88,16 +88,4 @@ export async function sendEmailsForChemical(user: string, tx: any) {
 		html: process.env.ENVIRONMENT == 'prod' ? template.body : `${logRecipients([process.env.CATALYSE_EMAIL], [], [] )}\n${template.body}`,
 		attachments: [{raw: ["Content-Type: text/csv; charset=utf-8", 'Content-Disposition: attachment; filename="chemicals.csv"', "", csv].join("\r\n"),}]
 	});
-}
-
-async function getUserInfoFromAPI(username: string) {
-	let userFullName = username;
-	let userEmail = '';
-	const ldapUsers = await getUsersFromApi(username);
-	const ldapUser = ldapUsers["persons"].filter(u => u.account && u.account.username == username);
-	if (ldapUser.length == 1) {
-		userFullName = ldapUser[0].display;
-		userEmail = ldapUser[0].email;
-	}
-	return {userFullName, userEmail};
 }
