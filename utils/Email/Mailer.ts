@@ -86,6 +86,16 @@ export async function sendEmailsForChemical(user: string, tx: any) {
 		to: process.env.ENVIRONMENT == 'prod' ? process.env.CATALYSE_EMAIL : userInfo.userEmail,
 		subject: template.subject,
 		html: process.env.ENVIRONMENT == 'prod' ? template.body : `${logRecipients([process.env.CATALYSE_EMAIL], [], [] )}\n${template.body}`,
-		attachments: [{raw: ["Content-Type: text/csv; charset=utf-8", 'Content-Disposition: attachment; filename="chemicals.csv"', "", csv].join("\r\n"),}]
+		attachments: [{raw: ["Content-Type: text/csv; charset=utf-8", `Content-Disposition: attachment; filename="chemicals-${getFormattedDate()}.csv"`, "", csv].join("\r\n"),}]
 	});
+}
+
+function getFormattedDate() {
+	const date = new Date();
+
+	const day = String(date.getDate()).padStart(2, '0');
+	const month = String(date.getMonth() + 1).padStart(2, '0');
+	const year = String(date.getFullYear()).slice(-2); // Get last 2 digits
+
+	return `${day}${month}${year}`;
 }
