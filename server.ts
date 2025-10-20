@@ -9,12 +9,13 @@ import * as cors from 'cors';
 import * as fs from 'fs/promises'
 import {schema} from './nexus/schema';
 
-import {errors, Issuer} from 'openid-client';
-import {loginResponse, UserInfo} from './serverTypes';
+import {Issuer} from 'openid-client';
+import {loginResponse} from './serverTypes';
 import * as path from "node:path";
 import {registerLegacyApi} from "./api";
 import {ApolloServer} from "@apollo/server";
 import {expressMiddleware} from "@as-integrations/express5";
+import {getToken, VALID_TOKENS_FOR_API} from "./libs/authentication";
 
 type TestInjections = {
 	insecure?: boolean;
@@ -61,12 +62,13 @@ export async function makeServer(
 
 	app.use(express.json({ limit: '50mb' }));
 	app.use(cors());
-	registerLegacyApi(app);
 
 	if (! insecure) {
-		app.use(async function (req, res, next) {
+		app.use(async function (req: any, res, next) {
 			try {
 				var loginResponse = await getLoggedInUserInfos(req);
+				req.user = loginResponse.user;
+
 				if (req.method === 'POST' && !isHarmless(req) && !loginResponse.loggedIn) {
 					res.status(loginResponse.httpCode);
 					res.send(loginResponse.message);
@@ -89,29 +91,25 @@ export async function makeServer(
 	app.post('/files/', async (req, res) => {
 		try {
 			console.error('Getting file');
-			var loginResponse = await getLoggedInUserInfos(req);
-			if (!loginResponse.loggedIn) {
-				res.status(loginResponse.httpCode);
-				res.send(loginResponse.message);
-			} else {
-				const filePath = path.join(req.body.filePath as string);
-				const fileName = path.basename(filePath);
-				const fullFilePath = path.join(process.env.DOCUMENTS_PATH, filePath);
-				console.error('Getting file', fullFilePath);
-				res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-				res.sendFile(fullFilePath, (err) => {
-					if ( err ) {
-						console.error('Error sending file:', err);
-						res.status(500).send(err.message);
-					}
-					console.error('Getting file success', fullFilePath);
-				});
-			}
+			const filePath = path.join(req.body.filePath as string);
+			const fileName = path.basename(filePath);
+			const fullFilePath = path.join(process.env.DOCUMENTS_PATH, filePath);
+			console.error('Getting file', fullFilePath);
+			res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+			res.sendFile(fullFilePath, (err) => {
+				if ( err ) {
+					console.error('Error sending file:', err);
+					res.status(500).send(err.message);
+				}
+				console.error('Getting file success', fullFilePath);
+			});
 		} catch ( e ) {
 			console.error('Error sending file:', e);
 			res.status(404).send('File not found');
 		}
 	});
+
+	registerLegacyApi(app,{ prisma });
 
 	app.use('/',
 		expressMiddleware(server, {
@@ -159,12 +157,20 @@ async function getLoggedInUserInfos(req): Promise<loginResponse> {
 		const client = new issuer_.Client({ client_id: 'LHDv3 server' });
 
 		try {
-			const userinfo: UserInfo = await client.userinfo(access_token);
+			let userinfo;
+			const apiUser = Object.keys(VALID_TOKENS_FOR_API).find(k => VALID_TOKENS_FOR_API[k] === access_token) || null;
+			if (apiUser == null) {
+				userinfo = await client.userinfo(access_token);
+			} else {
+				userinfo = {
+					preferred_username: apiUser,
+					groups:[]
+				};
+			}
 			const allowedGroups = process.env.ALLOWED_GROUPS.split(',');
 			console.log('Logged in', userinfo);
 			console.log('Allowed groups', allowedGroups);
-			// TODO: Some pages do not have the same access rights as others. Rewrite this to account for that.
-			if (userinfo.groups && userinfo.groups.some(e => allowedGroups.includes(e))) {
+			if ((userinfo.groups && userinfo.groups.some(e => allowedGroups.includes(e)) || apiUser != null)) {
 				return {
 					loggedIn: true,
 					user: userinfo,
@@ -172,38 +178,12 @@ async function getLoggedInUserInfos(req): Promise<loginResponse> {
 					message: 'Correct access rights and token are working, user logged in.',
 				};
 			}
-			return {
-				loggedIn: false,
-				user: null,
-				httpCode: 403,
-				message: `Wrong access rights. You are required to have one of the following groups: ${allowedGroups.join(
-					', '
-				)}`,
-			};
+			throw new Error('Wrong access rights');
 		} catch (e: any) {
-			if (e instanceof errors.OPError && e.error == 'invalid_token') {
-				return {
-					loggedIn: false,
-					httpCode: 401,
-					message: `JWT Token is invalid: ${e}`,
-				};
-			} else {
-				throw e;
-			}
+			throw e;
 		}
 	}
 
-	const matched = req.headers.authorization?.match(/^Bearer\s(.*)$/);
-
-	if (!matched) {
-		return {
-			loggedIn: false,
-			httpCode: 401,
-			message: `No token, no logged in`,
-		};
-	}
-
-	const authenticationResult = await getUserAuthentication(matched[1]);
-	req.user = authenticationResult.user;
-	return authenticationResult;
+	const matched = getToken(req);
+	return await getUserAuthentication(matched);
 }

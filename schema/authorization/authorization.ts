@@ -1,4 +1,4 @@
-import {arg, extendType, inputObjectType, intArg, list, objectType, stringArg} from "nexus";
+import {extendType, inputObjectType, intArg, list, objectType, stringArg} from "nexus";
 import {id, IDObfuscator} from "../../utils/IDObfuscator";
 import {authorization} from "nexus-prisma";
 import {mutationStatusType} from "../statuses";
@@ -10,7 +10,6 @@ import {ChemicalStruct} from "./chemicals";
 import {UnitStruct} from "../roomdetails/units";
 import {getUsersFromApi} from "../../utils/CallAPI";
 import {RadiationStruct} from "./radiation";
-import { checkToken } from "./lib/authentication";
 
 export const AuthorizationStruct = objectType({
 	name: authorization.$name,
@@ -91,7 +90,7 @@ export const AuthorizationStruct = objectType({
 	},
 });
 
-function getAuthorizationToString(parent) {
+export function getAuthorizationToString(parent) {
 	return {
 		id: parent.id_authorization,
 		authorization: parent.authorization,
@@ -128,70 +127,10 @@ export const AuthorizationsWithPaginationQuery = extendType({
 				skip: intArg({ default: 0 }),
 				take: intArg({ default: 20 }),
 				search: stringArg(),
-				type: stringArg(),
-				token: stringArg()
+				type: stringArg()
 			},
 			async resolve(parent, args, context) {
-				checkToken(args.token, context.user);
-
-				const queryArray = args.search.split("&");
-				const dictionary = queryArray.map(query => query.split("="));
-				const whereCondition = [];
-				whereCondition.push({ type: args.type})
-				if (dictionary.length > 0) {
-					dictionary.forEach(query => {
-						const value = decodeURIComponent(query[1]);
-						if (query[0] == 'Unit') {
-							whereCondition.push({ unit: { is: {name: {contains: value}} }})
-						} else if (query[0] == 'Authorization') {
-							whereCondition.push({ authorization: { contains: value }})
-						} else if (query[0] == 'Status') {
-							whereCondition.push({ status: { contains: value }})
-						} else if (query[0] == 'Room') {
-							whereCondition.push({ authorization_has_room: { some: {room: {is: {name: {contains: value}}}} }})
-						} else if (query[0] == 'Holder') {
-							whereCondition.push({
-								authorization_has_holder: {
-									some: {
-										holder: {
-											OR: [
-												{ name: { contains: value } },
-												{ surname: { contains: value } },
-												{ email: { contains: value } },
-												{ sciper: parseInt(value) },
-											],
-										},
-									},
-								}
-							})
-						} else if (query[0] == 'CAS') {
-							whereCondition.push({ authorization_has_chemical: { some: {chemical: {
-											OR: [
-												{ cas_auth_chem: { contains: value } },
-												{ auth_chem_en: { contains: value } }
-											],
-										}} }})
-						} else if (query[0] == 'Source') {
-							whereCondition.push({ authorization_has_radiation: { some: {source: {contains: value}} }})
-						}
-					})
-				}
-
-				const authorizationList = await context.prisma.authorization.findMany({
-					where: {
-						AND: whereCondition
-					},
-					orderBy: [
-						{
-							authorization: 'asc',
-						},
-					]
-				});
-
-				const authorizations = args.take == 0 ? authorizationList : authorizationList.slice(args.skip, args.skip + args.take);
-				const totalCount = authorizationList.length;
-
-				return { authorizations, totalCount };
+				return await getAuthorizationsWithPagination(args, context);
 			}
 		});
 	},
@@ -266,7 +205,6 @@ const HolderMutationType = inputObjectType({
 });
 
 const newAuthorizationType = {
-	token: stringArg(),
 	id: stringArg(),
 	authorization: stringArg(),
 	id_unit: stringArg(),
@@ -297,46 +235,7 @@ export const AuthorizationMutations = extendType({
 			args: newAuthorizationType,
 			type: "AuthorizationStatus",
 			async resolve(root, args, context) {
-				try {
-					const hasUserAccess = checkToken(args.token, context.user);
-
-					let unitId = parseInt(args.id_unit);
-					if (hasUserAccess) {
-						const id = IDObfuscator.getId(args.id_unit);
-						const idDeobfuscatedForUnit = IDObfuscator.getIdDeobfuscated(id);
-						const unit = await context.prisma.Unit.findUnique({where: {id: idDeobfuscatedForUnit}})
-						if (!unit) throw new Error(`Authorization not created`);
-						unitId = unit.id;
-					}
-
-					return await context.prisma.$transaction(async (tx) => {
-						const [dayCrea, monthCrea, yearCrea] = args.creation_date.split("/").map(Number);
-						const [day, month, year] = args.expiration_date.split("/").map(Number);
-						const authorization = await tx.authorization.create({
-							data: {
-								authorization: args.authorization,
-								status: args.status,
-								creation_date: new Date(yearCrea, monthCrea - 1, dayCrea, 12),
-								expiration_date: new Date(year, month - 1, day, 12),
-								id_unit: unitId,
-								renewals: 0,
-								type: args.type,
-								authority: args.authority
-							}
-						});
-
-						if ( !authorization ) {
-							throw new Error(`Authorization not created`);
-						} else {
-							await createNewMutationLog(tx, context, tx.authorization.name, authorization.id_authorization, '', {}, authorization, 'CREATE');
-							await checkRelations(tx, context, args, authorization);
-						}
-
-						return mutationStatusType.success();
-					});
-				} catch ( e ) {
-					return mutationStatusType.error(e.message);
-				}
+				return await addAuthorization(args, context);
 			}
 		});
 		t.nonNull.field('updateAuthorization', {
@@ -344,56 +243,7 @@ export const AuthorizationMutations = extendType({
 			args: newAuthorizationType,
 			type: "AuthorizationStatus",
 			async resolve(root, args, context) {
-				try {
-					checkToken(args.token, context.user);
-
-					return await context.prisma.$transaction(async (tx) => {
-						const id = IDObfuscator.getId(args.id);
-						const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
-						const auth = await tx.authorization.findUnique({where: {id_authorization: idDeobfuscated}});
-						if (! auth) {
-							throw new Error(`Authorization ${args.authorization} not found.`);
-						}
-						const authorizationObject =  getSHA256(JSON.stringify(getAuthorizationToString(auth)), id.salt);
-						if (IDObfuscator.getDataSHA256(id) !== authorizationObject) {
-							throw new Error(`Authorization ${args.authorization} has been changed from another user. Please reload the page to make modifications`);
-						}
-
-						const [day, month, year] = args.expiration_date.split("/").map(Number);
-						const newExpDate = new Date(year, month - 1, day, 12);
-						const ren = args.renewals ?? (newExpDate > auth.expiration_date ? (auth.renewals + 1) : auth.renewals);
-						const data = {
-							status: args.status,
-							expiration_date: newExpDate,
-							authority: args.authority ?? auth.authority,
-							renewals: ren
-						}
-						if (args.id_unit) {
-							const idunit = IDObfuscator.getId(args.id_unit);
-							const idDeobfuscatedForUnit = IDObfuscator.getIdDeobfuscated(idunit);
-							const unit = await context.prisma.Unit.findUnique({where: {id: idDeobfuscatedForUnit}})
-							if ( !unit ) {
-								throw new Error(`Authorization not updated`);
-							}
-							data['id_unit'] = unit.id;
-						}
-
-						const updatedAuthorization = await tx.authorization.update(
-							{ where: { id_authorization: auth.id_authorization },
-								data: data
-							});
-
-						if (!updatedAuthorization) {
-							throw new Error(`Authorization ${args.authorization} not updated.`);
-						} else {
-							await createNewMutationLog(tx, context, tx.authorization.name, updatedAuthorization.id_authorization, '', auth, updatedAuthorization, 'UPDATE');
-							await checkRelations(tx, context, args, updatedAuthorization);
-						}
-						return mutationStatusType.success();
-					});
-				} catch ( e ) {
-					return mutationStatusType.error(e.message);
-				}
+				return await updateAuthorization(args, context);
 			}
 		});
 		t.nonNull.field('deleteAuthorization', {
@@ -650,4 +500,181 @@ async function checkRelations(tx, context, args, authorization) {
 	if (errors.length > 0) {
 		throw new Error(`${errors.join('\n')}`);
 	}
+}
+
+export async function addAuthorization(args, context) {
+	try {
+		let unitId = parseInt(args.id_unit);
+		if (!['SNOW', 'CATALYSE'].includes(context.user.preferred_username)) {
+			const id = IDObfuscator.getId(args.id_unit);
+			const idDeobfuscatedForUnit = IDObfuscator.getIdDeobfuscated(id);
+			const unit = await context.prisma.Unit.findUnique({where: {id: idDeobfuscatedForUnit}})
+			if (!unit) throw new Error(`Authorization not created`);
+			unitId = unit.id;
+		}
+
+		return await context.prisma.$transaction(async (tx) => {
+			const [dayCrea, monthCrea, yearCrea] = args.creation_date.split("/").map(Number);
+			const [day, month, year] = args.expiration_date.split("/").map(Number);
+			const authorization = await tx.authorization.create({
+				data: {
+					authorization: args.authorization,
+					status: args.status,
+					creation_date: new Date(yearCrea, monthCrea - 1, dayCrea, 12),
+					expiration_date: new Date(year, month - 1, day, 12),
+					id_unit: unitId,
+					renewals: 0,
+					type: args.type,
+					authority: args.authority
+				}
+			});
+
+			if ( !authorization ) {
+				throw new Error(`Authorization not created`);
+			} else {
+				await createNewMutationLog(tx, context, tx.authorization.name, authorization.id_authorization, '', {}, authorization, 'CREATE');
+				await checkRelations(tx, context, args, authorization);
+			}
+
+			return mutationStatusType.success();
+		});
+	} catch ( e ) {
+		return mutationStatusType.error(e.message);
+	}
+}
+
+export async function updateAuthorization(args, context) {
+	try {
+		return await context.prisma.$transaction(async (tx) => {
+			const id = IDObfuscator.getId(args.id);
+			const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
+			const auth = await tx.authorization.findUnique({where: {id_authorization: idDeobfuscated}});
+			if (! auth) {
+				throw new Error(`Authorization ${args.authorization} not found.`);
+			}
+			const authorizationObject =  getSHA256(JSON.stringify(getAuthorizationToString(auth)), id.salt);
+			if (IDObfuscator.getDataSHA256(id) !== authorizationObject) {
+				throw new Error(`Authorization ${args.authorization} has been changed from another user. Please reload the page to make modifications`);
+			}
+
+			const [day, month, year] = args.expiration_date.split("/").map(Number);
+			const newExpDate = new Date(year, month - 1, day, 12);
+			const ren = args.renewals ?? (newExpDate > auth.expiration_date ? (auth.renewals + 1) : auth.renewals);
+			const data = {
+				status: args.status,
+				expiration_date: newExpDate,
+				authority: args.authority ?? auth.authority,
+				renewals: ren
+			}
+			if (args.id_unit) {
+				const idunit = IDObfuscator.getId(args.id_unit);
+				const idDeobfuscatedForUnit = IDObfuscator.getIdDeobfuscated(idunit);
+				const unit = await context.prisma.Unit.findUnique({where: {id: idDeobfuscatedForUnit}})
+				if ( !unit ) {
+					throw new Error(`Authorization not updated`);
+				}
+				data['id_unit'] = unit.id;
+			}
+
+			const updatedAuthorization = await tx.authorization.update(
+				{ where: { id_authorization: auth.id_authorization },
+					data: data
+				});
+
+			if (!updatedAuthorization) {
+				throw new Error(`Authorization ${args.authorization} not updated.`);
+			} else {
+				await createNewMutationLog(tx, context, tx.authorization.name, updatedAuthorization.id_authorization, '', auth, updatedAuthorization, 'UPDATE');
+				await checkRelations(tx, context, args, updatedAuthorization);
+			}
+			return mutationStatusType.success();
+		});
+	} catch ( e ) {
+		return mutationStatusType.error(e.message);
+	}
+}
+
+export async function getAuthorizationsWithPagination(args, context) {
+	const queryArray = args.search.split("&");
+	const dictionary = queryArray.map(query => query.split("="));
+	const whereCondition = [];
+	whereCondition.push({ type: args.type})
+	if (dictionary.length > 0) {
+		dictionary.forEach(query => {
+			const value = decodeURIComponent(query[1]);
+			if (query[0] == 'Unit') {
+				whereCondition.push({ unit: { is: {name: {contains: value}} }})
+			} else if (query[0] == 'Authorization') {
+				whereCondition.push({ authorization: { contains: value }})
+			} else if (query[0] == 'Status') {
+				whereCondition.push({ status: { contains: value }})
+			} else if (query[0] == 'Room') {
+				whereCondition.push({ authorization_has_room: { some: {room: {is: {name: {contains: value}}}} }})
+			} else if (query[0] == 'Holder') {
+				whereCondition.push({
+					authorization_has_holder: {
+						some: {
+							holder: {
+								OR: [
+									{ name: { contains: value } },
+									{ surname: { contains: value } },
+									{ email: { contains: value } },
+									{ sciper: parseInt(value) },
+								],
+							},
+						},
+					}
+				})
+			} else if (query[0] == 'CAS') {
+				whereCondition.push({ authorization_has_chemical: { some: {chemical: {
+								OR: [
+									{ cas_auth_chem: { contains: value } },
+									{ auth_chem_en: { contains: value } }
+								],
+							}} }})
+			} else if (query[0] == 'Source') {
+				whereCondition.push({ authorization_has_radiation: { some: {source: {contains: value}} }})
+			}
+		})
+	}
+
+	const authorizationList = await context.prisma.authorization.findMany({
+		where: {
+			AND: whereCondition
+		},
+		include: { authorization_has_chemical: { include: { chemical: true } } },
+		orderBy: [
+			{
+				authorization: 'asc',
+			},
+		]
+	});
+
+	const authorizations = args.take == 0 ? authorizationList : authorizationList.slice(args.skip, args.skip + args.take);
+	const totalCount = authorizationList.length;
+
+	return { authorizations, totalCount };
+}
+
+
+export async function getAuthorization(args, context) {
+	const whereCondition = [];
+	whereCondition.push({ type: args.type})
+	whereCondition.push({ authorization: args.search })
+
+	const authorizationList = await context.prisma.authorization.findMany({
+		where: {
+			AND: whereCondition
+		},
+		orderBy: [
+			{
+				authorization: 'asc',
+			},
+		]
+	});
+
+	const authorizations = args.take == 0 ? authorizationList : authorizationList.slice(args.skip, args.skip + args.take);
+	const totalCount = authorizationList.length;
+
+	return { authorizations, totalCount };
 }

@@ -7,6 +7,7 @@ export type UserInfo = {
 
 export type loginResponse = {
 	loggedIn: boolean;
+	user: object;
 	httpCode: number;
 	message: string;
 };

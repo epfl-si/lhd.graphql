@@ -4,7 +4,6 @@ import {auth_chem} from "nexus-prisma";
 import {mutationStatusType} from "../statuses";
 import {createNewMutationLog} from "../global/mutationLogs";
 import {getSHA256} from "../../utils/HashingTools";
-import {checkToken} from "./lib/authentication";
 import {sendEmailsForChemical} from "../../utils/Email/Mailer";
 
 export const ChemicalStruct = objectType({
@@ -61,45 +60,10 @@ export const ChemicalsWithPaginationQuery = extendType({
 			args: {
 				skip: intArg({ default: 0 }),
 				take: intArg({ default: 20 }),
-				search: stringArg(),
-				token: stringArg()
+				search: stringArg()
 			},
 			async resolve(parent, args, context) {
-				checkToken(args.token, context.user);
-
-				const queryArray = args.search.split("&");
-				const dictionary = queryArray.map(query => query.split("="));
-				const whereCondition = [];
-				if (dictionary.length == 0) {
-					whereCondition.push({ cas_auth_chem: { contains: '' }})
-				} else {
-					dictionary.forEach(query => {
-						const value = decodeURIComponent(query[1]);
-						if (query[0] == 'CAS') {
-							whereCondition.push({ cas_auth_chem: { contains: value }})
-						} else if (query[0] == 'Name') {
-							whereCondition.push({ auth_chem_en : { contains: value }})
-						} else if (query[0] == 'Status') {
-							whereCondition.push({ flag_auth_chem : value == 'Active' })
-						}
-					})
-				}
-
-				const chemicalList = await context.prisma.auth_chem.findMany({
-					where: {
-						AND: whereCondition
-					},
-					orderBy: [
-						{
-							cas_auth_chem: 'asc',
-						},
-					]
-				});
-
-				const chemicals = args.take == 0 ? chemicalList : chemicalList.slice(args.skip, args.skip + args.take);
-				const totalCount = chemicalList.length;
-
-				return { chemicals, totalCount };
+				return await getChemicalWithPagination(args, context);
 			}
 		});
 	},
@@ -109,8 +73,7 @@ const newChemicalType = {
 	id: stringArg(),
 	cas_auth_chem: stringArg(),
 	auth_chem_en: stringArg(),
-	flag_auth_chem: booleanArg(),
-	token: stringArg()
+	flag_auth_chem: booleanArg()
 };
 
 export const ChemicalStatus = mutationStatusType({
@@ -128,29 +91,7 @@ export const ChemicalMutations = extendType({
 			args: newChemicalType,
 			type: "ChemicalStatus",
 			async resolve(root, args, context) {
-				try {
-					checkToken(args.token, context.user);
-
-					return await context.prisma.$transaction(async (tx) => {
-						const chemical = await tx.auth_chem.create({
-							data: {
-								cas_auth_chem: args.cas_auth_chem,
-								auth_chem_en: args.auth_chem_en,
-								flag_auth_chem: args.flag_auth_chem
-							}
-						});
-
-						if ( !chemical ) {
-							throw new Error(`Chemical not created`);
-						} else {
-							await createNewMutationLog(tx, context, tx.auth_chem.name, chemical.id_auth_chem, '', {}, chemical, 'CREATE');
-						}
-						await sendEmailsForChemical(context.user.preferred_username, tx);
-						return mutationStatusType.success();
-					});
-				} catch ( e ) {
-					return mutationStatusType.error(e.message);
-				}
+				return await addChemical(args, context);
 			}
 		});
 		t.nonNull.field('updateChemical', {
@@ -259,3 +200,63 @@ export const ChemicalMutations = extendType({
 		});
 	}
 });
+
+export async function addChemical(args, context) {
+	try {
+		return await context.prisma.$transaction(async (tx) => {
+			const chemical = await tx.auth_chem.create({
+				data: {
+					cas_auth_chem: args.cas_auth_chem,
+					auth_chem_en: args.auth_chem_en,
+					flag_auth_chem: args.flag_auth_chem
+				}
+			});
+
+			if ( !chemical ) {
+				throw new Error(`Chemical not created`);
+			} else {
+				await createNewMutationLog(tx, context, tx.auth_chem.name, chemical.id_auth_chem, '', {}, chemical, 'CREATE');
+			}
+			await sendEmailsForChemical(context.user.preferred_username, tx);
+			return mutationStatusType.success();
+		});
+	} catch ( e ) {
+		return mutationStatusType.error(e.message);
+	}
+}
+
+export async function getChemicalWithPagination(args, context) {
+	const queryArray = args.search.split("&");
+	const dictionary = queryArray.map(query => query.split("="));
+	const whereCondition = [];
+	if (dictionary.length == 0) {
+		whereCondition.push({ cas_auth_chem: { contains: '' }})
+	} else {
+		dictionary.forEach(query => {
+			const value = decodeURIComponent(query[1]);
+			if (query[0] == 'CAS') {
+				whereCondition.push({ cas_auth_chem: { contains: value }})
+			} else if (query[0] == 'Name') {
+				whereCondition.push({ auth_chem_en : { contains: value }})
+			} else if (query[0] == 'Status') {
+				whereCondition.push({ flag_auth_chem : value == 'Active' })
+			}
+		})
+	}
+
+	const chemicalList = await context.prisma.auth_chem.findMany({
+		where: {
+			AND: whereCondition
+		},
+		orderBy: [
+			{
+				cas_auth_chem: 'asc',
+			},
+		]
+	});
+
+	const chemicals = args.take == 0 ? chemicalList : chemicalList.slice(args.skip, args.skip + args.take);
+	const totalCount = chemicalList.length;
+
+	return { chemicals, totalCount };
+}
