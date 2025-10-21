@@ -77,7 +77,7 @@ export async function makeServer(
 				}
 			} catch (e) {
 				console.error(e, e.stack);
-				res.status(500);
+				res.status(e.message == 'Unauthorized' ? 403 : 500);
 				res.send(`GraphQL Error: ${e}`);
 			}
 		});
@@ -180,7 +180,7 @@ async function getLoggedInUserInfos(req): Promise<loginResponse> {
 			}
 			throw new Error('Wrong access rights');
 		} catch (e: any) {
-			throw e;
+			throw new Error('Unauthorized');
 		}
 	}
 
