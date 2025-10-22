@@ -1,4 +1,6 @@
 export type UserInfo = {
+	isCosec?: boolean;
+	isManager?: boolean;
 	sub?: string;
 	given_name?: string;
 	family_name?: string;

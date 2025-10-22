@@ -171,21 +171,23 @@ async function getLoggedInUserInfos(req): Promise<loginResponse> {
 			console.log('Logged in', userinfo);
 			console.log('Allowed groups', allowedGroups);
 			if ((userinfo.groups && userinfo.groups.some(e => allowedGroups.includes(e)) || apiUser != null)) {
-				userinfo.isAdmin = userinfo.groups.indexOf('LHD_acces_admin') > -1;
-				userinfo.canListRooms = userinfo.groups.indexOf('LHD_acces_admin') > -1 || userinfo.groups.indexOf('LHD_acces_lecture') > -1;
-				userinfo.canEditRooms = userinfo.groups.indexOf('LHD_acces_admin') > -1 || userinfo.groups.indexOf('LHD_acces_lecture') > -1;
-				userinfo.canListHazards = userinfo.groups.indexOf('LHD_acces_admin') > -1 || userinfo.groups.indexOf('LHD_acces_lecture') > -1;
-				userinfo.canEditHazards = userinfo.groups.indexOf('LHD_acces_admin') > -1 || userinfo.groups.indexOf('LHD_acces_lecture') > -1;
-				userinfo.canListUnits = userinfo.groups.indexOf('LHD_acces_admin') > -1 || userinfo.groups.indexOf('LHD_acces_lecture') > -1;
-				userinfo.canEditUnits = userinfo.groups.indexOf('LHD_acces_admin') > -1 || userinfo.groups.indexOf('LHD_acces_lecture') > -1;
-				userinfo.canListOrganisms = userinfo.groups.indexOf('LHD_acces_admin') > -1 || userinfo.groups.indexOf('LHD_acces_lecture') > -1 || userinfo.groups.includes('LHD_acces_cosec');
-				userinfo.canEditOrganisms = userinfo.groups.indexOf('LHD_acces_admin') > -1 || userinfo.groups.indexOf('LHD_acces_lecture') > -1;
-				userinfo.canListChemicals = userinfo.groups.indexOf('LHD_acces_admin') > -1 || userinfo.groups.indexOf('LHD_acces_lecture') > -1;
-				userinfo.canEditChemicals = userinfo.groups.indexOf('LHD_acces_admin') > -1 || userinfo.groups.indexOf('LHD_acces_lecture') > -1;
-				userinfo.canListAuthorizations = userinfo.groups.indexOf('LHD_acces_admin') > -1 || userinfo.groups.indexOf('LHD_acces_lecture') > -1;
-				userinfo.canEditAuthorizations = userinfo.groups.indexOf('LHD_acces_admin') > -1 || userinfo.groups.indexOf('LHD_acces_lecture') > -1;
-				userinfo.canListPersons = userinfo.groups.indexOf('LHD_acces_admin') > -1 || userinfo.groups.indexOf('LHD_acces_lecture') > -1;
-				userinfo.canCallAPIToGetChemicals = ['SNOW'].includes(userinfo.preferred_username);
+				userinfo.isAdmin = userinfo.groups.indexOf(process.env.ADMIN_GROUP) > -1;
+				userinfo.isManager = userinfo.groups.indexOf(process.env.LHD_GROUP) > -1;
+				userinfo.isCosec = userinfo.groups.indexOf(process.env.COSEC_GROUP) > -1;
+				userinfo.canListRooms = userinfo.isAdmin || userinfo.isManager;
+				userinfo.canEditRooms = userinfo.isAdmin || userinfo.isManager;
+				userinfo.canListHazards = userinfo.isAdmin || userinfo.isManager;
+				userinfo.canEditHazards = userinfo.isAdmin || userinfo.isManager;
+				userinfo.canListUnits = userinfo.isAdmin || userinfo.isManager;
+				userinfo.canEditUnits = userinfo.isAdmin || userinfo.isManager;
+				userinfo.canListOrganisms = userinfo.isAdmin || userinfo.isManager || userinfo.isCosec;
+				userinfo.canEditOrganisms = userinfo.isAdmin || userinfo.isManager;
+				userinfo.canListChemicals = userinfo.isAdmin || userinfo.isManager;
+				userinfo.canEditChemicals = userinfo.isAdmin || userinfo.isManager;
+				userinfo.canListAuthorizations = userinfo.isAdmin || userinfo.isManager;
+				userinfo.canEditAuthorizations = userinfo.isAdmin || userinfo.isManager;
+				userinfo.canListPersons = userinfo.isAdmin || userinfo.isManager;
+				userinfo.canCallAPIToGetChemicals = ['SNOW'].includes(userinfo.preferred_username); //TODO testare le API, refactor IDObfuscated
 				userinfo.canCallAPIToPostChemicals = ['SNOW'].includes(userinfo.preferred_username);
 				userinfo.canCallAPIToPostAuthorization = ['SNOW'].includes(userinfo.preferred_username);
 				userinfo.canCallAPIToRenewAuthorization = ['SNOW'].includes(userinfo.preferred_username);
