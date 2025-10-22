@@ -42,16 +42,27 @@ export const BioOrgQuery = extendType({
 	},
 });
 
+export const BiosWithPaginationStruct = objectType({
+	name: 'BiosWithPagination',
+	definition(t) {
+		t.list.field('bios', { type: 'bio_org' });
+		t.int('totalCount');
+	},
+});
+
 export const OrganismsFromFullTextQuery = extendType({
 	type: 'Query',
 	definition(t) {
 		t.field("organismsFromFullText", {
-			type: list("bio_org"),
+			type: "BiosWithPagination",
 			args: {
 				search: stringArg(),
+				skip: intArg({ default: 0 }),
+				take: intArg({ default: 20 })
 			},
+			authorize: (parent, args, context) => context.user.canListOrganisms,
 			async resolve(parent, args, context) {
-				return await context.prisma.bio_org.findMany({
+				const bioList =  await context.prisma.bio_org.findMany({
 					where: { organism: { contains: args.search } },
 					orderBy: [
 						{
@@ -59,6 +70,11 @@ export const OrganismsFromFullTextQuery = extendType({
 						},
 					]
 				});
+
+				const bios = args.take == 0 ? bioList : bioList.slice(args.skip, args.skip + args.take);
+				const totalCount = bioList.length;
+
+				return { bios, totalCount };
 			}
 		})
 	},
@@ -86,12 +102,9 @@ export const OrganismMutations = extendType({
 			description: `Add a new organism`,
 			args: newOrganismType,
 			type: "OrganismStatus",
+			authorize: (parent, args, context) => context.user.canEditOrganisms,
 			async resolve(root, args, context) {
 				try {
-					if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
-						throw new Error(`Permission denied`);
-					}
-
 					return await context.prisma.$transaction(async (tx) => {
 						const userInfo = await getUserInfoFromAPI(context.user.preferred_username);
 						const organism = await tx.bio_org.create({
@@ -133,12 +146,9 @@ export const OrganismMutations = extendType({
 			description: `Update organism details.`,
 			args: newOrganismType,
 			type: "OrganismStatus",
+			authorize: (parent, args, context) => context.user.canEditOrganisms,
 			async resolve(root, args, context) {
 				try {
-					if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
-						throw new Error(`Permission denied`);
-					}
-
 					return await context.prisma.$transaction(async (tx) => {
 						if (!args.id) {
 							throw new Error(`Not allowed to update organism`);
@@ -195,12 +205,9 @@ export const OrganismMutations = extendType({
 			description: `Delete organism details.`,
 			args: newOrganismType,
 			type: "OrganismStatus",
+			authorize: (parent, args, context) => context.user.canEditOrganisms,
 			async resolve(root, args, context) {
 				try {
-					if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
-						throw new Error(`Permission denied`);
-					}
-
 					return await context.prisma.$transaction(async (tx) => {
 						if (!args.id) {
 							throw new Error(`Not allowed to delete organism`);

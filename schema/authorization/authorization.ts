@@ -129,6 +129,7 @@ export const AuthorizationsWithPaginationQuery = extendType({
 				search: stringArg(),
 				type: stringArg()
 			},
+			authorize: (parent, args, context) => context.user.canListAuthorizations,
 			async resolve(parent, args, context) {
 				return await getAuthorizationsWithPagination(args, context);
 			}
@@ -147,10 +148,8 @@ export const AuthorizationsByRoom = extendType({
 				roomId: stringArg(),
 				type: stringArg()
 			},
+			authorize: (parent, args, context) => context.user.canListAuthorizations,
 			async resolve(parent, args, context) {
-				if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
-					throw new Error(`Permission denied`);
-				}
 				if (args.roomId) {
 					const id: id = JSON.parse(args.roomId);
 					if(id && id.eph_id && id.eph_id != '' && id.salt && id.salt != '' && IDObfuscator.checkSalt(id)) {
@@ -234,6 +233,7 @@ export const AuthorizationMutations = extendType({
 			description: `Add a new authorization`,
 			args: newAuthorizationType,
 			type: "AuthorizationStatus",
+			authorize: (parent, args, context) => context.user.canEditAuthorizations,
 			async resolve(root, args, context) {
 				return await addAuthorization(args, context);
 			}
@@ -242,6 +242,7 @@ export const AuthorizationMutations = extendType({
 			description: `Update authorization details.`,
 			args: newAuthorizationType,
 			type: "AuthorizationStatus",
+			authorize: (parent, args, context) => context.user.canEditAuthorizations,
 			async resolve(root, args, context) {
 				return await updateAuthorization(args, context);
 			}
@@ -250,12 +251,9 @@ export const AuthorizationMutations = extendType({
 			description: `Delete authorization details.`,
 			args: newAuthorizationType,
 			type: "AuthorizationStatus",
+			authorize: (parent, args, context) => context.user.canEditAuthorizations,
 			async resolve(root, args, context) {
 				try {
-					if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
-						throw new Error(`Permission denied`);
-					}
-
 					return await context.prisma.$transaction(async (tx) => {
 						const id = IDObfuscator.getId(args.id);
 						const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);

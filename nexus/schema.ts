@@ -60,7 +60,7 @@
 
 import * as path from 'path';
 
-import { makeSchema } from 'nexus';
+import {fieldAuthorizePlugin, makeSchema} from 'nexus';
 import { NexusPrismaCRUDPlugin } from './prisma_crud_plugin';
 
 import * as schoolTypes from '../schema/roomdetails/schools';
@@ -120,6 +120,7 @@ export const schema = makeSchema({
 	plugins: [
 		// Note: this plugin also outputs a typegen (but doesn't let us choose where)
 		NexusPrismaCRUDPlugin({ shouldGenerateArtifacts }),
+		fieldAuthorizePlugin(),
 	],
 	sourceTypes: {
 		modules: [

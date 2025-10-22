@@ -111,7 +111,7 @@ export const UnitQuery = extendType({
 				}
 
 				// Check if user has the right to access rooms (customize this logic)
-				if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1) {
+				if (!context.user.canListUnits) {
 					throw new Error('Permission denied');
 				}
 
@@ -216,11 +216,9 @@ export const UnitMutations = extendType({
 			description: `Import a new unit from api.epfl.ch.`,
 			args: unitCreationType,
 			type: "UnitStatus",
+			authorize: (parent, args, context) => context.user.canEditUnits,
 			async resolve(root, args, context) {
 				try {
-					if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1) {
-						throw new Error('Permission denied');
-					}
 					return await context.prisma.$transaction(async (tx) => {
 						const errors: string[] = [];
 						for (const unit of args.units) {
@@ -306,11 +304,9 @@ export const UnitMutations = extendType({
 			description: `Update unit details (profs, cosecs, sub-units).`,
 			args: unitChangesType,
 			type: "UnitStatus",
+			authorize: (parent, args, context) => context.user.canEditUnits,
 			async resolve(root, args, context) {
 				try {
-					if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1) {
-						throw new Error('Permission denied');
-					}
 					return await context.prisma.$transaction(async (tx) => {
 						if (!args.id) {
 							throw new Error(`Not allowed to update unit`);
@@ -488,11 +484,9 @@ export const UnitMutations = extendType({
 			description: `Delete unit details by unit name (profs, cosecs, sub-units).`,
 			args: unitDeleteType,
 			type: "UnitStatus",
+			authorize: (parent, args, context) => context.user.canEditUnits,
 			async resolve(root, args, context) {
 				try {
-					if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1) {
-						throw new Error('Permission denied');
-					}
 					return await context.prisma.$transaction(async (tx) => {
 						if (!args.id) {
 							throw new Error(`Not allowed to update unit`);
@@ -644,10 +638,8 @@ export const UnitFullTextQuery = extendType({
 				take: intArg({ default: 20 }),
 				search: stringArg(),
 			},
+			authorize: (parent, args, context) => context.user.canListUnits,
 			async resolve(parent, args, context) {
-				if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1) {
-					throw new Error('Permission denied');
-				}
 				const unitList = await context.prisma.Unit.findMany({
 					where: {
 						OR: [
@@ -678,10 +670,8 @@ export const UnitFullTextQuery = extendType({
 			args: {
 				search: stringArg(),
 			},
+			authorize: (parent, args, context) => context.user.canListUnits,
 			async resolve(parent, args, context) {
-				if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1) {
-					throw new Error('Permission denied');
-				}
 				return await context.prisma.Unit.findMany({
 					where: {
 						OR: [
@@ -722,10 +712,8 @@ export const UnitFromAPIQuery = extendType({
 			args: {
 				search: stringArg()
 			},
+			authorize: (parent, args, context) => context.user.canListUnits,
 			async resolve(parent, args, context): Promise<any> {
-				if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1) {
-					throw new Error('Permission denied');
-				}
 				const units = await getUnitsFromApi(args.search);
 				const unitList = [];
 				units["units"].forEach(u =>
@@ -765,11 +753,9 @@ export const UnitReportFilesQuery = extendType({
 			args: {
 				id: stringArg()
 			},
+			authorize: (parent, args, context) => context.user.canListUnits,
 			async resolve(parent, args, context): Promise<any> {
 				try {
-					if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1) {
-						throw new Error('Permission denied');
-					}
 					return await context.prisma.$transaction(async (tx) => {
 						if (!args.id) {
 							throw new Error(`Not allowed to update unit`);

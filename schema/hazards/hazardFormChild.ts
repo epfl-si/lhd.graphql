@@ -50,7 +50,7 @@ export const HazardFormChildQuery = extendType({
 				}
 
 				// Check if user has the right to access rooms (customize this logic)
-				if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1) {
+				if (!context.user.isAdmin) {
 					throw new Error('Permission denied');
 				}
 
@@ -82,12 +82,10 @@ export const HazardFormChildMutations = extendType({
 			description: `Create new hazard form child with his own form and version.`,
 			args: hazardFormChildChangesType,
 			type: "HazardFormChildStatus",
+			authorize: (parent, args, context) => context.user.isAdmin,
 			async resolve(root, args, context) {
 				try {
 					return await context.prisma.$transaction(async (tx) => {
-						if (!context.user.groups.includes('LHD_acces_admin')) {
-							throw new Error(`Only admins are allowed to update hazard form`);
-						}
 						if (!args.id) {
 							throw new Error(`Not allowed to create a new hazard form child`);
 						}
@@ -146,12 +144,10 @@ export const HazardFormChildMutations = extendType({
 			description: `Update form with a new version.`,
 			args: hazardFormChildChangesType,
 			type: "HazardFormStatus",
+			authorize: (parent, args, context) => context.user.isAdmin,
 			async resolve(root, args, context) {
 				try {
 					return await context.prisma.$transaction(async (tx) => {
-						if (!context.user.groups.includes('LHD_acces_admin')) {
-							throw new Error(`Only admins are allowed to update hazard form`);
-						}
 						if (!args.id) {
 							throw new Error(`Not allowed to update hazard form`);
 						}

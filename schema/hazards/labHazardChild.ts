@@ -50,9 +50,6 @@ export function getLabHasHazardChildToString(parent) {
 }
 
 export async function updateHazardFormChild(child: submission, tx: any, context: any, room: string, parentHazard: number) {
-	if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1) {
-		throw new Error('Permission denied');
-	}
 	if ( child.id == undefined || child.id.eph_id == undefined || child.id.eph_id == '' || child.id.salt == undefined || child.id.salt == '' ) {
 		throw new Error(`Not allowed to update hazards child`);
 	}
@@ -135,9 +132,6 @@ export async function updateHazardFormChild(child: submission, tx: any, context:
 }
 
 export async function updateBioOrg(oldBioOrg: bio_org, newBioOrg: bio_org, tx: any, context: any) {
-	if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1) {
-		throw new Error('Permission denied');
-	}
 	const children = await tx.lab_has_hazards_child.findMany({where: {submission: {contains: `"organism":"${oldBioOrg.organism}"`}}});
 	for ( const child of children ) {
 		const newSubmission = JSON.parse(child.submission);
@@ -193,11 +187,8 @@ export const HazardsWithPaginationQuery = extendType({
 				search: stringArg(),
 				queryString: stringArg(),
 			},
+			authorize: (parent, args, context) => context.user.canListHazards,
 			async resolve(parent, args, context) {
-				if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
-					throw new Error(`Permission denied`);
-				}
-
 				let jsonCondition = Prisma.raw(`1=1`);
 				if (args.queryString != '') {
 					const queryStringArgs = args.queryString.split('&');
@@ -320,11 +311,8 @@ export const HazardFetchForExportQuery = extendType({
 				profs: booleanArg(),
 				search: stringArg()
 			},
+			authorize: (parent, args, context) => context.user.canListHazards,
 			async resolve(parent, args, context) {
-				if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
-					throw new Error(`Permission denied`);
-				}
-
 				let selectedFieldForUnits = Prisma.raw(``);
 				let selectedFieldsForCosecs = Prisma.raw(``);
 				let selectedFieldsForProfs = Prisma.raw(``);
@@ -431,12 +419,9 @@ export const HazardChildMutations = extendType({
 			description: `Delete an Hazard child`,
 			args: hazardChildMutationsType,
 			type: "HazardChildStatus",
+			authorize: (parent, args, context) => context.user.canEditHazards,
 			async resolve(root, args, context) {
 				try {
-					if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
-						throw new Error(`Permission denied`);
-					}
-
 					return await context.prisma.$transaction(async (tx) => {
 						if (!args.id) {
 							throw new Error(`Not allowed to delete hazard child`);

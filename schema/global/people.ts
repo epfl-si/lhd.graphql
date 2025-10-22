@@ -42,7 +42,7 @@ export const PersonQuery = extendType({
 				}
 
 				// Check if user has the right to access rooms (customize this logic)
-				if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1) {
+				if (!context.user.canListPersons) {
 					throw new Error('Permission denied');
 				}
 
@@ -81,11 +81,8 @@ export const PersonFullTextQuery = extendType({
 				search: stringArg(),
 				lhdOnly: booleanArg()
 			},
+			authorize: (parent, args, context) => context.user.canListPersons,
 			async resolve(parent, args, context) {
-				if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
-					throw new Error(`Permission denied`);
-				}
-
 				const lhdPeople = await context.prisma.Person.findMany({
 					where: {
 						OR: [
@@ -127,9 +124,30 @@ export const ConnectedUserInfoStruct = objectType({
 	name: 'ConnectedUserInfo',
 	definition(t) {
 		t.list.string('groups');
-		t.string('preferred_username');
+		t.string('userName');
 		t.string('given_name');
 		t.string('family_name');
+		t.boolean('canEditHazardForms');
+		t.boolean('canEditHazards');
+		t.boolean('canEditRooms');
+		t.boolean('canListUnits');
+		t.boolean('canListHazards');
+		t.boolean('canListRooms');
+		t.boolean('isAdmin');
+		t.boolean('canEditUnits');
+		t.boolean('canListOrganisms');
+		t.boolean('canEditOrganisms');
+		t.boolean('canListChemicals');
+		t.boolean('canEditChemicals');
+		t.boolean('canListAuthorizations');
+		t.boolean('canEditAuthorizations');
+		t.boolean('canListHazardsForm');
+		t.boolean('canListPersons');
+		t.boolean('canCallAPIToGetChemicals');
+		t.boolean('canCallAPIToPostChemicals');
+		t.boolean('canCallAPIToPostAuthorization');
+		t.boolean('canCallAPIToRenewAuthorization');
+		t.boolean('canCallAPIToCheckAuthorization');
 	},
 });
 
@@ -141,9 +159,30 @@ export const ConnectedUserInfoQuery = extendType({
 			async resolve(parent, args, context) {
 				return {
 					groups: context.user.groups,
-					preferred_username: context.user.preferred_username,
+					userName: context.user.preferred_username,
 					given_name: context.user.given_name,
-					family_name: context.user.family_name
+					family_name: context.user.family_name,
+					canEditHazardForms: context.user.canEditHazardForms,
+					canEditHazards: context.user.canEditHazards,
+					canEditRooms: context.user.canEditRooms,
+					canListUnits: context.user.canListUnits,
+					canListHazards: context.user.canListHazards,
+					canListRooms: context.user.canListRooms,
+					isAdmin: context.user.isAdmin,
+					canEditUnits : context.user.canEditUnits,
+					canListOrganisms: context.user.canListOrganisms,
+					canEditOrganisms: context.user.canEditOrganisms,
+					canListChemicals: context.user.canListChemicals,
+					canEditChemicals: context.user.canEditChemicals,
+					canListAuthorizations: context.user.canListAuthorizations,
+					canEditAuthorizations: context.user.canEditAuthorizations,
+					canListHazardsForm: context.user.canListHazardsForm,
+					canListPersons: context.user.canListPersons,
+					canCallAPIToGetChemicals: context.user.canCallAPIToGetChemicals,
+					canCallAPIToPostChemicals: context.user.canCallAPIToPostChemicals,
+					canCallAPIToPostAuthorization: context.user.canCallAPIToPostAuthorization,
+					canCallAPIToRenewAuthorization: context.user.canCallAPIToRenewAuthorization,
+					canCallAPIToCheckAuthorization: context.user.canCallAPIToCheckAuthorization,
 				};
 			}
 		})

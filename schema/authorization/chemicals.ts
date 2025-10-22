@@ -62,6 +62,7 @@ export const ChemicalsWithPaginationQuery = extendType({
 				take: intArg({ default: 20 }),
 				search: stringArg()
 			},
+			authorize: (parent, args, context) => context.user.canListChemicals,
 			async resolve(parent, args, context) {
 				return await getChemicalWithPagination(args, context);
 			}
@@ -90,6 +91,7 @@ export const ChemicalMutations = extendType({
 			description: `Add a new chemical`,
 			args: newChemicalType,
 			type: "ChemicalStatus",
+			authorize: (parent, args, context) => context.user.canEditChemicals,
 			async resolve(root, args, context) {
 				return await addChemical(args, context);
 			}
@@ -98,12 +100,9 @@ export const ChemicalMutations = extendType({
 			description: `Update chemical details.`,
 			args: newChemicalType,
 			type: "ChemicalStatus",
+			authorize: (parent, args, context) => context.user.canEditChemicals,
 			async resolve(root, args, context) {
 				try {
-					if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
-						throw new Error(`Permission denied`);
-					}
-
 					return await context.prisma.$transaction(async (tx) => {
 						if (!args.id) {
 							throw new Error(`Not allowed to update chemical`);
@@ -152,12 +151,9 @@ export const ChemicalMutations = extendType({
 			description: `Delete chemical details.`,
 			args: newChemicalType,
 			type: "ChemicalStatus",
+			authorize: (parent, args, context) => context.user.canEditChemicals,
 			async resolve(root, args, context) {
 				try {
-					if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
-						throw new Error(`Permission denied`);
-					}
-
 					return await context.prisma.$transaction(async (tx) => {
 						if (!args.id) {
 							throw new Error(`Not allowed to delete chemical`);

@@ -10,7 +10,7 @@ import * as fs from 'fs/promises'
 import {schema} from './nexus/schema';
 
 import {Issuer} from 'openid-client';
-import {loginResponse} from './serverTypes';
+import {loginResponse, UserInfo} from './serverTypes';
 import * as path from "node:path";
 import {registerLegacyApi} from "./api";
 import {ApolloServer} from "@apollo/server";
@@ -157,7 +157,7 @@ async function getLoggedInUserInfos(req): Promise<loginResponse> {
 		const client = new issuer_.Client({ client_id: 'LHDv3 server' });
 
 		try {
-			let userinfo;
+			let userinfo: UserInfo;
 			const apiUser = Object.keys(VALID_TOKENS_FOR_API).find(k => VALID_TOKENS_FOR_API[k] === access_token) || null;
 			if (apiUser == null) {
 				userinfo = await client.userinfo(access_token);
@@ -171,6 +171,26 @@ async function getLoggedInUserInfos(req): Promise<loginResponse> {
 			console.log('Logged in', userinfo);
 			console.log('Allowed groups', allowedGroups);
 			if ((userinfo.groups && userinfo.groups.some(e => allowedGroups.includes(e)) || apiUser != null)) {
+				userinfo.isAdmin = userinfo.groups.indexOf('LHD_acces_admin') > -1;
+				userinfo.canListRooms = userinfo.groups.indexOf('LHD_acces_admin') > -1 || userinfo.groups.indexOf('LHD_acces_lecture') > -1;
+				userinfo.canEditRooms = userinfo.groups.indexOf('LHD_acces_admin') > -1 || userinfo.groups.indexOf('LHD_acces_lecture') > -1;
+				userinfo.canListHazards = userinfo.groups.indexOf('LHD_acces_admin') > -1 || userinfo.groups.indexOf('LHD_acces_lecture') > -1;
+				userinfo.canEditHazards = userinfo.groups.indexOf('LHD_acces_admin') > -1 || userinfo.groups.indexOf('LHD_acces_lecture') > -1;
+				userinfo.canListUnits = userinfo.groups.indexOf('LHD_acces_admin') > -1 || userinfo.groups.indexOf('LHD_acces_lecture') > -1;
+				userinfo.canEditUnits = userinfo.groups.indexOf('LHD_acces_admin') > -1 || userinfo.groups.indexOf('LHD_acces_lecture') > -1;
+				userinfo.canListOrganisms = userinfo.groups.indexOf('LHD_acces_admin') > -1 || userinfo.groups.indexOf('LHD_acces_lecture') > -1 || userinfo.groups.includes('LHD_acces_cosec');
+				userinfo.canEditOrganisms = userinfo.groups.indexOf('LHD_acces_admin') > -1 || userinfo.groups.indexOf('LHD_acces_lecture') > -1;
+				userinfo.canListChemicals = userinfo.groups.indexOf('LHD_acces_admin') > -1 || userinfo.groups.indexOf('LHD_acces_lecture') > -1;
+				userinfo.canEditChemicals = userinfo.groups.indexOf('LHD_acces_admin') > -1 || userinfo.groups.indexOf('LHD_acces_lecture') > -1;
+				userinfo.canListAuthorizations = userinfo.groups.indexOf('LHD_acces_admin') > -1 || userinfo.groups.indexOf('LHD_acces_lecture') > -1;
+				userinfo.canEditAuthorizations = userinfo.groups.indexOf('LHD_acces_admin') > -1 || userinfo.groups.indexOf('LHD_acces_lecture') > -1;
+				userinfo.canListPersons = userinfo.groups.indexOf('LHD_acces_admin') > -1 || userinfo.groups.indexOf('LHD_acces_lecture') > -1;
+				userinfo.canCallAPIToGetChemicals = ['SNOW'].includes(userinfo.preferred_username);
+				userinfo.canCallAPIToPostChemicals = ['SNOW'].includes(userinfo.preferred_username);
+				userinfo.canCallAPIToPostAuthorization = ['SNOW'].includes(userinfo.preferred_username);
+				userinfo.canCallAPIToRenewAuthorization = ['SNOW'].includes(userinfo.preferred_username);
+				userinfo.canCallAPIToCheckAuthorization = ['CATALYSE'].includes(userinfo.preferred_username);
+
 				return {
 					loggedIn: true,
 					user: userinfo,
@@ -185,5 +205,13 @@ async function getLoggedInUserInfos(req): Promise<loginResponse> {
 	}
 
 	const matched = getToken(req);
+	if (!matched) {
+		return {
+			user: undefined,
+			loggedIn: false,
+			httpCode: 401,
+			message: `Unauthorized`
+		};
+	}
 	return await getUserAuthentication(matched);
 }

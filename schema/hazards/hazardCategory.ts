@@ -21,7 +21,7 @@ export const HazardCategoryQuery = extendType({
 				}
 
 				// Check if user has the right to access rooms (customize this logic)
-				if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1) {
+				if (!context.user.canListHazards && !context.user.isAdmin)  {
 					throw new Error('Permission denied');
 				}
 

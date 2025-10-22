@@ -240,7 +240,7 @@ export const RoomQuery = extendType({
 				}
 
 				// Check if user has the right to access rooms (customize this logic)
-				if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1) {
+				if (!context.user.canListRooms) {
 					throw new Error('Permission denied');
 				}
 
@@ -269,10 +269,8 @@ export const RoomsWithPaginationQuery = extendType({
 				take: intArg({ default: 20 }),
 				search: stringArg(),
 			},
+			authorize: (parent, args, context) => context.user.canListRooms,
 			async resolve(parent, args, context) {
-				if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
-					throw new Error(`Permission denied`);
-				}
 				const queryArray = args.search.split("&");
 				const dictionary = queryArray.map(query => query.split("="));
 				const whereCondition = [];
@@ -378,7 +376,7 @@ export const RoomKindQuery = extendType({
 				}
 
 				// Check if user has the right to access rooms (customize this logic)
-				if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1) {
+				if (!context.user.canListRooms) {
 					throw new Error('Permission denied');
 				}
 
@@ -435,12 +433,9 @@ export const RoomMutations = extendType({
 			description: `Create a new room.`,
 			args: roomCreationType,
 			type: "RoomStatus",
+			authorize: (parent, args, context) => context.user.canEditRooms,
 			async resolve(root, args, context) {
 				try {
-					if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
-						throw new Error(`Permission denied`);
-					}
-
 					return await context.prisma.$transaction(async (tx) => {
 						for (const room of args.rooms) {
 							if (room.status == 'New') {
@@ -481,12 +476,9 @@ export const RoomMutations = extendType({
 			description: `Update room details.`,
 			args: roomType,
 			type: "RoomStatus",
+			authorize: (parent, args, context) => context.user.canEditRooms,
 			async resolve(root, args, context) {
 				try {
-					if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1){
-						throw new Error(`Permission denied`);
-					}
-
 					return await context.prisma.$transaction(async (tx) => {
 						if (!args.id) {
 							throw new Error(`Not allowed to update room`);
@@ -586,11 +578,9 @@ export const RoomMutations = extendType({
 			description: `Delete room details by room id (units and hazards too).`,
 			args: roomDeleteType,
 			type: "RoomStatus",
+			authorize: (parent, args, context) => context.user.canEditRooms,
 			async resolve(root, args, context) {
 				try {
-					if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1) {
-						throw new Error('Permission denied');
-					}
 					return await context.prisma.$transaction(async (tx) => {
 						if (!args.id) {
 							throw new Error(`Not allowed to update unit`);
@@ -748,10 +738,8 @@ export const RoomFromAPIQuery = extendType({
 			args: {
 				search: stringArg()
 			},
+			authorize: (parent, args, context) => context.user.canListRooms,
 			async resolve(parent, args, context): Promise<any> {
-				if (context.user.groups.indexOf("LHD_acces_lecture") == -1 && context.user.groups.indexOf("LHD_acces_admin") == -1) {
-					throw new Error('Permission denied');
-				}
 				const rooms = await getRoomsFromApi(args.search);
 				const roomsList = [];
 				rooms["rooms"].forEach(u =>

@@ -11,7 +11,6 @@ export function getToken(req: Request<{}, any, any, ParsedQs, Record<string, any
 		return String(req.query.token);
 
 	const matched = req.headers.authorization?.match(/^Bearer\s(.*)$/);
-	if (!matched)
-		throw new Error(`Unauthorized`)
+	if (!matched) return undefined;
 	else return matched[1];
 }
