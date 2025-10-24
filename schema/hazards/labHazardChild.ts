@@ -4,7 +4,6 @@ import {mutationStatusType} from "../statuses";
 import {getSHA256} from "../../utils/HashingTools";
 import {id, IDObfuscator, submission} from "../../utils/IDObfuscator";
 import {HazardFormChildHistoryStruct} from "./hazardFormChildHistory";
-import {createNewMutationLog} from "../global/mutationLogs";
 import {LabHazardStruct} from "./labHazard";
 import {Prisma} from '@prisma/client';
 
@@ -72,8 +71,6 @@ export async function updateHazardFormChild(child: submission, tx: any, context:
 		})
 		if ( !hazardChild ) {
 			throw new Error(`Hazard child not created for room ${room}.`);
-		} else {
-			await createNewMutationLog(tx, context, tx.lab_has_hazards_child.name, hazardChild.id_lab_has_hazards_child,'', {}, hazardChild, 'CREATE');
 		}
 	} else if ( !child.id.eph_id.startsWith('newHazardChild') ) {
 		if ( !IDObfuscator.checkSalt(child.id) ) {
@@ -100,8 +97,6 @@ export async function updateHazardFormChild(child: submission, tx: any, context:
 				});
 			if ( !hazardChild ) {
 				throw new Error(`Hazard child not updated for room ${room}.`);
-			} else {
-				await createNewMutationLog(tx, context, tx.lab_has_hazards_child.name, hazardChild.id_lab_has_hazards_child, '', hazardsChildInRoom, hazardChild, 'UPDATE');
 			}
 		} else if ( child.submission.data['status'] == 'Deleted' ) {
 			const hazardChild = await tx.lab_has_hazards_child.delete({
@@ -118,14 +113,10 @@ export async function updateHazardFormChild(child: submission, tx: any, context:
 				});
 				if ( !hazard ) {
 					throw new Error(`Hazard not deleted for room ${room}.`);
-				} else {
-					await createNewMutationLog(tx, context, tx.lab_has_hazards.name, 0, '', hazard, {}, 'DELETE');
 				}
 			}
 			if ( !hazardChild ) {
 				throw new Error(`Hazard child not deleted for room ${room}.`);
-			} else {
-				await createNewMutationLog(tx, context, tx.lab_has_hazards_child.name, 0, '', hazardChild, {}, 'DELETE');
 			}
 		}
 	}
@@ -147,9 +138,6 @@ export async function updateBioOrg(oldBioOrg: bio_org, newBioOrg: bio_org, tx: a
 					submission: JSON.stringify(newSubmission)
 				}
 			});
-		if ( hazardChild ) {
-			await createNewMutationLog(tx, context, tx.lab_has_hazards_child.name, hazardChild.id_lab_has_hazards_child, '', child, hazardChild, 'UPDATE');
-		}
 	}
 }
 
@@ -458,14 +446,10 @@ export const HazardChildMutations = extendType({
 							});
 							if ( !hazard ) {
 								throw new Error(`Hazard not deleted.`);
-							} else {
-								await createNewMutationLog(tx, context, tx.lab_has_hazards.name, 0, '', hazard, {}, 'DELETE');
 							}
 						}
 						if ( !hazardChild ) {
 							throw new Error(`Hazard child not deleted.`);
-						} else {
-							await createNewMutationLog(tx, context, tx.lab_has_hazards_child.name, 0, '', hazardChild, {}, 'DELETE');
 						}
 						return mutationStatusType.success();
 					});

@@ -2,7 +2,6 @@ import {extendType, inputObjectType, intArg, list, objectType, stringArg} from "
 import {id, IDObfuscator} from "../../utils/IDObfuscator";
 import {authorization} from "nexus-prisma";
 import {mutationStatusType} from "../statuses";
-import {createNewMutationLog} from "../global/mutationLogs";
 import {getSHA256} from "../../utils/HashingTools";
 import {RoomStruct} from "../global/rooms";
 import {PersonStruct} from "../global/people";
@@ -274,8 +273,6 @@ export const AuthorizationMutations = extendType({
 
 						if ( !deleteAuth ) {
 							throw new Error(`Authorization ${args.authorization} not deleted.`);
-						} else {
-							await createNewMutationLog(tx, context, tx.authorization.name, 0, '', deleteAuth, {}, 'DELETE');
 						}
 						return mutationStatusType.success();
 					});
@@ -307,10 +304,6 @@ async function checkRelations(tx, context, args, authorization) {
 								sciper: parseInt(ldapUser.id)
 							}
 						});
-
-						if ( p ) {
-							await createNewMutationLog(tx, context, tx.Person.name, p.id_person, '', {}, p, 'CREATE');
-						}
 					} catch ( e ) {
 						throw new Error(`Sciper ${holder} not found`);
 					}
@@ -326,8 +319,6 @@ async function checkRelations(tx, context, args, authorization) {
 					});
 					if ( !relationHolders ) {
 						throw new Error(`Relation not update between ${authorization.authorization} and ${holder.sciper}.`);
-					} else {
-						await createNewMutationLog(tx, context, tx.authorization_has_holder.name, 0, '', {}, relation, 'CREATE');
 					}
 				} catch ( e ) {
 					throw new Error(`Relation not update between ${authorization.authorization} and ${holder}.`);
@@ -345,8 +336,6 @@ async function checkRelations(tx, context, args, authorization) {
 						});
 						if ( !del ) {
 							errors.push(`Relation authorization-holder not deleted between ${authorization.authorizations} and ${holder.sciper}.`)
-						} else {
-							await createNewMutationLog(tx, context, tx.authorization_has_holder.name, 0, '', whereCondition, {}, 'DELETE');
 						}
 					} catch ( e ) {
 						errors.push(`DB error: relation authorization-holder not deleted between ${authorization.authorizations} and ${holder.sciper}.`)
@@ -376,8 +365,6 @@ async function checkRelations(tx, context, args, authorization) {
 					});
 					if ( !relationRooms ) {
 						throw new Error(`Relation not update between ${authorization.authorization} and ${room.name}.`);
-					} else {
-						await createNewMutationLog(tx, context, tx.authorization_has_room.name, 0, '', {}, relation, 'CREATE');
 					}
 				} catch ( e ) {
 					throw new Error(`Relation not update between ${authorization.authorization} and ${room.name}.`);
@@ -395,8 +382,6 @@ async function checkRelations(tx, context, args, authorization) {
 						});
 						if ( !del ) {
 							errors.push(`Relation authorization-room not deleted between ${authorization.authorizations} and ${room.name}.`)
-						} else {
-							await createNewMutationLog(tx, context, tx.authorization_has_room.name, 0, '', whereCondition, {}, 'DELETE');
 						}
 					} catch ( e ) {
 						errors.push(`DB error: relation authorization-room not deleted between ${authorization.authorizations} and ${room.name}.`)
@@ -419,8 +404,6 @@ async function checkRelations(tx, context, args, authorization) {
 					});
 					if ( !relationSource ) {
 						throw new Error(`Relation not update between ${authorization.authorization} and ${source.name}.`);
-					} else {
-						await createNewMutationLog(tx, context, tx.authorization_has_radiation.name, 0, '', {}, relation, 'CREATE');
 					}
 				} catch ( e ) {
 					throw new Error(`Relation not update between ${authorization.authorization} and ${source.name}.`);
@@ -436,8 +419,6 @@ async function checkRelations(tx, context, args, authorization) {
 					});
 					if ( !del ) {
 						errors.push(`Relation authorization-radiation not deleted between ${authorization.authorizations} and ${source.name}.`)
-					} else {
-						await createNewMutationLog(tx, context, tx.authorization_has_radiation.name, 0, '', whereCondition, {}, 'DELETE');
 					}
 				} catch ( e ) {
 					errors.push(`DB error: relation authorization-radiation not deleted between ${authorization.authorizations} and ${source.name}.`)
@@ -465,8 +446,6 @@ async function checkRelations(tx, context, args, authorization) {
 					});
 					if ( !relationChemical ) {
 						throw new Error(`Relation not update between ${authorization.authorizations} and ${cas.name}.`);
-					} else {
-						await createNewMutationLog(tx, context, tx.authorization_has_chemical.name, 0, '', {}, relation, 'CREATE');
 					}
 				} catch ( e ) {
 					throw new Error(`Relation not update between ${authorization.authorizations} and ${cas.name}.`);
@@ -484,8 +463,6 @@ async function checkRelations(tx, context, args, authorization) {
 						});
 						if ( !del ) {
 							errors.push(`Relation authorization-chemical not deleted between ${authorization.authorizations} and ${cas.name}.`)
-						} else {
-							await createNewMutationLog(tx, context, tx.authorization_has_chemical.name, 0, '', whereCondition, {}, 'DELETE');
 						}
 					} catch ( e ) {
 						errors.push(`DB error: relation authorization-chemical not deleted between ${authorization.authorizations} and ${cas.name}.`)
@@ -530,7 +507,6 @@ export async function addAuthorization(args, context) {
 			if ( !authorization ) {
 				throw new Error(`Authorization not created`);
 			} else {
-				await createNewMutationLog(tx, context, tx.authorization.name, authorization.id_authorization, '', {}, authorization, 'CREATE');
 				await checkRelations(tx, context, args, authorization);
 			}
 
@@ -582,7 +558,6 @@ export async function updateAuthorization(args, context) {
 			if (!updatedAuthorization) {
 				throw new Error(`Authorization ${args.authorization} not updated.`);
 			} else {
-				await createNewMutationLog(tx, context, tx.authorization.name, updatedAuthorization.id_authorization, '', auth, updatedAuthorization, 'UPDATE');
 				await checkRelations(tx, context, args, updatedAuthorization);
 			}
 			return mutationStatusType.success();

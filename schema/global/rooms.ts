@@ -14,7 +14,6 @@ import {LabHazardStruct} from "../hazards/labHazard";
 import {id, IDObfuscator} from "../../utils/IDObfuscator";
 import {getSHA256} from "../../utils/HashingTools";
 import {getDoorPlugFromApi, getRoomsFromApi} from "../../utils/CallAPI";
-import {createNewMutationLog} from "./mutationLogs";
 import {HazardsAdditionalInfoStruct} from "../hazards/hazardsAdditionalInfo";
 import {LabHazardChildStruct} from "../hazards/labHazardChild";
 
@@ -459,9 +458,6 @@ export const RoomMutations = extendType({
 											id_labType: labType ? labType.id_labType : null
 										}
 									});
-									if (newRoom) {
-										await createNewMutationLog(tx, context, tx.Room.name, newRoom.id, '', {}, newRoom, 'CREATE');
-									}
 								}
 							}
 						}
@@ -513,8 +509,6 @@ export const RoomMutations = extendType({
 
 						if (!updatedRoom) {
 							throw new Error(`Room ${args.name} not updated.`);
-						} else {
-							await createNewMutationLog(tx, context, tx.Room.name, updatedRoom.id, '', room, updatedRoom, 'UPDATE');
 						}
 
 						const errors: string[] = [];
@@ -536,8 +530,6 @@ export const RoomMutations = extendType({
 									})
 									if ( !u ) {
 										errors.push(`Error creating unit ${unit.name}.`);
-									} else {
-										await createNewMutationLog(tx, context, tx.unit_has_room.name, 0, '', {}, u, 'CREATE');
 									}
 								} catch ( e ) {
 									errors.push(`Error creating unit ${unit.name}.`);
@@ -554,8 +546,6 @@ export const RoomMutations = extendType({
 									});
 									if (!u) {
 										errors.push(`Error deleting ${unit.name}.`);
-									} else {
-										await createNewMutationLog(tx, context, tx.unit_has_room.name, 0,'', whereConditionForDelete, {}, 'DELETE');
 									}
 								} catch ( e ) {
 									errors.push(`Error creating unit ${unit.name}.`);
@@ -628,8 +618,6 @@ async function writeDeletionLog(obj: any, tx, context, objName: string, r: Room)
 	const errors: string[] = [];
 	if ( !obj ) {
 		errors.push(`Error deleting ${objName} for ${r.name}.`);
-	} else if (obj.count > 0) {
-		await createNewMutationLog(tx, context, objName, 0,'', {name: r.name, id: r.id}, {}, 'DELETE');
 	}
 	return errors;
 }
@@ -707,8 +695,6 @@ async function deleteRoom(tx, context, r:Room) {
 		});
 		if ( !room ) {
 			errors.push(`Error deleting ${r.name}.`);
-		} else {
-			await createNewMutationLog(tx, context, tx.Unit.name, 0, '', room, {}, 'DELETE');
 		}
 	} catch ( e ) {
 		errors.push(`Error deleting ${r.name}: ${e.message}.`);

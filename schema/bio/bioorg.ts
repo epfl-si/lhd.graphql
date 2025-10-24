@@ -1,6 +1,5 @@
 import {extendType, intArg, list, objectType, stringArg} from 'nexus';
 import {bio_org} from 'nexus-prisma';
-import {createNewMutationLog} from "../global/mutationLogs";
 import {saveBase64File} from "../../utils/File";
 import {mutationStatusType} from "../statuses";
 import {getSHA256} from "../../utils/HashingTools";
@@ -131,8 +130,6 @@ export const OrganismMutations = extendType({
 									id_bio_org: organism.id_bio_org
 								}
 							});
-							await createNewMutationLog(tx, context, tx.bio_org.name, organism.id_bio_org, '', {}, organism, 'CREATE');
-							await createNewMutationLog(tx, context, tx.bio_org.name, organism.id_bio_org, 'filePath', {}, {'filePath': filePath}, 'CREATE');
 						}
 
 						return mutationStatusType.success();
@@ -191,7 +188,6 @@ export const OrganismMutations = extendType({
 						if (!updatedOrganism) {
 							throw new Error(`Organism ${args.organismName} not updated.`);
 						} else {
-							await createNewMutationLog(tx, context, tx.bio_org.name, updatedOrganism.id_bio_org, '', org, updatedOrganism, 'UPDATE');
 							await updateBioOrg(org, updatedOrganism, tx, context);
 						}
 						return mutationStatusType.success();
@@ -235,8 +231,6 @@ export const OrganismMutations = extendType({
 
 						if ( !deletedOrganism ) {
 							throw new Error(`Organism ${args.organismName} not deleted.`);
-						} else {
-							await createNewMutationLog(tx, context, tx.bio_org.name, 0, '', deletedOrganism, {}, 'DELETE');
 						}
 						return mutationStatusType.success();
 					});

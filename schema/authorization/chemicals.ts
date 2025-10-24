@@ -2,7 +2,6 @@ import {booleanArg, extendType, intArg, objectType, stringArg} from "nexus";
 import {id, IDObfuscator} from "../../utils/IDObfuscator";
 import {auth_chem} from "nexus-prisma";
 import {mutationStatusType} from "../statuses";
-import {createNewMutationLog} from "../global/mutationLogs";
 import {getSHA256} from "../../utils/HashingTools";
 import {sendEmailsForChemical} from "../../utils/Email/Mailer";
 
@@ -136,8 +135,6 @@ export const ChemicalMutations = extendType({
 
 						if (!updatedChemical) {
 							throw new Error(`Chemical ${args.cas_auth_chem} not updated.`);
-						} else {
-							await createNewMutationLog(tx, context, tx.auth_chem.name, updatedChemical.id_auth_chem, '', chem, updatedChemical, 'UPDATE');
 						}
 						await sendEmailsForChemical(context.user.preferred_username, tx);
 						return mutationStatusType.success();
@@ -183,8 +180,6 @@ export const ChemicalMutations = extendType({
 						//TODO delete authorizations?
 						if ( !deletedChemical ) {
 							throw new Error(`Chemical ${args.cas_auth_chem} not deleted.`);
-						} else {
-							await createNewMutationLog(tx, context, tx.auth_chem.name, 0, '', deletedChemical, {}, 'DELETE');
 						}
 						await sendEmailsForChemical(context.user.preferred_username, tx);
 						return mutationStatusType.success();
@@ -210,8 +205,6 @@ export async function addChemical(args, context) {
 
 			if ( !chemical ) {
 				throw new Error(`Chemical not created`);
-			} else {
-				await createNewMutationLog(tx, context, tx.auth_chem.name, chemical.id_auth_chem, '', {}, chemical, 'CREATE');
 			}
 			await sendEmailsForChemical(context.user.preferred_username, tx);
 			return mutationStatusType.success();
