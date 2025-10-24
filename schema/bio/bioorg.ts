@@ -147,18 +147,8 @@ export const OrganismMutations = extendType({
 			async resolve(root, args, context) {
 				try {
 					return await context.prisma.$transaction(async (tx) => {
-						if (!args.id) {
-							throw new Error(`Not allowed to update organism`);
-						}
-						const id: id = JSON.parse(args.id);
-						if(id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
-							throw new Error(`Not allowed to update organism`);
-						}
-
-						if(!IDObfuscator.checkSalt(id)) {
-							throw new Error(`Bad descrypted request`);
-						}
-						const idDeobfuscated = IDObfuscator.deobfuscateId(id);
+						const id = IDObfuscator.getId(args.id);
+						const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
 						const org = await tx.bio_org.findUnique({where: {id_bio_org: idDeobfuscated}});
 						if (! org) {
 							throw new Error(`Organism ${args.organismName} not found.`);

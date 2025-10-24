@@ -148,18 +148,8 @@ export const HazardFormChildMutations = extendType({
 			async resolve(root, args, context) {
 				try {
 					return await context.prisma.$transaction(async (tx) => {
-						if (!args.id) {
-							throw new Error(`Not allowed to update hazard form`);
-						}
-						const id: id = JSON.parse(args.id);
-						if(id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
-							throw new Error(`Not allowed to update hazard form`);
-						}
-
-						if(!IDObfuscator.checkSalt(id)) {
-							throw new Error(`Bad descrypted request`);
-						}
-						const idDeobfuscated = IDObfuscator.deobfuscateId(id);
+						const id = IDObfuscator.getId(args.id);
+						const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
 						const form = await tx.hazard_form_child.findUnique({where: {id_hazard_form_child: idDeobfuscated}});
 						if (! form) {
 							throw new Error(`Hazard form not found.`);

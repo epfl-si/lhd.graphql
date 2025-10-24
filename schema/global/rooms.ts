@@ -476,18 +476,8 @@ export const RoomMutations = extendType({
 			async resolve(root, args, context) {
 				try {
 					return await context.prisma.$transaction(async (tx) => {
-						if (!args.id) {
-							throw new Error(`Not allowed to update room`);
-						}
-						const id: id = JSON.parse(args.id);
-						if(id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
-							throw new Error(`Not allowed to update room`);
-						}
-
-						if(!IDObfuscator.checkSalt(id)) {
-							throw new Error(`Bad descrypted request`);
-						}
-						const idDeobfuscated = IDObfuscator.deobfuscateId(id);
+						const id = IDObfuscator.getId(args.id);
+						const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
 						const room = await tx.Room.findUnique({where: {id: idDeobfuscated}});
 						if (! room) {
 							throw new Error(`Room ${args.name} not found.`);
@@ -572,18 +562,8 @@ export const RoomMutations = extendType({
 			async resolve(root, args, context) {
 				try {
 					return await context.prisma.$transaction(async (tx) => {
-						if (!args.id) {
-							throw new Error(`Not allowed to update unit`);
-						}
-						const id: id = JSON.parse(args.id);
-						if(id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
-							throw new Error(`Not allowed to delete unit`);
-						}
-
-						if(!IDObfuscator.checkSalt(id)) {
-							throw new Error(`Bad descrypted request`);
-						}
-						const idDeobfuscated = IDObfuscator.deobfuscateId(id);
+						const id = IDObfuscator.getId(args.id);
+						const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
 						const room = await tx.Room.findUnique({where: {id: idDeobfuscated}});
 						if (! room) {
 							throw new Error(`Room not found.`);

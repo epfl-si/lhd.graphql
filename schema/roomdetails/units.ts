@@ -294,18 +294,8 @@ export const UnitMutations = extendType({
 			async resolve(root, args, context) {
 				try {
 					return await context.prisma.$transaction(async (tx) => {
-						if (!args.id) {
-							throw new Error(`Not allowed to update unit`);
-						}
-						const id: id = JSON.parse(args.id);
-						if (id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
-							throw new Error(`Not allowed to update unit`);
-						}
-
-						if(!IDObfuscator.checkSalt(id)) {
-							throw new Error(`Bad descrypted request`);
-						}
-						const idDeobfuscated = IDObfuscator.deobfuscateId(id);
+						const id = IDObfuscator.getId(args.id);
+						const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
 						const unit = await tx.Unit.findUnique({where: {id: idDeobfuscated}});
 						if (! unit) {
 							throw new Error(`Unit ${args.unit} not found.`);
@@ -464,18 +454,8 @@ export const UnitMutations = extendType({
 			async resolve(root, args, context) {
 				try {
 					return await context.prisma.$transaction(async (tx) => {
-						if (!args.id) {
-							throw new Error(`Not allowed to update unit`);
-						}
-						const id: id = JSON.parse(args.id);
-						if(id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
-							throw new Error(`Not allowed to delete unit`);
-						}
-
-						if(!IDObfuscator.checkSalt(id)) {
-							throw new Error(`Bad descrypted request`);
-						}
-						const idDeobfuscated = IDObfuscator.deobfuscateId(id);
+						const id = IDObfuscator.getId(args.id);
+						const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
 						const unit = await tx.Unit.findUnique({where: {id: idDeobfuscated}});
 						if (! unit) {
 							throw new Error(`Unit not found.`);
@@ -716,21 +696,10 @@ export const UnitReportFilesQuery = extendType({
 			async resolve(parent, args, context): Promise<any> {
 				try {
 					return await context.prisma.$transaction(async (tx) => {
-						if (!args.id) {
-							throw new Error(`Not allowed to update unit`);
-						}
-						const ids: id[] = JSON.parse(args.id);
+						const ids = IDObfuscator.getId(args.id);
 						const reportList = [];
 						await Promise.all(ids.map(async (id) => {
-							if (id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
-								throw new Error(`Not allowed to update unit`);
-							}
-
-							if(!IDObfuscator.checkSalt(id)) {
-								throw new Error(`Bad descrypted request`);
-							}
-
-							const idDeobfuscated = IDObfuscator.deobfuscateId(id);
+							const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
 							const reportFolder = "report_audits/pdf/" + idDeobfuscated + "/";
 							const folderPath = process.env.DOCUMENTS_PATH + "/" + reportFolder;
 							if (fs.existsSync(folderPath)) {

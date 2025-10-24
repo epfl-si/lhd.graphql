@@ -54,7 +54,7 @@ export class IDObfuscator {
 		return s.eph_id.substring(s.eph_id.indexOf('-')+1);
 	}
 
-	static getId (argId: string): id {
+	static getId (argId: string) {
 		if (!argId) {
 			throw new Error(`Not allowed to update`);
 		}
