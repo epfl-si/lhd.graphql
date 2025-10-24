@@ -27,7 +27,7 @@ export async function createNewMutationLog(
 	oldObject: object,
 	newObject: object,
 	action: 'CREATE' | 'UPDATE' | 'DELETE' | 'LINK') {
-	try {
+	/*try {
 		await tx.mutation_logs.create({
 			data: {
 				modified_by: context.user.preferred_username,
@@ -42,5 +42,5 @@ export async function createNewMutationLog(
 		});
 	} catch ( e ) {
 		console.log(e.message);
-	}
+	}*/
 }

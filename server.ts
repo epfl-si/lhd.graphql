@@ -37,13 +37,48 @@ export async function makeServer(
 		clientOptions.log.push('query');
 	}
 
-	const prisma = new PrismaClient({
-		datasources: { db: { url: config.LHD_DB_URL } },
-		...clientOptions,
-	});
+	const basePrisma = new PrismaClient();
+
+	function getPrismaForUser(user) {
+		return basePrisma.$extends({
+			query: {
+				async $allOperations({ model, operation, args, query }) {
+					let newValue = {};
+					if (['create', 'update', 'delete', 'deleteMany'].includes(operation)) {
+						const oldValue = operation === 'create' ? null : await basePrisma[model.toLowerCase()].findMany({ where: args.where });
+						newValue = await query(args);
+						try {
+							const source = operation === "create" ? newValue : (operation == 'deleteMany' ? null : oldValue[0]);
+							const key = source ? Object.keys(source).find(k => k.startsWith("id")) : undefined;
+							const id = key ? source[key] : 0;
+							await basePrisma['mutation_logs'].create({
+								data: {
+									modified_by: user.preferred_username,
+									modified_on: new Date(),
+									table_name: model,
+									table_id: id,
+									column_name: '',
+									old_value: oldValue ? JSON.stringify(oldValue) : '',
+									new_value: ['delete','deleteMany'].includes(operation) ? '' : JSON.stringify(newValue),
+									action: operation.toUpperCase()
+								}
+							});
+						} catch ( e ) {
+							console.log(`Log not in the DB ${e.message}`);
+						}
+					} else {
+						newValue = await query(args);
+					}
+					return newValue;
+				},
+			},
+			datasources: { db: { url: config.LHD_DB_URL } },
+			...clientOptions,
+		});
+	}
 
 	if (onQuery) {
-		(prisma as any).$on('query', onQuery);
+		(basePrisma as any).$on('query', onQuery);
 	}
 
 	const httpServer = http.createServer(app);
@@ -109,11 +144,15 @@ export async function makeServer(
 		}
 	});
 
-	registerLegacyApi(app,{ prisma });
+	registerLegacyApi(app,{ basePrisma });
 
 	app.use('/',
 		expressMiddleware(server, {
-			context: async ({ req }) => ({ prisma, user: req.user  }),
+			context: async ( { req } ) => {
+				const user = req.user;
+				const prisma = getPrismaForUser(user);
+				return { prisma, user };
+			}
 		})
 	);
 	return httpServer;
