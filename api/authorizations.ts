@@ -12,6 +12,7 @@ export function registerAuthApi(app, context) {
 		console.log(`API CALL - [${getNow()}] - ${req.method} - ${req.protocol}://${req.hostname}${req.originalUrl}`);
 
 		context.user = req.user;
+		context.prisma = req.prisma;
 
 		//TODO delete when Catalyse can change the call
 		if (req.url.indexOf(".php") > -1) {

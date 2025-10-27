@@ -103,6 +103,7 @@ export async function makeServer(
 			try {
 				var loginResponse = await getLoggedInUserInfos(req);
 				req.user = loginResponse.user;
+				req.prisma = getPrismaForUser(req.user);
 
 				if (req.method === 'POST' && !isHarmless(req) && !loginResponse.loggedIn) {
 					res.status(loginResponse.httpCode);
@@ -144,7 +145,7 @@ export async function makeServer(
 		}
 	});
 
-	registerLegacyApi(app,{ prisma: getPrismaForUser({preferred_username: 'API'}) });
+	registerLegacyApi(app,{ prisma: basePrisma });
 
 	app.use('/',
 		expressMiddleware(server, {
