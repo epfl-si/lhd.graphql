@@ -39,7 +39,7 @@ async function callAPI(url: string, method: "GET" | "POST") {
 
 export async function getUserInfoFromAPI(username: string) {
 	let userFullName = username;
-	let userEmail = 'rosa.maggi@epfl.ch'; //TODO do not push, only for dev
+	let userEmail = '';
 	let sciper = '';
 	const ldapUsers = await getUsersFromApi(username);
 	const ldapUser = ldapUsers["persons"].filter(u => u.account && u.account.username == username);
