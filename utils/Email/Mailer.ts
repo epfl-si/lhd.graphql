@@ -1,5 +1,5 @@
 import * as nodemailer from "nodemailer";
-import {EMAIL_TEMPLATES, logRecipients} from "./EmailTemplates";
+import {EMAIL_TEMPLATES, logAction, logRecipients} from "./EmailTemplates";
 import {getUserInfoFromAPI} from "../CallAPI";
 
 export const mailer = nodemailer.createTransport({
@@ -62,16 +62,43 @@ async function sendEmailCosec(modifiedByName: string,
 }
 
 export async function sendEmailsForHazards(user: string,
-																					 hazardType: string,
-																					 room: string,
-																					 action: object,
-																					 comment: string,
-																					 cosecs: string[]) {
-	if (process.env.HAZARD_TYPES_TO_EMAIL_AFTER_UPDATE.includes(hazardType)) {
+																					 args: any,
+																					 oldRoom: any,
+																					 cosecs: string[],
+																					 tx: any) {
+	const newRoom = await tx.Room.findFirst(
+		{
+			where: { name: args.room },
+			include: {
+				lab_has_hazards: true
+			}
+		});
+	const oldValues = getHazardLevel(oldRoom.lab_has_hazards, args.category);
+	const newValues = getHazardLevel(newRoom.lab_has_hazards, args.category);
+	const created = (oldValues.laser.length == 0 && newValues.laser.length > 0) || (oldValues.bio.length == 0 && newValues.bio.length > 0);
+	const deleted = (oldValues.laser.length > 0 && newValues.laser.length == 0) || (oldValues.bio.length > 0 && newValues.bio.length == 0);
+	console.log(created || deleted)
+	if (process.env.HAZARD_TYPES_TO_EMAIL_AFTER_UPDATE.includes(args.category) && (created || deleted)) {
 		const userInfo = await getUserInfoFromAPI(user);
-		await sendEmailCAE(userInfo.userFullName, userInfo.userEmail, room, action, hazardType, comment);
-		await sendEmailCosec(userInfo.userFullName, userInfo.userEmail, room, action, hazardType, cosecs);
+		await sendEmailCAE(userInfo.userFullName, userInfo.userEmail, args.room,
+			logAction(created, deleted), args.category, args.additionalInfo.comment);
+		await sendEmailCosec(userInfo.userFullName, userInfo.userEmail, args.room,
+			logAction(created, deleted), args.category, cosecs);
 	}
+}
+
+function getHazardLevel (submissions: any[], category: string) {
+	const laser = [];
+	const bio = [];
+	submissions.forEach(haz => {
+		const submission = JSON.parse(haz.submission);
+		if (category == 'Laser' && submission.data.laserClass && ['3B', '4'].includes(submission.data.laserClass.toString())) {
+			laser.push(submission.data.laserClass);
+		} else if (category == 'Biological' && submission.data.biosafetyLevel >= 2) {
+			bio.push(submission.data.biosafetyLevel);
+		}
+	});
+	return {laser, bio};
 }
 
 export async function sendEmailsForChemical(user: string, tx: any) {
