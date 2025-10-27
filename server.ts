@@ -144,7 +144,7 @@ export async function makeServer(
 		}
 	});
 
-	registerLegacyApi(app,{ basePrisma });
+	registerLegacyApi(app,{ prisma: getPrismaForUser({preferred_username: 'API'}) });
 
 	app.use('/',
 		expressMiddleware(server, {
@@ -226,7 +226,7 @@ async function getLoggedInUserInfos(req): Promise<loginResponse> {
 				userinfo.canListAuthorizations = userinfo.isAdmin || userinfo.isManager;
 				userinfo.canEditAuthorizations = userinfo.isAdmin || userinfo.isManager;
 				userinfo.canListPersons = userinfo.isAdmin || userinfo.isManager;
-				userinfo.canCallAPIToGetChemicals = ['SNOW'].includes(userinfo.preferred_username); //TODO testare le API, refactor IDObfuscated
+				userinfo.canCallAPIToGetChemicals = ['SNOW'].includes(userinfo.preferred_username);
 				userinfo.canCallAPIToPostChemicals = ['SNOW'].includes(userinfo.preferred_username);
 				userinfo.canCallAPIToPostAuthorization = ['SNOW'].includes(userinfo.preferred_username);
 				userinfo.canCallAPIToRenewAuthorization = ['SNOW'].includes(userinfo.preferred_username);
