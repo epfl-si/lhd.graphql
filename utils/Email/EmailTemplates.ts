@@ -66,53 +66,8 @@ export function logRecipients (to: string[], cc: string[], bcc: string[]) {
 	<b>BCC</b>: ${bcc.join(', ')}<br/><br/>`
 }
 
-export function logAction (logs: any[]) {
-	const result = [];
-	result.push({'status' : {'fr': 'Création', 'en': 'Created'},'count': logs.filter(log => log.status == 'Created').length});
-	result.push({'status' : {'fr': 'Modification', 'en': 'Modified'},'count': logs.filter(log => log.status == 'Modified').length});
-	result.push({'status' : {'fr': 'Suppression', 'en': 'Deleted'},'count': logs.filter(log => log.status == 'Deleted').length});
-	const filtered = result.filter(res => res.count > 0);
-	return {'en': filtered.map(res => `${res.status.en}: ${res.count}`).join(', '),
-		'fr': filtered.map(res => `${res.status.fr}: ${res.count}`).join(', ')};
-
-	/*logs.filter(log => log.submission.data.status !== 'Default' ||
-		log.children.filter(child => child.submission.data.status !== 'Default' || child.id.salt.indexOf('newHazard') > -1).length > 0)
-		.forEach((item, index) => {
-		result += `<br/>${formatSubmission(item.submission.data, 1, undefined)}<br/>`;
-
-		if ( item.children && item.children.length > 0 ) {
-			const items = item.children.filter(child => child.submission.data.status !== 'Default' || child.id.salt.indexOf('newHazard') > -1)
-			result += "  Children:<br/>";
-			items.forEach(child => {
-				result += `    - `;
-				result += formatSubmission(child.submission.data, 3, child.id) + "<br/>";
-			});
-		}
-
-		result += "<br/>";
-	});
-	if (result == '') result += 'Modified';
-	return result;*/
+export function logAction (created: boolean, deleted: boolean) {
+	if (created) return {'fr': 'Création', 'en': 'Created'};
+	else if (deleted) return {'fr': 'Suppression', 'en': 'Deleted'};
+	else return {'fr': 'Modification', 'en': 'Modified'};
 }
-
-/*function formatSubmission (submission: any, indent = 0, id) {
-	const pad = "  ".repeat(indent);
-	return Object.entries(submission)
-		.map(([key, value]) => {
-			if (!['status', 'delete', 'fileLink', 'filePath', 'risk_group'].includes(key)) {
-				if (typeof value === 'object' && value != null) {
-					return formatSubmission(value, indent, undefined);
-				} else {
-					return `${pad}${splitCamelCase(key)}: ${value}`
-				}
-			} else if (key == 'status') {
-				return `${pad}${splitCamelCase(key)}: ${value == 'Default' && id && id.salt.indexOf('newHazard') > -1 ? 'Created' : value}`
-			}
-		}).filter(text => text != '' && text != null).join("<br/>");
-}
-
-function splitCamelCase(str: string) {
-	const label = str.replace(/([a-z])([A-Z])/g, '$1 $2') // Insert a space between lowercase and uppercase letters
-	const txt = label.charAt(0).toUpperCase() + label.slice(1);
-	return txt.replaceAll('_', ' ');
-}*/
