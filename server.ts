@@ -214,11 +214,11 @@ async function getLoggedInUserInfos(req): Promise<loginResponse> {
 				userinfo.isAdmin = userinfo.groups.indexOf(process.env.ADMIN_GROUP) > -1;
 				userinfo.isManager = userinfo.groups.indexOf(process.env.LHD_GROUP) > -1;
 				userinfo.isCosec = userinfo.groups.indexOf(process.env.COSEC_GROUP) > -1;
-				userinfo.canListRooms = userinfo.isAdmin || userinfo.isManager;
+				userinfo.canListRooms = userinfo.isAdmin || userinfo.isManager || ['SNOW'].includes(userinfo.preferred_username);
 				userinfo.canEditRooms = userinfo.isAdmin || userinfo.isManager;
 				userinfo.canListHazards = userinfo.isAdmin || userinfo.isManager;
 				userinfo.canEditHazards = userinfo.isAdmin || userinfo.isManager;
-				userinfo.canListUnits = userinfo.isAdmin || userinfo.isManager;
+				userinfo.canListUnits = userinfo.isAdmin || userinfo.isManager || ['SNOW'].includes(userinfo.preferred_username);
 				userinfo.canEditUnits = userinfo.isAdmin || userinfo.isManager;
 				userinfo.canListOrganisms = userinfo.isAdmin || userinfo.isManager || userinfo.isCosec;
 				userinfo.canEditOrganisms = userinfo.isAdmin || userinfo.isManager;

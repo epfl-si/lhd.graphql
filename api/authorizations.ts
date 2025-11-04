@@ -6,6 +6,8 @@ import {
 } from "../schema/authorization/authorization";
 import {addChemical, getChemicalWithPagination} from "../schema/authorization/chemicals";
 import {IDObfuscator} from "../utils/IDObfuscator";
+import {getRoomsWithPagination} from "../schema/global/rooms";
+import {getParentUnit, getUnitByName} from "../schema/roomdetails/units";
 
 export function registerAuthApi(app, context) {
 	app.use('/api', (req, res, next) => {
@@ -385,6 +387,97 @@ export function registerAuthApi(app, context) {
 					}
 				})
 				res.json({Message: "Ok", Data: [casAuth]});
+			}
+		} catch (err: any) {
+			res.status(500).json({Message: err.message});
+		}
+	});
+	app.get("/api/get_labs_and_units", async (req, res) => {
+		try {
+			if ( !req.user.canListRooms )
+				res.status(403).json({Message: 'Unauthorized'});
+			else {
+				const conditions = [];
+				if (req.query.unit) conditions.push(req.query.unit as string);
+				if (req.query.room) conditions.push(req.query.room as string);
+				const args = {
+					search: conditions.join('&'),
+					take: 0
+				};
+				const resultNew = await getRoomsWithPagination(args, context);
+				for ( let i = 0; i<resultNew.rooms.length; i++) {
+					for ( let j = 0; j<resultNew.rooms[i].unit_has_room.length; j++) {
+						resultNew.rooms[i].unit_has_room[j].realID = resultNew.rooms[i].unit_has_room[j].id_unit;
+						if ( resultNew.rooms[i].unit_has_room[j].unit.unitId == null) {
+							const parentName = resultNew.rooms[i].unit_has_room[j].unit.name.substring(0, resultNew.rooms[i].unit_has_room[j].unit.name.indexOf(' ('));
+							const parent = await getParentUnit(parentName, context);
+							resultNew.rooms[i].unit_has_room[j].realID = parent.length > 0 ? parent[0].id : null;
+						}
+					}
+				}
+				const all = resultNew.rooms.map(r => {
+					return {
+						id_lab: r.id,
+						id_unit: r.unit_has_room.map(uhr => uhr.realID),
+						lab_display: r.name
+					}
+				});
+				const flatted = all.flatMap(item =>
+					item.id_unit.map(unit => ({
+						id_lab: item.id_lab,
+						id_unit: unit,
+						lab_display: item.lab_display
+					}))
+				);
+				res.json({Message: "Ok", Data: flatted});
+			}
+		} catch (err: any) {
+			res.status(500).json({Message: err.message});
+		}
+	});
+	app.get("/api/get_profs_and_cosecs", async (req, res) => {
+		try {
+			if ( !req.user.canListUnits )
+				res.status(403).json({Message: 'Unauthorized'});
+			else {
+				const args = {
+					search: req.query.unit ? req.query.unit as string : '',
+				};
+				const resultNew = await getUnitByName(args, context);
+				const unitMap: { [unit: string]: {unit: string, id_unit: number, sciper: string[], sciper_cosec: string[], rooms: string[] }; } = {};
+				resultNew.forEach(unit => {
+					const unitName = unit.name.split(' (')[0];
+					const cosecs = unit.unit_has_cosec.map(uhc => {
+							return uhc.cosec.sciper;
+						}
+					);
+					const profs = unit.subunpro.map(uhp => {
+							return uhp.person.sciper;
+						}
+					);
+					const rooms = unit.unit_has_room.map(uhr => {
+							return uhr.id_lab;
+						}
+					);
+					if (!unitMap.hasOwnProperty(unitName)) {
+						unitMap[unitName] = {
+							sciper_cosec: cosecs,
+							sciper: profs,
+							unit: `${unit.institute.school.name} ${unit.institute.name} ${unitName}`,
+							id_unit: unit.name === unitName ? unit.id : 0,
+							rooms: rooms
+						};
+					} else {
+						unitMap[unitName].sciper_cosec = [...new Set([...unitMap[unitName].sciper_cosec, ...cosecs])];
+						unitMap[unitName].sciper = [...new Set([...unitMap[unitName].sciper, ...profs])];
+						unitMap[unitName].id_unit = unit.name === unitName ? unit.id : unitMap[unitName].id_unit;
+						unitMap[unitName].rooms = [...new Set([...unitMap[unitName].rooms, ...rooms])];
+					}
+				});
+				const result = Object.values(unitMap).filter(val => val.rooms.length > 0).map(value => {
+					return {unit: value.unit, id_unit: value.id_unit, sciper: value.sciper.join(','), sciper_cosec: value.sciper_cosec.join(',')}
+				});
+				res.json({Message: "Ok", Data: result});
 			}
 		} catch (err: any) {
 			res.status(500).json({Message: err.message});

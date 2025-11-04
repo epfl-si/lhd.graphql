@@ -238,7 +238,7 @@ export const RoomQuery = extendType({
 					throw new Error('Unauthorized');
 				}
 
-				// Check if user has the right to access rooms (customize this logic)
+				// Check if user has the right to access rooms
 				if (!context.user.canListRooms) {
 					throw new Error('Permission denied');
 				}
@@ -270,99 +270,104 @@ export const RoomsWithPaginationQuery = extendType({
 			},
 			authorize: (parent, args, context) => context.user.canListRooms,
 			async resolve(parent, args, context) {
-				const queryArray = args.search.split("&");
-				const dictionary = queryArray.map(query => query.split("="));
-				const whereCondition = [];
-				if (dictionary.length == 0) {
-					whereCondition.push({ name: { contains: '' }})
-				} else {
-					dictionary.forEach(query => {
-						const value = decodeURIComponent(query[1]);
-						if (query[0] == 'Room') {
-							whereCondition.push({ name: { contains: value }})
-						} else if (query[0] == 'Hazard') {
-							whereCondition.push({ lab_has_hazards : {some: {hazard_form_history: { is: {hazard_form: { is: {hazard_category: { is: {hazard_category_name: { contains: value }}}}}}}}}})
-						} else if (query[0] == 'Designation') {
-							whereCondition.push({ kind : { is: {name: { contains: value }}}})
-						} else if (query[0] == 'Floor') {
-							whereCondition.push({ floor: { contains: value }})
-						} else if (query[0] == 'Sector') {
-							whereCondition.push({ sector: { contains: value }})
-						} else if (query[0] == 'Building') {
-							whereCondition.push({ building: { contains: value }})
-						} else if (query[0] == 'Unit') {
-							whereCondition.push({
-								OR: [
-									{ unit_has_room: { some: {unit: {is: {name: {contains: value}}}} }},
-									{ unit_has_room: { some: {unit: {is: {institute: {is: {name: {contains: value}}}}}} }},
-									{ unit_has_room: { some: {unit: {is: {institute: {is: {school: {is: {name: {contains: value}}}}}}}} }}
-								]
-							})
-						} else if (query[0] == 'Volume' && !isNaN(parseFloat(value))) {
-							whereCondition.push({ vol: { gt: parseFloat(value) - 10, lt: parseFloat(value) + 10 } })
-						} else if (query[0] == 'Cosec') {
-							whereCondition.push({
-								unit_has_room: {
-									some: {
-										unit: {
-											unit_has_cosec: {
-												some: {
-													cosec: {
-														OR: [
-															{ name: { contains: value } },
-															{ surname: { contains: value } },
-															{ email: { contains: value } },
-														],
-													},
-												},
-											},
-										},
-									},
-								},
-							})
-						} else if (query[0] == 'Prof') {
-							whereCondition.push({
-								unit_has_room: {
-									some: {
-										unit: {
-											subunpro: {
-												some: {
-													person: {
-														OR: [
-															{ name: { contains: value } },
-															{ surname: { contains: value } },
-															{ email: { contains: value } },
-														],
-													},
-												},
-											},
-										},
-									},
-								},
-							})
-						}
-					})
-				}
-
-				const roomsList = await context.prisma.Room.findMany({
-					where: {
-						AND: whereCondition
-					},
-					orderBy: [
-						{
-							name: 'asc',
-						},
-					]
-				});
-
-				const rooms = args.take == 0 ? roomsList : roomsList.slice(args.skip, args.skip + args.take);
-				const totalCount = roomsList.length;
-
-				return { rooms, totalCount };
+				return await getRoomsWithPagination(args, context);
 			}
 		});
 	},
 });
+
+export async function getRoomsWithPagination(args, context) {
+	const queryArray = args.search.split("&");
+	const dictionary = queryArray.map(query => query.split("="));
+	const whereCondition = [];
+	if (dictionary.length == 0) {
+		whereCondition.push({ name: { contains: '' }})
+	} else {
+		dictionary.forEach(query => {
+			const value = decodeURIComponent(query[1]);
+			if (query[0] == 'Room') {
+				whereCondition.push({ name: { contains: value }})
+			} else if (query[0] == 'Hazard') {
+				whereCondition.push({ lab_has_hazards : {some: {hazard_form_history: { is: {hazard_form: { is: {hazard_category: { is: {hazard_category_name: { contains: value }}}}}}}}}})
+			} else if (query[0] == 'Designation') {
+				whereCondition.push({ kind : { is: {name: { contains: value }}}})
+			} else if (query[0] == 'Floor') {
+				whereCondition.push({ floor: { contains: value }})
+			} else if (query[0] == 'Sector') {
+				whereCondition.push({ sector: { contains: value }})
+			} else if (query[0] == 'Building') {
+				whereCondition.push({ building: { contains: value }})
+			} else if (query[0] == 'Unit') {
+				whereCondition.push({
+					OR: [
+						{ unit_has_room: { some: {unit: {is: {name: {contains: value}}}} }},
+						{ unit_has_room: { some: {unit: {is: {institute: {is: {name: {contains: value}}}}}} }},
+						{ unit_has_room: { some: {unit: {is: {institute: {is: {school: {is: {name: {contains: value}}}}}}}} }}
+					]
+				})
+			} else if (query[0] == 'Volume' && !isNaN(parseFloat(value))) {
+				whereCondition.push({ vol: { gt: parseFloat(value) - 10, lt: parseFloat(value) + 10 } })
+			} else if (query[0] == 'Cosec') {
+				whereCondition.push({
+					unit_has_room: {
+						some: {
+							unit: {
+								unit_has_cosec: {
+									some: {
+										cosec: {
+											OR: [
+												{ name: { contains: value } },
+												{ surname: { contains: value } },
+												{ email: { contains: value } },
+											],
+										},
+									},
+								},
+							},
+						},
+					},
+				})
+			} else if (query[0] == 'Prof') {
+				whereCondition.push({
+					unit_has_room: {
+						some: {
+							unit: {
+								subunpro: {
+									some: {
+										person: {
+											OR: [
+												{ name: { contains: value } },
+												{ surname: { contains: value } },
+												{ email: { contains: value } },
+											],
+										},
+									},
+								},
+							},
+						},
+					},
+				})
+			}
+		})
+	}
+
+	const roomsList = await context.prisma.Room.findMany({
+		where: {
+			AND: whereCondition
+		},
+		include: { unit_has_room: { include: { unit: true } } },
+		orderBy: [
+			{
+				name: 'asc',
+			},
+		]
+	});
+
+	const rooms = args.take == 0 ? roomsList : roomsList.slice(args.skip, args.skip + args.take);
+	const totalCount = roomsList.length;
+
+	return { rooms, totalCount };
+}
 
 export const RoomKindQuery = extendType({
 	type: 'Query',

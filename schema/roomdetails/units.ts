@@ -611,25 +611,40 @@ export const UnitFullTextQuery = extendType({
 			},
 			authorize: (parent, args, context) => context.user.canListUnits,
 			async resolve(parent, args, context) {
-				return await context.prisma.Unit.findMany({
-					where: {
-						OR: [
-							{ name: { contains: args.search }},
-							{ institute : { name: { contains: args.search } }},
-							{ institute : { school: { name: { contains: args.search } } }},
-						]
-					},
-					orderBy: [
-						{
-							name: 'asc',
-						},
-					]
-				});
+				return await getUnitByName(args, context);
 			}
 		})
 	},
 })
 
+export async function getUnitByName(args, context) {
+	return await context.prisma.Unit.findMany({
+		where: {
+			OR: [
+				{ name: { contains: args.search }},
+				{ institute : { name: { contains: args.search } }},
+				{ institute : { school: { name: { contains: args.search } } }},
+			]
+		},
+		include: { unit_has_cosec: { include: { cosec: true } }, subunpro: { include: { person: true } }, institute: { include: { school: true } }, unit_has_room: { include: true } },
+		orderBy: [
+			{
+				name: 'asc',
+			},
+		]
+	});
+}
+
+export async function getParentUnit(nameParent: string, context) {
+	return await context.prisma.Unit.findMany({
+		where: {name: nameParent},
+		orderBy: [
+			{
+				name: 'asc',
+			},
+		]
+	});
+}
 export const UnitFromAPI = objectType({
 	name: "UnitFromAPI",
 	definition(t) {
@@ -673,7 +688,6 @@ export const UnitFromAPIQuery = extendType({
 		})
 	},
 })
-
 
 export const UnitReportFiles = objectType({
 	name: "UnitReportFiles",
