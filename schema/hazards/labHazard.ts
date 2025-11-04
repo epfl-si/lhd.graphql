@@ -117,7 +117,7 @@ export const RoomHazardMutations = extendType({
 						const category = await tx.hazard_category.findFirst({ where: { hazard_category_name: args.category }});
 
 						for ( const h of submissionsHazards ) {
-							if(h.id == undefined || h.id.eph_id == undefined || h.id.eph_id == '' || h.id.salt == undefined || h.id.salt == '') {
+							if (h.id == undefined || h.id.eph_id == undefined || h.id.eph_id == '' || h.id.salt == undefined || h.id.salt == '') {
 								throw new Error(`Not allowed to update hazards`);
 							}
 
@@ -147,7 +147,7 @@ export const RoomHazardMutations = extendType({
 								}
 							}
 							else if (!h.id.eph_id.startsWith('newHazard')) {
-								if(!IDObfuscator.checkSalt(h.id)) {
+								if (!IDObfuscator.checkSalt(h.id)) {
 									throw new Error(`Bad descrypted request`);
 								}
 								const id = IDObfuscator.deobfuscateId(h.id);

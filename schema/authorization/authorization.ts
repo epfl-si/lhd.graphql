@@ -151,7 +151,7 @@ export const AuthorizationsByRoom = extendType({
 			async resolve(parent, args, context) {
 				if (args.roomId) {
 					const id: id = JSON.parse(args.roomId);
-					if(id && id.eph_id && id.eph_id != '' && id.salt && id.salt != '' && IDObfuscator.checkSalt(id)) {
+					if (id && id.eph_id && id.eph_id != '' && id.salt && id.salt != '' && IDObfuscator.checkSalt(id)) {
 						const idDeobfuscated = IDObfuscator.deobfuscateId(id);
 						const auths = await context.prisma.authorization.findMany({
 							where: {

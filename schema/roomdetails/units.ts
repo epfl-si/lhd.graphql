@@ -225,11 +225,11 @@ export const UnitMutations = extendType({
 									const instituteName: string = parts[2];
 									let institute = await tx.Institute.findFirst({where: { name: instituteName}});
 
-									if(!institute) {
+									if (!institute) {
 										const facultyName: string = parts[1];
 										let faculty = await tx.School.findFirst({where: { name: facultyName}});
 
-										if(!faculty) {
+										if (!faculty) {
 											faculty = await tx.School.create({
 												data: {
 													name: facultyName,

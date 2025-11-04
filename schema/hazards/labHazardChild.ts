@@ -415,11 +415,11 @@ export const HazardChildMutations = extendType({
 							throw new Error(`Not allowed to delete hazard child`);
 						}
 						const id: id = JSON.parse(args.id);
-						if(id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
+						if (id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
 							throw new Error(`Not allowed to delete hazard child`);
 						}
 
-						if(!IDObfuscator.checkSalt(id)) {
+						if (!IDObfuscator.checkSalt(id)) {
 							throw new Error(`Bad descrypted request`);
 						}
 						const idDeobfuscated = IDObfuscator.deobfuscateId(id);

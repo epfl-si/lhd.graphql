@@ -117,20 +117,20 @@ export const OrganismMutations = extendType({
 
 						if ( !organism ) {
 							throw new Error(`Organism not created`);
-						} else {
-							let filePath = '';
-							if (args.fileContent != '' && args.fileName != '') {
-								filePath = saveBase64File(args.fileContent,  'd_bio/' + organism.id_bio_org + '/', args.fileName)
-							}
-							await tx.bio_org.update({
-								data: {
-									filePath: filePath
-								},
-								where: {
-									id_bio_org: organism.id_bio_org
-								}
-							});
 						}
+
+						let filePath = '';
+						if (args.fileContent != '' && args.fileName != '') {
+							filePath = saveBase64File(args.fileContent,  'd_bio/' + organism.id_bio_org + '/', args.fileName)
+						}
+						await tx.bio_org.update({
+							data: {
+								filePath: filePath
+							},
+							where: {
+								id_bio_org: organism.id_bio_org
+							}
+						});
 
 						return mutationStatusType.success();
 					});
@@ -177,9 +177,9 @@ export const OrganismMutations = extendType({
 
 						if (!updatedOrganism) {
 							throw new Error(`Organism ${args.organismName} not updated.`);
-						} else {
-							await updateBioOrg(org, updatedOrganism, tx, context);
 						}
+
+						await updateBioOrg(org, updatedOrganism, tx, context);
 						return mutationStatusType.success();
 					});
 				} catch ( e ) {
@@ -199,11 +199,11 @@ export const OrganismMutations = extendType({
 							throw new Error(`Not allowed to delete organism`);
 						}
 						const id: id = JSON.parse(args.id);
-						if(id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
+						if (id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
 							throw new Error(`Not allowed to delete organism`);
 						}
 
-						if(!IDObfuscator.checkSalt(id)) {
+						if (!IDObfuscator.checkSalt(id)) {
 							throw new Error(`Bad descrypted request`);
 						}
 						const idDeobfuscated = IDObfuscator.deobfuscateId(id);
