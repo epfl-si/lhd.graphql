@@ -73,10 +73,7 @@ export function registerAuthApi(app, context) {
 							res.json({Message: "Ok"});
 						else {
 							const error = add.errors.map(err => err.message).join(', ');
-							if (error.indexOf("Unique constraint failed on the constraint: `authorization`") > -1)
-								res.json({Message: "Ok"});
-							else
-								res.json({Message: error});
+							res.json({Message: error});
 						}
 					}
 					break;
@@ -133,10 +130,7 @@ export function registerAuthApi(app, context) {
 							res.json({Message: "Ok"});
 						else {
 							const error = resultNewChem.errors.map(err => err.message).join(', ');
-							if ( error.indexOf("Unique constraint failed on the constraint: `auth_chem_en`") > -1 )
-								res.json({Message: "Ok"});
-							else
-								res.json({Message: error});
+							res.json({Message: error});
 						}
 					}
 					break;
@@ -240,10 +234,7 @@ export function registerAuthApi(app, context) {
 				res.json({Message: "Ok"});
 			else {
 				const error = add.errors.map(err => err.message).join(', ');
-				if ( error.indexOf("Unique constraint failed on the constraint: `authorization`") > -1 )
-					res.json({Message: "Ok"});
-				else
-					res.json({Message: error});
+				res.json({Message: error});
 			}
 		} catch (err: any) {
 			res.status(500).json({Message: err.message});
@@ -316,10 +307,7 @@ export function registerAuthApi(app, context) {
 				res.json({Message: "Ok"});
 			else {
 				const error = resultNewChem.errors.map(err => err.message).join(', ');
-				if ( error.indexOf("Unique constraint failed on the constraint: `auth_chem_en`") > -1 )
-					res.json({Message: "Ok"});
-				else
-					res.json({Message: error});
+				res.json({Message: error});
 			}
 		} catch (err: any) {
 			res.status(500).json({Message: err.message});

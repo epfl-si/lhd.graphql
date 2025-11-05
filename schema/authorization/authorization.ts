@@ -513,6 +513,8 @@ export async function addAuthorization(args, context) {
 			return mutationStatusType.success();
 		});
 	} catch ( e ) {
+		if (e.message.indexOf("Unique constraint failed on the constraint: `authorization`") > -1)
+			return mutationStatusType.success();
 		return mutationStatusType.error(e.message);
 	}
 }

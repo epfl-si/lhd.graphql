@@ -200,6 +200,8 @@ export async function addChemical(args, context) {
 			return mutationStatusType.success();
 		});
 	} catch ( e ) {
+		if ( e.message.indexOf("Unique constraint failed on the constraint: `auth_chem_en`") > -1 )
+			return mutationStatusType.success();
 		return mutationStatusType.error(e.message);
 	}
 }
