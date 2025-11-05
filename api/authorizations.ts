@@ -4,7 +4,7 @@ import {
 	getAuthorizationsWithPagination, getAuthorizationToString,
 	updateAuthorization
 } from "../schema/authorization/authorization";
-import {addChemical, getChemicalWithPagination} from "../schema/authorization/chemicals";
+import {ensureChemical, getChemicalWithPagination} from "../schema/authorization/chemicals";
 import {IDObfuscator} from "../utils/IDObfuscator";
 import {getRoomsWithPagination} from "../schema/global/rooms";
 import {getParentUnit, getUnitByName} from "../schema/roomdetails/units";
@@ -125,7 +125,7 @@ export function registerAuthApi(app, context) {
 							cas_auth_chem: req.query.cas as string,
 							flag_auth_chem: (req.query.auth as string).toLowerCase() == 'yes' || (req.query.auth as string) == '1'
 						}
-						const resultNewChem = await addChemical(argsChem, context);
+						const resultNewChem = await ensureChemical(argsChem, context);
 						if ( resultNewChem.isSuccess )
 							res.json({Message: "Ok"});
 						else {
@@ -302,7 +302,7 @@ export function registerAuthApi(app, context) {
 				cas_auth_chem: req.query.cas as string,
 				flag_auth_chem: (req.query.auth as string).toLowerCase() == 'yes' || (req.query.auth as string) == '1'
 			}
-			const resultNewChem = await addChemical(argsChem, context);
+			const resultNewChem = await ensureChemical(argsChem, context);
 			if ( resultNewChem.isSuccess )
 				res.json({Message: "Ok"});
 			else {

@@ -92,7 +92,7 @@ export const ChemicalMutations = extendType({
 			type: "ChemicalStatus",
 			authorize: (parent, args, context) => context.user.canEditChemicals,
 			async resolve(root, args, context) {
-				return await addChemical(args, context);
+				return await ensureChemical(args, context);
 			}
 		});
 		t.nonNull.field('updateChemical', {
@@ -182,7 +182,7 @@ export const ChemicalMutations = extendType({
 	}
 });
 
-export async function addChemical(args, context) {
+export async function ensureChemical(args, context) {
 	try {
 		return await context.prisma.$transaction(async (tx) => {
 			const chemical = await tx.auth_chem.create({
