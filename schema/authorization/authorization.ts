@@ -234,7 +234,7 @@ export const AuthorizationMutations = extendType({
 			type: "AuthorizationStatus",
 			authorize: (parent, args, context) => context.user.canEditAuthorizations,
 			async resolve(root, args, context) {
-				return await addAuthorization(args, context);
+				return await ensureAuthorization(args, context);
 			}
 		});
 		t.nonNull.field('updateAuthorization', {
@@ -477,7 +477,7 @@ async function checkRelations(tx, context, args, authorization) {
 	}
 }
 
-export async function addAuthorization(args, context) {
+export async function ensureAuthorization(args, context) {
 	try {
 		let unitId = parseInt(args.id_unit);
 		if (!['SNOW', 'CATALYSE'].includes(context.user.preferred_username)) {

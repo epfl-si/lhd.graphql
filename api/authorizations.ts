@@ -1,6 +1,6 @@
 import {getNow} from "../libs/date";
 import {
-	addAuthorization, getAuthorization,
+	ensureAuthorization, getAuthorization,
 	getAuthorizationsWithPagination, getAuthorizationToString,
 	updateAuthorization
 } from "../schema/authorization/authorization";
@@ -68,7 +68,7 @@ export function registerAuthApi(app, context) {
 								roomIds.map(r => `{id: ${r}, status: "New"}`)
 							],
 						}
-						const add = await addAuthorization(args, context);
+						const add = await ensureAuthorization(args, context);
 						if (add.isSuccess)
 							res.json({Message: "Ok"});
 						else {
@@ -229,7 +229,7 @@ export function registerAuthApi(app, context) {
 					roomIds.map(r => `{id: ${r}, status: "New"}`)
 				],
 			}
-			const add = await addAuthorization(args, context);
+			const add = await ensureAuthorization(args, context);
 			if ( add.isSuccess )
 				res.json({Message: "Ok"});
 			else {
