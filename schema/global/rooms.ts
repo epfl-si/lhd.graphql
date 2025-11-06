@@ -449,7 +449,7 @@ export const RoomMutations = extendType({
 									const parts: string[] = room.name.split(' ');
 
 									const labType = await tx.RoomKind.findFirst({where: {name: room.facultyuse}});
-									const newRoom = await tx.Room.create({
+									await tx.Room.create({
 										data: {
 											sciper_lab: room.id,
 											building: room.building,
@@ -493,7 +493,7 @@ export const RoomMutations = extendType({
 						}
 
 						const roomKind = await tx.RoomKind.findFirst({where: {name: args.kind}})
-						const updatedRoom = await tx.Room.update(
+						await tx.Room.update(
 							{ where: { id: room.id },
 								data: {
 									vent: args.vent,
@@ -501,10 +501,6 @@ export const RoomMutations = extendType({
 									kind: { connect: { id_labType: roomKind.id_labType}},
 								}
 							});
-
-						if (!updatedRoom) {
-							throw new Error(`Room ${args.name} not updated.`);
-						}
 
 						const errors: string[] = [];
 						for (const unitToChange of args.units) {
@@ -517,15 +513,12 @@ export const RoomMutations = extendType({
 							}
 							if (unitToChange.status == 'New') {
 								try {
-									const u = await tx.unit_has_room.create({
+									await tx.unit_has_room.create({
 										data: {
 											id_lab: room.id,
 											id_unit: unit.id
 										}
 									})
-									if ( !u ) {
-										errors.push(`Error creating unit ${unit.name}.`);
-									}
 								} catch ( e ) {
 									errors.push(`Error creating unit ${unit.name}.`);
 								}
@@ -536,12 +529,9 @@ export const RoomMutations = extendType({
 										id_lab: room.id,
 										id_unit: unit.id
 									};
-									const u = await tx.unit_has_room.deleteMany({
+									await tx.unit_has_room.deleteMany({
 										where: whereConditionForDelete
 									});
-									if (!u) {
-										errors.push(`Error deleting ${unit.name}.`);
-									}
 								} catch ( e ) {
 									errors.push(`Error creating unit ${unit.name}.`);
 								}
@@ -673,14 +663,11 @@ async function deleteRoom(tx, context, r:Room) {
 		});
 		errors.push(...await writeDeletionLog(disp, tx, context, tx.DispensationInRoomRelation.name, r));
 
-		const room = await tx.Room.delete({
+		await tx.Room.delete({
 			where: {
 				id: r.id,
 			},
 		});
-		if ( !room ) {
-			errors.push(`Error deleting ${r.name}.`);
-		}
 	} catch ( e ) {
 		errors.push(`Error deleting ${r.name}: ${e.message}.`);
 	}

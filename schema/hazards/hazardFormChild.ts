@@ -114,9 +114,6 @@ export const HazardFormChildMutations = extendType({
 										id_hazard_form: hazardForm.id_hazard_form
 									}
 								});
-							if ( !form ) {
-								throw new Error(`Hazard form child not created.`);
-							}
 
 							const newFormChildHistory = await tx.hazard_form_child_history.create(
 								{ data: {
@@ -159,17 +156,14 @@ export const HazardFormChildMutations = extendType({
 							throw new Error(`Hazard form has been changed from another user. Please reload the page to make modifications`);
 						}
 
-						const updatedForm = await tx.hazard_form_child.update(
+						await tx.hazard_form_child.update(
 							{ where: { id_hazard_form_child: form.id_hazard_form_child },
 								data: {
 									form: args.form,
 									version: args.version
 								}
 							});
-						if ( !updatedForm ) {
-							throw new Error(`Hazard form not updated.`);
-						}
-						const newFormHistory = await tx.hazard_form_child_history.create(
+						await tx.hazard_form_child_history.create(
 							{ data: {
 									form: args.form,
 									version: args.version,
@@ -178,9 +172,6 @@ export const HazardFormChildMutations = extendType({
 									modified_on: new Date()
 								}
 							});
-						if ( !newFormHistory ) {
-							throw new Error(`Hazard form not updated.`);
-						}
 					});
 				} catch ( e ) {
 					return mutationStatusType.error(e.message);

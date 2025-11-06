@@ -62,16 +62,13 @@ export async function updateHazardFormChild(child: submission, tx: any, context:
 	});
 
 	if ( child.id.eph_id.startsWith('newHazardChild') && child.submission.data['status'] == 'Default' ) {
-		const hazardChild = await tx.lab_has_hazards_child.create({
+		await tx.lab_has_hazards_child.create({
 			data: {
 				id_lab_has_hazards: parentHazard,
 				id_hazard_form_child_history: historyChildLastVersion.id_hazard_form_child_history,
 				submission: JSON.stringify(child.submission)
 			}
 		})
-		if ( !hazardChild ) {
-			throw new Error(`Hazard child not created for room ${room}.`);
-		}
 	} else if ( !child.id.eph_id.startsWith('newHazardChild') ) {
 		if ( !IDObfuscator.checkSalt(child.id) ) {
 			throw new Error(`Bad descrypted request`);
@@ -87,7 +84,7 @@ export async function updateHazardFormChild(child: submission, tx: any, context:
 		}
 
 		if ( child.submission.data['status'] == 'Default' ) {
-			const hazardChild = await tx.lab_has_hazards_child.update(
+			await tx.lab_has_hazards_child.update(
 				{
 					where: {id_lab_has_hazards_child: id},
 					data: {
@@ -95,28 +92,19 @@ export async function updateHazardFormChild(child: submission, tx: any, context:
 						submission: JSON.stringify(child.submission)
 					}
 				});
-			if ( !hazardChild ) {
-				throw new Error(`Hazard child not updated for room ${room}.`);
-			}
 		} else if ( child.submission.data['status'] == 'Deleted' ) {
-			const hazardChild = await tx.lab_has_hazards_child.delete({
+			await tx.lab_has_hazards_child.delete({
 				where: {
 					id_lab_has_hazards_child: id
 				}
 			});
 			const lab_has_hazardsList = await tx.lab_has_hazards_child.findMany({where: {id_lab_has_hazards: parentHazard}});
 			if (lab_has_hazardsList.length == 0) {
-				const hazard = await tx.lab_has_hazards.delete({
+				await tx.lab_has_hazards.delete({
 					where: {
 						id_lab_has_hazards: parentHazard
 					}
 				});
-				if ( !hazard ) {
-					throw new Error(`Hazard not deleted for room ${room}.`);
-				}
-			}
-			if ( !hazardChild ) {
-				throw new Error(`Hazard child not deleted for room ${room}.`);
 			}
 		}
 	}
@@ -131,7 +119,7 @@ export async function updateBioOrg(oldBioOrg: bio_org, newBioOrg: bio_org, tx: a
 		newSubmission.data.organism.filePath = newBioOrg.filePath;
 		newSubmission.data.fileLink = newBioOrg.filePath;
 		newSubmission.data.riskGroup = newBioOrg.risk_group;
-		const hazardChild = await tx.lab_has_hazards_child.update(
+		await tx.lab_has_hazards_child.update(
 			{
 				where: {id_lab_has_hazards_child: child.id_lab_has_hazards_child},
 				data: {
@@ -432,24 +420,18 @@ export const HazardChildMutations = extendType({
 							throw new Error(`Hazard child has been changed from another user. Please reload the page to make modifications`);
 						}
 
-						const hazardChild = await tx.lab_has_hazards_child.delete({
+						await tx.lab_has_hazards_child.delete({
 							where: {
 									id_lab_has_hazards_child: idDeobfuscated
 							}
 						});
 						const lab_has_hazardsList = await tx.lab_has_hazards_child.findMany({where: {id_lab_has_hazards: child.id_lab_has_hazards}});
 						if (lab_has_hazardsList.length == 0) {
-							const hazard = await tx.lab_has_hazards.delete({
+							await tx.lab_has_hazards.delete({
 								where: {
 									id_lab_has_hazards: child.id_lab_has_hazards
 								}
 							});
-							if ( !hazard ) {
-								throw new Error(`Hazard not deleted.`);
-							}
-						}
-						if ( !hazardChild ) {
-							throw new Error(`Hazard child not deleted.`);
 						}
 						return mutationStatusType.success();
 					});

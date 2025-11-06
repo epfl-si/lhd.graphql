@@ -138,9 +138,6 @@ export const RoomHazardMutations = extendType({
 										submission: JSON.stringify(h.submission)
 									}
 								})
-								if ( !hazard ) {
-									throw new Error(`Hazard not created for room ${args.room}.`);
-								}
 
 								for await (const child of h.children) {
 									await updateHazardFormChild(child, tx, context, args.room, hazard.id_lab_has_hazards)
@@ -168,32 +165,23 @@ export const RoomHazardMutations = extendType({
 												submission: JSON.stringify(h.submission)
 											}
 										});
-									if ( !hazard ) {
-										throw new Error(`Hazard not updated for room ${args.room}.`);
-									}
 
 									for await (const child of h.children) {
 										await updateHazardFormChild(child, tx, context, args.room, hazard.id_lab_has_hazards)
 									}
 								}
 								else if (h.submission.data['status'] == 'Deleted') {
-									const hazardChildren = await tx.lab_has_hazards_child.deleteMany({
+									await tx.lab_has_hazards_child.deleteMany({
 										where: {
 											id_lab_has_hazards: id
 										}
 									});
-									if ( !hazardChildren ) {
-										throw new Error(`Hazard not deleted for room ${args.room}.`);
-									}
 
-									const hazard = await tx.lab_has_hazards.delete({
+									await tx.lab_has_hazards.delete({
 											where: {
 												id_lab_has_hazards: id
 											}
 										});
-									if ( !hazard ) {
-										throw new Error(`Hazard not deleted for room ${args.room}.`);
-									}
 								}
 							}
 						}
@@ -211,7 +199,7 @@ export const RoomHazardMutations = extendType({
 							}});
 						if (additionalInfoResult) {
 							const userInfo = await getUserInfoFromAPI(context.user.preferred_username);
-							const info = await tx.lab_has_hazards_additional_info.update(
+							await tx.lab_has_hazards_additional_info.update(
 								{ where: { id_lab_has_hazards_additional_info: additionalInfoResult.id_lab_has_hazards_additional_info },
 									data: {
 										modified_by: `${userInfo.userFullName} (${userInfo.sciper})`,
@@ -220,13 +208,9 @@ export const RoomHazardMutations = extendType({
 										filePath: filePath != '' ? filePath : additionalInfoResult.filePath
 									}
 								});
-
-							if ( !info ) {
-								throw new Error(`Additional information not updated for room ${args.room}.`);
-							}
 						} else {
 							const userInfo = await getUserInfoFromAPI(context.user.preferred_username);
-							const info = await tx.lab_has_hazards_additional_info.create({
+							await tx.lab_has_hazards_additional_info.create({
 								data: {
 									modified_by: `${userInfo.userFullName} (${userInfo.sciper})`,
 									modified_on: new Date(),
@@ -236,10 +220,6 @@ export const RoomHazardMutations = extendType({
 									id_lab: room.id
 								}
 							});
-
-							if ( !info ) {
-								throw new Error(`Additional information not created for room ${args.room}.`);
-							}
 						}
 
 						const cosecs = [];

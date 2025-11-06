@@ -114,7 +114,7 @@ export const ChemicalMutations = extendType({
 							throw new Error(`Chemical ${args.cas_auth_chem} has been changed from another user. Please reload the page to make modifications`);
 						}
 
-						const updatedChemical = await tx.auth_chem.update(
+						await tx.auth_chem.update(
 							{ where: { id_auth_chem: chem.id_auth_chem },
 								data: {
 									cas_auth_chem: args.cas_auth_chem,
@@ -123,9 +123,6 @@ export const ChemicalMutations = extendType({
 								}
 							});
 
-						if (!updatedChemical) {
-							throw new Error(`Chemical ${args.cas_auth_chem} not updated.`);
-						}
 						await sendEmailsForChemical(context.user.preferred_username, tx);
 						return mutationStatusType.success();
 					});
@@ -165,12 +162,9 @@ export const ChemicalMutations = extendType({
 
 						await tx.auth_chem_log.deleteMany({ where: { id_auth_chem: chem.id_auth_chem }});
 						await tx.auth_rchem.deleteMany({ where: { id_auth_chem: chem.id_auth_chem }});
-						const deletedChemical = await tx.auth_chem.delete({ where: { id_auth_chem: chem.id_auth_chem }});
+						await tx.auth_chem.delete({ where: { id_auth_chem: chem.id_auth_chem }});
 
 						//TODO delete authorizations?
-						if ( !deletedChemical ) {
-							throw new Error(`Chemical ${args.cas_auth_chem} not deleted.`);
-						}
 						await sendEmailsForChemical(context.user.preferred_username, tx);
 						return mutationStatusType.success();
 					});
@@ -185,17 +179,13 @@ export const ChemicalMutations = extendType({
 export async function ensureChemical(args, context) {
 	try {
 		return await context.prisma.$transaction(async (tx) => {
-			const chemical = await tx.auth_chem.create({
+			await tx.auth_chem.create({
 				data: {
 					cas_auth_chem: args.cas_auth_chem,
 					auth_chem_en: args.auth_chem_en,
 					flag_auth_chem: args.flag_auth_chem
 				}
 			});
-
-			if ( !chemical ) {
-				throw new Error(`Chemical not created`);
-			}
 			await sendEmailsForChemical(context.user.preferred_username, tx);
 			return mutationStatusType.success();
 		});

@@ -104,9 +104,6 @@ export const HazardFormMutations = extendType({
 										hazard_category_name: args.hazard_category_name
 									}
 								});
-							if ( !category ) {
-								throw new Error(`Category ${args.hazard_category_name} not created.`);
-							}
 							form = await tx.hazard_form.create(
 								{ data: {
 										form: args.form,
@@ -114,9 +111,6 @@ export const HazardFormMutations = extendType({
 										id_hazard_category: category.id_hazard_category
 									}
 								});
-							if ( !form ) {
-								throw new Error(`Hazard form not updated.`);
-							}
 						} else {
 							if (!IDObfuscator.checkSalt(id)) {
 								throw new Error(`Bad descrypted request`);
@@ -130,19 +124,16 @@ export const HazardFormMutations = extendType({
 							if (IDObfuscator.getDataSHA256(id) !== hazardFormObject) {
 								throw new Error(`Hazard form has been changed from another user. Please reload the page to make modifications`);
 							}
-							const updatedForm = await tx.hazard_form.update(
+							await tx.hazard_form.update(
 								{ where: { id_hazard_form: form.id_hazard_form },
 									data: {
 										form: args.form,
 										version: args.version
 									}
 								});
-							if ( !updatedForm ) {
-								throw new Error(`Hazard form not updated.`);
-							}
 						}
 
-						const newFormHistory = await tx.hazard_form_history.create(
+						await tx.hazard_form_history.create(
 							{ data: {
 									form: args.form,
 									version: args.version,
@@ -151,9 +142,6 @@ export const HazardFormMutations = extendType({
 									modified_on: new Date()
 								}
 							});
-						if ( !newFormHistory ) {
-							throw new Error(`Hazard form not updated.`);
-						}
 						return mutationStatusType.success();
 					});
 				} catch ( e ) {
@@ -180,17 +168,14 @@ export const HazardFormMutations = extendType({
 							throw new Error(`Hazard form has been changed from another user. Please reload the page to make modifications`);
 						}
 
-						const updatedForm = await tx.hazard_form.update(
+						await tx.hazard_form.update(
 							{ where: { id_hazard_form: form.id_hazard_form },
 								data: {
 									form: args.form,
 									version: args.version
 								}
 							});
-						if ( !updatedForm ) {
-							throw new Error(`Hazard form not updated.`);
-						}
-						const newFormHistory = await tx.hazard_form_history.create(
+						await tx.hazard_form_history.create(
 							{ data: {
 									form: args.form,
 									version: args.version,
@@ -199,9 +184,6 @@ export const HazardFormMutations = extendType({
 									modified_on: new Date()
 								}
 							});
-						if ( !newFormHistory ) {
-							throw new Error(`Hazard form not updated.`);
-						}
 						return mutationStatusType.success();
 					});
 				} catch ( e ) {

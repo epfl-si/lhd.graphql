@@ -115,10 +115,6 @@ export const OrganismMutations = extendType({
 							}
 						});
 
-						if ( !organism ) {
-							throw new Error(`Organism not created`);
-						}
-
 						let filePath = '';
 						if (args.fileContent != '' && args.fileName != '') {
 							filePath = saveBase64File(args.fileContent,  'd_bio/' + organism.id_bio_org + '/', args.fileName)
@@ -175,10 +171,6 @@ export const OrganismMutations = extendType({
 								}
 							});
 
-						if (!updatedOrganism) {
-							throw new Error(`Organism ${args.organismName} not updated.`);
-						}
-
 						await updateBioOrg(org, updatedOrganism, tx, context);
 						return mutationStatusType.success();
 					});
@@ -217,11 +209,8 @@ export const OrganismMutations = extendType({
 						}
 
 						await tx.bio_org_lab.deleteMany({ where: { id_bio_org: org.id_bio_org }});
-						const deletedOrganism = await tx.bio_org.delete({ where: { id_bio_org: org.id_bio_org }});
+						await tx.bio_org.delete({ where: { id_bio_org: org.id_bio_org }});
 
-						if ( !deletedOrganism ) {
-							throw new Error(`Organism ${args.organismName} not deleted.`);
-						}
 						return mutationStatusType.success();
 					});
 				} catch ( e ) {

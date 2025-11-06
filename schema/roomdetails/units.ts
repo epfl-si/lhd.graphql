@@ -256,24 +256,19 @@ export const UnitMutations = extendType({
 										}
 									});
 
-									if (u) {
-										if (!responsible) {
-											errors.push(`Sciper ${unit.responsibleId} not found.`);
-										} else {
-											try {
-												const newSubunpro = {
-													id_person: responsible.id_person,
-													id_unit: u.id
-												};
-												const subunpro = await tx.subunpro.create({
-													data: newSubunpro
-												});
-												if (!subunpro) {
-													errors.push(`Relation not updated between unit ${unit.name} and sciper ${unit.responsibleId}.`)
-												}
-											} catch ( e ) {
-												errors.push(`DB error: relation not updated between unit ${unit.name} and sciper ${unit.responsibleId}.`)
-											}
+									if (!responsible) {
+										errors.push(`Sciper ${unit.responsibleId} not found.`);
+									} else {
+										try {
+											const newSubunpro = {
+												id_person: responsible.id_person,
+												id_unit: u.id
+											};
+											await tx.subunpro.create({
+												data: newSubunpro
+											});
+										} catch ( e ) {
+											errors.push(`DB error: relation not updated between unit ${unit.name} and sciper ${unit.responsibleId}.`)
 										}
 									}
 								}
@@ -328,12 +323,9 @@ export const UnitMutations = extendType({
 											id_person: p.id_person,
 											id_unit: unit.id
 										};
-										const subunpro = await tx.subunpro.create({
+										await tx.subunpro.create({
 											data: newSubunpro
 										});
-										if (!subunpro) {
-											errors.push(`Relation not updated between ${unit.name} and ${person.person.sciper}.`)
-										}
 									} catch ( e ) {
 										errors.push(`DB error: relation not updated between ${unit.name} and ${person.person.sciper}.`)
 									}
@@ -349,12 +341,9 @@ export const UnitMutations = extendType({
 											id_unit: unit.id,
 											id_person: p.id_person
 										};
-										const del = await tx.subunpro.deleteMany({
+										await tx.subunpro.deleteMany({
 											where: whereCondition
 										});
-										if (!del) {
-											errors.push(`Relation unit-prof not deleted between ${unit.name} and ${person.person.sciper}.`)
-										}
 									} catch ( e ) {
 										errors.push(`DB error: relation unit-prof not deleted between ${unit.name} and ${person.person.sciper}.`)
 									}
@@ -373,12 +362,9 @@ export const UnitMutations = extendType({
 											id_person: p.id_person,
 											id_unit: unit.id
 										};
-										const unitHasCosec = await tx.unit_has_cosec.create({
+										await tx.unit_has_cosec.create({
 											data: relationUnitCosec
 										});
-										if ( !unitHasCosec ) {
-											errors.push(`Relation not update between ${unit.name} and ${person.person.sciper}.`)
-										}
 									} catch ( e ) {
 										errors.push(`DB error: relation not update between ${unit.name} and ${person.person.sciper}.`)
 									}
@@ -394,12 +380,9 @@ export const UnitMutations = extendType({
 											id_unit: unit.id,
 											id_person: p.id_person
 										};
-										const del = await tx.unit_has_cosec.deleteMany({
+										await tx.unit_has_cosec.deleteMany({
 											where: whereCondition
 										});
-										if (!del) {
-											errors.push(`Relation unit-cosec not deleted between ${unit.name} and ${person.person.sciper}.`)
-										}
 									} catch ( e ) {
 										errors.push(`DB error: relation unit-cosec not deleted between ${unit.name} and ${person.person.sciper}.`)
 									}
@@ -409,15 +392,12 @@ export const UnitMutations = extendType({
 							for (const subunit of args.subUnits) {
 								if (subunit.status == 'New') {
 									try {
-										const u = await tx.Unit.create({
+										await tx.Unit.create({
 											data: {
 												name: subunit.name,
 												id_institute: unit.id_institute
 											}
 										});
-										if ( !u ) {
-											errors.push(`Error creating sub-unit ${subunit.name}.`);
-										}
 									} catch ( e ) {
 										errors.push(`Error creating sub-unit ${subunit.name}.`);
 									}
@@ -489,50 +469,35 @@ export const UnitMutations = extendType({
 async function deleteUnit(tx, context, u:Unit) {
 	const errors: string[] = [];
 	try {
-		const aa = await tx.aa.deleteMany({
+		await tx.aa.deleteMany({
 			where: {
 				id_unit: u.id,
 			}
 		});
-		if ( !aa ) {
-			errors.push(`Error deleting aa for ${u.name}.`);
-		}
 
-		const uHc = await tx.unit_has_cosec.deleteMany({
+		await tx.unit_has_cosec.deleteMany({
 			where: {
 				id_unit: u.id,
 			}
 		});
-		if ( !uHc ) {
-			errors.push(`Error deleting cosecs for ${u.name}.`);
-		}
 
-		const uHr = await tx.unit_has_room.deleteMany({
+		await tx.unit_has_room.deleteMany({
 			where: {
 				id_unit: u.id,
 			}
 		});
-		if ( !uHr ) {
-			errors.push(`Error deleting rooms for ${u.name}.`);
-		}
 
-		const sub = await tx.subunpro.deleteMany({
+		await tx.subunpro.deleteMany({
 			where: {
 				id_unit: u.id,
 			},
 		});
-		if ( !sub ) {
-			errors.push(`Error deleting responsible for ${u.name}.`);
-		}
 
-		const storages = await tx.unit_has_storage_for_room.deleteMany({
+		await tx.unit_has_storage_for_room.deleteMany({
 			where: {
 				id_unit: u.id,
 			},
 		});
-		if ( !storages ) {
-			errors.push(`Error deleting ${u.name}.`);
-		}
 
 		const subUnitList = await tx.Unit.findMany({
 			where: {
@@ -545,14 +510,11 @@ async function deleteUnit(tx, context, u:Unit) {
 		}
 
 
-		const unit = await tx.Unit.delete({
+		await tx.Unit.delete({
 			where: {
 				id: u.id,
 			},
 		});
-		if ( !unit ) {
-			errors.push(`Error deleting ${u.name}.`);
-		}
 	} catch ( e ) {
 		errors.push(`Error deleting ${u.name}: ${e.message}.`);
 	}

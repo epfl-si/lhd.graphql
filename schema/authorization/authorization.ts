@@ -269,11 +269,8 @@ export const AuthorizationMutations = extendType({
 						await tx.authorization_has_chemical.deleteMany({ where: { id_authorization: auth.id_authorization }});
 						await tx.authorization_has_holder.deleteMany({ where: { id_authorization: auth.id_authorization }});
 						await tx.authorization_has_radiation.deleteMany({ where: { id_authorization: auth.id_authorization }});
-						const deleteAuth = await tx.authorization.delete({ where: { id_authorization: auth.id_authorization }});
+						await tx.authorization.delete({ where: { id_authorization: auth.id_authorization }});
 
-						if ( !deleteAuth ) {
-							throw new Error(`Authorization ${args.authorization} not deleted.`);
-						}
 						return mutationStatusType.success();
 					});
 				} catch ( e ) {
@@ -314,12 +311,9 @@ async function checkRelations(tx, context, args, authorization) {
 						id_person: Number(p.id_person),
 						id_authorization: Number(authorization.id_authorization)
 					};
-					const relationHolders = await tx.authorization_has_holder.create({
+					await tx.authorization_has_holder.create({
 						data: relation
 					});
-					if ( !relationHolders ) {
-						throw new Error(`Relation not update between ${authorization.authorization} and ${holder.sciper}.`);
-					}
 				} catch ( e ) {
 					throw new Error(`Relation not update between ${authorization.authorization} and ${holder}.`);
 				}
@@ -331,12 +325,9 @@ async function checkRelations(tx, context, args, authorization) {
 							id_authorization: authorization.id_authorization,
 							id_person: p.id_person
 						};
-						const del = await tx.authorization_has_holder.deleteMany({
+						await tx.authorization_has_holder.deleteMany({
 							where: whereCondition
 						});
-						if ( !del ) {
-							errors.push(`Relation authorization-holder not deleted between ${authorization.authorizations} and ${holder.sciper}.`)
-						}
 					} catch ( e ) {
 						errors.push(`DB error: relation authorization-holder not deleted between ${authorization.authorizations} and ${holder.sciper}.`)
 					}
@@ -360,12 +351,9 @@ async function checkRelations(tx, context, args, authorization) {
 						id_lab: Number(r.id),
 						id_authorization: Number(authorization.id_authorization)
 					};
-					const relationRooms = await tx.authorization_has_room.create({
+					await tx.authorization_has_room.create({
 						data: relation
 					});
-					if ( !relationRooms ) {
-						throw new Error(`Relation not update between ${authorization.authorization} and ${room.name}.`);
-					}
 				} catch ( e ) {
 					throw new Error(`Relation not update between ${authorization.authorization} and ${room.name}.`);
 				}
@@ -377,12 +365,9 @@ async function checkRelations(tx, context, args, authorization) {
 							id_authorization: authorization.id_authorization,
 							id_lab: p.id
 						};
-						const del = await tx.authorization_has_room.deleteMany({
+						await tx.authorization_has_room.deleteMany({
 							where: whereCondition
 						});
-						if ( !del ) {
-							errors.push(`Relation authorization-room not deleted between ${authorization.authorizations} and ${room.name}.`)
-						}
 					} catch ( e ) {
 						errors.push(`DB error: relation authorization-room not deleted between ${authorization.authorizations} and ${room.name}.`)
 					}
@@ -399,12 +384,9 @@ async function checkRelations(tx, context, args, authorization) {
 						id_authorization: Number(authorization.id_authorization),
 						source: source.name
 					};
-					const relationSource = await tx.authorization_has_radiation.create({
+					await tx.authorization_has_radiation.create({
 						data: relation
 					});
-					if ( !relationSource ) {
-						throw new Error(`Relation not update between ${authorization.authorization} and ${source.name}.`);
-					}
 				} catch ( e ) {
 					throw new Error(`Relation not update between ${authorization.authorization} and ${source.name}.`);
 				}
@@ -414,12 +396,9 @@ async function checkRelations(tx, context, args, authorization) {
 						id_authorization: authorization.id_authorization,
 						source: source.name
 					};
-					const del = await tx.authorization_has_radiation.deleteMany({
+					await tx.authorization_has_radiation.deleteMany({
 						where: whereCondition
 					});
-					if ( !del ) {
-						errors.push(`Relation authorization-radiation not deleted between ${authorization.authorizations} and ${source.name}.`)
-					}
 				} catch ( e ) {
 					errors.push(`DB error: relation authorization-radiation not deleted between ${authorization.authorizations} and ${source.name}.`)
 				}
@@ -441,12 +420,9 @@ async function checkRelations(tx, context, args, authorization) {
 						id_chemical: Number(p.id_auth_chem),
 						id_authorization: Number(authorization.id_authorization)
 					};
-					const relationChemical = await tx.authorization_has_chemical.create({
+					await tx.authorization_has_chemical.create({
 						data: relation
 					});
-					if ( !relationChemical ) {
-						throw new Error(`Relation not update between ${authorization.authorizations} and ${cas.name}.`);
-					}
 				} catch ( e ) {
 					throw new Error(`Relation not update between ${authorization.authorizations} and ${cas.name}.`);
 				}
@@ -458,12 +434,9 @@ async function checkRelations(tx, context, args, authorization) {
 							id_authorization: authorization.id_authorization,
 							id_chemical: p.id_auth_chem
 						};
-						const del = await tx.authorization_has_chemical.deleteMany({
+						await tx.authorization_has_chemical.deleteMany({
 							where: whereCondition
 						});
-						if ( !del ) {
-							errors.push(`Relation authorization-chemical not deleted between ${authorization.authorizations} and ${cas.name}.`)
-						}
 					} catch ( e ) {
 						errors.push(`DB error: relation authorization-chemical not deleted between ${authorization.authorizations} and ${cas.name}.`)
 					}
@@ -504,12 +477,7 @@ export async function ensureAuthorization(args, context) {
 				}
 			});
 
-			if ( !authorization ) {
-				throw new Error(`Authorization not created`);
-			} else {
-				await checkRelations(tx, context, args, authorization);
-			}
-
+			await checkRelations(tx, context, args, authorization);
 			return mutationStatusType.success();
 		});
 	} catch ( e ) {
@@ -557,11 +525,7 @@ export async function updateAuthorization(args, context) {
 					data: data
 				});
 
-			if (!updatedAuthorization) {
-				throw new Error(`Authorization ${args.authorization} not updated.`);
-			} else {
-				await checkRelations(tx, context, args, updatedAuthorization);
-			}
+			await checkRelations(tx, context, args, updatedAuthorization);
 			return mutationStatusType.success();
 		});
 	} catch ( e ) {
