@@ -12,10 +12,10 @@ import {schema} from './nexus/schema';
 import {Issuer} from 'openid-client';
 import {loginResponse, UserInfo} from './serverTypes';
 import * as path from "node:path";
-import {registerLegacyApi} from "./api";
 import {ApolloServer} from "@apollo/server";
 import {expressMiddleware} from "@as-integrations/express5";
 import {getToken, VALID_TOKENS_FOR_API} from "./libs/authentication";
+import {makeRESTAPI} from "./api/authorizations";
 
 type TestInjections = {
 	insecure?: boolean;
@@ -145,7 +145,7 @@ export async function makeServer(
 		}
 	});
 
-	registerLegacyApi(app,{ prisma: basePrisma });
+	makeRESTAPI(app,{ prisma: basePrisma });
 
 	app.use('/',
 		expressMiddleware(server, {

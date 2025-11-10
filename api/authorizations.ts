@@ -9,7 +9,7 @@ import {IDObfuscator} from "../utils/IDObfuscator";
 import {getRoomsWithPagination} from "../schema/global/rooms";
 import {getParentUnit, getUnitByName} from "../schema/roomdetails/units";
 
-export function registerAuthApi(app, context) {
+export function makeRESTAPI(app, context) {
 	app.use('/api', (req, res, next) => {
 		console.log(`API CALL - [${getNow()}] - ${req.method} - ${req.protocol}://${req.hostname}${req.originalUrl}`);
 
