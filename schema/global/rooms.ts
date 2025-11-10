@@ -567,19 +567,8 @@ export const RoomMutations = extendType({
 						if (IDObfuscator.getDataSHA256(id) !== roomObject) {
 							throw new Error(`Room has been changed from another user. Please reload the page to make modifications`);
 						}
-
-						const errors: string[] = [];
-						try {
-							errors.push(...await deleteRoom(tx, context, room));
-						} catch ( e ) {
-							errors.push(`Error updating unit.`)
-						}
-
-						if (errors.length > 0) {
-							throw new Error(`${errors.join('\n')}`);
-						} else {
-							return mutationStatusType.success();
-						}
+						await deleteRoom(tx, context, room);
+						return mutationStatusType.success();
 					});
 				} catch ( e ) {
 					return mutationStatusType.error(e.message);
@@ -589,89 +578,72 @@ export const RoomMutations = extendType({
 	}
 });
 
-async function writeDeletionLog(obj: any, tx, context, objName: string, r: Room) {
-	const errors: string[] = [];
-	if ( !obj ) {
-		errors.push(`Error deleting ${objName} for ${r.name}.`);
-	}
-	return errors;
-}
-
-async function deleteRoomObject(obj: any, r: Room, tx, context) {
-	const objDeleted = await obj.deleteMany({
-		where: {
-			id_lab: r.id,
-		}
-	});
-	return await writeDeletionLog(objDeleted, tx, context, obj.name, r);
-}
-
 async function deleteRoom(tx, context, r:Room) {
-	let errors: string[] = [];
-	try {
 		const where = { where: { id_lab: r.id } }
 
 		const bioOrg = await context.prisma.bio.findMany({ where: { id_lab: r.id } });
-		bioOrg.forEach(async (h) => {
-			const child = await tx.bio_org_lab.deleteMany({
+		for ( const h of bioOrg ) {
+			await tx.bio_org_lab.deleteMany({
 				where: {
 					id_bio: h.id_bio
 				}
 			});
-			errors.push(...await writeDeletionLog(child, tx, context, tx.bio_org_lab.name, r));
-		})
+		}
 
 		const hazards = await context.prisma.lab_has_hazards.findMany({ where: { id_lab: r.id } });
-		hazards.forEach(async (h) => {
-			const child = await tx.lab_has_hazards_child.deleteMany({
+		for ( const h of hazards ) {
+			await tx.lab_has_hazards_child.deleteMany({
 				where: {
 					id_lab_has_hazards: h.id_lab_has_hazards
 				}
 			});
-			errors.push(...await writeDeletionLog(child, tx, context, tx.lab_has_hazards_child.name, r));
-		})
+		}
 
-		errors.push(...await writeDeletionLog(await tx.aa.deleteMany(where), tx, context, tx.aa.name, r));
-		errors.push(...await writeDeletionLog(await tx.auth_lab.deleteMany(where), tx, context, tx.auth_lab.name, r));
-		errors.push(...await writeDeletionLog(await tx.bio.deleteMany(where), tx, context, tx.bio.name, r));
-		errors.push(...await writeDeletionLog(await tx.cad_corr.deleteMany(where), tx, context, tx.cad_corr.name, r));
-		errors.push(...await writeDeletionLog(await tx.cad_lab.deleteMany(where), tx, context, tx.cad_lab.name, r));
-		errors.push(...await writeDeletionLog(await tx.cut.deleteMany(where), tx, context, tx.cut.name, r));
-		errors.push(...await writeDeletionLog(await tx.dewar.deleteMany(where), tx, context, tx.dewar.name, r));
-		errors.push(...await writeDeletionLog(await tx.elec.deleteMany(where), tx, context, tx.elec.name, r));
-		errors.push(...await writeDeletionLog(await tx.mag_f.deleteMany(where), tx, context, tx.mag_f.name, r));
-		errors.push(...await writeDeletionLog(await tx.mag.deleteMany(where), tx, context, tx.mag.name, r));
-		errors.push(...await writeDeletionLog(await tx.gaschem.deleteMany(where), tx, context, tx.gaschem.name, r));
-		errors.push(...await writeDeletionLog(await tx.gnb_labsto.deleteMany(where), tx, context, tx.gnb_labsto.name, r));
-		errors.push(...await writeDeletionLog(await tx.haz_date.deleteMany(where), tx, context, tx.haz_date.name, r));
-		errors.push(...await writeDeletionLog(await tx.irad.deleteMany(where), tx, context, tx.irad.name, r));
-		errors.push(...await writeDeletionLog(await tx.lab_has_hazards.deleteMany(where), tx, context, tx.lab_has_hazards.name, r));
-		errors.push(...await writeDeletionLog(await tx.lab_has_hazards_additional_info.deleteMany(where), tx, context, tx.lab_has_hazards_additional_info.name, r));
-		errors.push(...await writeDeletionLog(await tx.laser.deleteMany(where), tx, context, tx.laser.name, r));
-		errors.push(...await writeDeletionLog(await tx.nano.deleteMany(where), tx, context, tx.nano.name, r));
-		errors.push(...await writeDeletionLog(await tx.naudits.deleteMany(where), tx, context, tx.naudits.name, r));
-		errors.push(...await writeDeletionLog(await tx.nirad.deleteMany(where), tx, context, tx.nirad.name, r));
-		errors.push(...await writeDeletionLog(await tx.noise.deleteMany(where), tx, context, tx.noise.name, r));
-		errors.push(...await writeDeletionLog(await tx.tdegree.deleteMany(where), tx, context, tx.tdegree.name, r));
-		errors.push(...await writeDeletionLog(await tx.unit_has_room.deleteMany(where), tx, context, tx.unit_has_room.name, r));
-		errors.push(...await writeDeletionLog(await tx.unit_has_storage_for_room.deleteMany(where), tx, context, tx.unit_has_storage_for_room.name, r));
+		const dewar = await context.prisma.dewar.findMany({ where: { id_lab: r.id } });
+		for ( const d of dewar ) {
+			await tx.cryo.deleteMany({
+				where: {
+					id_dewar: d.id_dewar
+				}
+			});
+		}
 
-		const disp = await tx.DispensationInRoomRelation.deleteMany({
+		await tx.aa.deleteMany(where);
+		await tx.auth_lab.deleteMany(where);
+		await tx.bio.deleteMany(where);
+		await tx.cad_corr.deleteMany(where);
+		await tx.cad_lab.deleteMany(where);
+		await tx.cut.deleteMany(where);
+		await tx.dewar.deleteMany(where);
+		await tx.elec.deleteMany(where);
+		await tx.mag_f.deleteMany(where);
+		await tx.mag.deleteMany(where);
+		await tx.gaschem.deleteMany(where);
+		await tx.gnb_labsto.deleteMany(where);
+		await tx.haz_date.deleteMany(where);
+		await tx.irad.deleteMany(where);
+		await tx.lab_has_hazards.deleteMany(where);
+		await tx.lab_has_hazards_additional_info.deleteMany(where);
+		await tx.laser.deleteMany(where);
+		await tx.nano.deleteMany(where);
+		await tx.naudits.deleteMany(where);
+		await tx.nirad.deleteMany(where);
+		await tx.noise.deleteMany(where);
+		await tx.tdegree.deleteMany(where);
+		await tx.unit_has_room.deleteMany(where);
+		await tx.unit_has_storage_for_room.deleteMany(where);
+
+		await tx.DispensationInRoomRelation.deleteMany({
 			where: {
-				id_room: r.id,
+				id_room: r.id
 			}
 		});
-		errors.push(...await writeDeletionLog(disp, tx, context, tx.DispensationInRoomRelation.name, r));
 
 		await tx.Room.delete({
 			where: {
 				id: r.id,
 			},
 		});
-	} catch ( e ) {
-		errors.push(`Error deleting ${r.name}: ${e.message}.`);
-	}
-	return errors;
 }
 
 export const RoomFromAPI = objectType({
