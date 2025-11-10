@@ -45,7 +45,7 @@ export async function makeServer(
 				async $allOperations({ model, operation, args, query }) {
 					let newValue = {};
 					if (['create', 'update', 'delete', 'deleteMany'].includes(operation)) {
-						const oldValue = operation === 'create' ? null : await basePrisma[model.toLowerCase()].findMany({ where: args.where });
+						const oldValue = operation === 'create' ? null : await basePrisma[model].findMany({ where: args.where });
 						newValue = await query(args);
 						try {
 							const source = operation === "create" ? newValue : (operation == 'deleteMany' ? null : oldValue[0]);
