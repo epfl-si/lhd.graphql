@@ -20,11 +20,6 @@ export type UserInfo = {
 	canListAuthorizations?: boolean;
 	canEditAuthorizations?: boolean;
 	canListPersons?: boolean;
-	canCallAPIToGetChemicals?: boolean;
-	canCallAPIToPostChemicals?: boolean;
-	canCallAPIToPostAuthorization?: boolean;
-	canCallAPIToRenewAuthorization?: boolean;
-	canCallAPIToCheckAuthorization?: boolean;
 };
 
 export type loginResponse = {

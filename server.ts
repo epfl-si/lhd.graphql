@@ -222,16 +222,11 @@ async function getLoggedInUserInfos(req): Promise<loginResponse> {
 				userinfo.canEditUnits = userinfo.isAdmin || userinfo.isManager;
 				userinfo.canListOrganisms = userinfo.isAdmin || userinfo.isManager || userinfo.isCosec;
 				userinfo.canEditOrganisms = userinfo.isAdmin || userinfo.isManager;
-				userinfo.canListChemicals = userinfo.isAdmin || userinfo.isManager;
-				userinfo.canEditChemicals = userinfo.isAdmin || userinfo.isManager;
-				userinfo.canListAuthorizations = userinfo.isAdmin || userinfo.isManager;
-				userinfo.canEditAuthorizations = userinfo.isAdmin || userinfo.isManager;
+				userinfo.canListChemicals = userinfo.isAdmin || userinfo.isManager || ['SNOW'].includes(userinfo.preferred_username);
+				userinfo.canEditChemicals = userinfo.isAdmin || userinfo.isManager || ['SNOW'].includes(userinfo.preferred_username);
+				userinfo.canListAuthorizations = userinfo.isAdmin || userinfo.isManager || ['CATALYSE'].includes(userinfo.preferred_username);
+				userinfo.canEditAuthorizations = userinfo.isAdmin || userinfo.isManager || ['SNOW'].includes(userinfo.preferred_username);
 				userinfo.canListPersons = userinfo.isAdmin || userinfo.isManager;
-				userinfo.canCallAPIToGetChemicals = ['SNOW'].includes(userinfo.preferred_username);
-				userinfo.canCallAPIToPostChemicals = ['SNOW'].includes(userinfo.preferred_username);
-				userinfo.canCallAPIToPostAuthorization = ['SNOW'].includes(userinfo.preferred_username);
-				userinfo.canCallAPIToRenewAuthorization = ['SNOW'].includes(userinfo.preferred_username);
-				userinfo.canCallAPIToCheckAuthorization = ['CATALYSE'].includes(userinfo.preferred_username);
 
 				return {
 					loggedIn: true,

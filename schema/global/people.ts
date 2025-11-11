@@ -143,11 +143,6 @@ export const ConnectedUserInfoStruct = objectType({
 		t.boolean('canEditAuthorizations');
 		t.boolean('canListHazardsForm');
 		t.boolean('canListPersons');
-		t.boolean('canCallAPIToGetChemicals');
-		t.boolean('canCallAPIToPostChemicals');
-		t.boolean('canCallAPIToPostAuthorization');
-		t.boolean('canCallAPIToRenewAuthorization');
-		t.boolean('canCallAPIToCheckAuthorization');
 	},
 });
 
@@ -178,11 +173,6 @@ export const ConnectedUserInfoQuery = extendType({
 					canEditAuthorizations: context.user.canEditAuthorizations,
 					canListHazardsForm: context.user.canListHazardsForm,
 					canListPersons: context.user.canListPersons,
-					canCallAPIToGetChemicals: context.user.canCallAPIToGetChemicals,
-					canCallAPIToPostChemicals: context.user.canCallAPIToPostChemicals,
-					canCallAPIToPostAuthorization: context.user.canCallAPIToPostAuthorization,
-					canCallAPIToRenewAuthorization: context.user.canCallAPIToRenewAuthorization,
-					canCallAPIToCheckAuthorization: context.user.canCallAPIToCheckAuthorization,
 				};
 			}
 		})

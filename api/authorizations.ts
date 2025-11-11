@@ -40,7 +40,7 @@ export function makeRESTAPI(app, context) {
 
 			switch (method) {
 				case "auth_req":
-					if ( !req.user.canCallAPIToPostAuthorization )
+					if ( !req.user.canEditAuthorizations )
 						res.status(403).json({Message: 'Unauthorized'});
 					else {
 						const idUnit = parseInt(req.query.id_unit as string);
@@ -80,7 +80,7 @@ export function makeRESTAPI(app, context) {
 					}
 					break;
 				case "auth_renew":
-					if ( !req.user.canCallAPIToRenewAuthorization )
+					if ( !req.user.canEditAuthorizations )
 						res.status(403).json({Message: 'Unauthorized'});
 					else {
 						const reqParts = request.split("-");
@@ -115,7 +115,7 @@ export function makeRESTAPI(app, context) {
 					}
 					break;
 				case "auth_chem":
-					if ( !req.user.canCallAPIToPostChemicals )
+					if ( !req.user.canEditChemicals )
 						res.status(403).json({Message: 'Unauthorized'});
 					else {
 						if ( !req.query.cas ) return res.status(404).json({Message: "missing <cas> code for chemical product"});
@@ -148,7 +148,7 @@ export function makeRESTAPI(app, context) {
 		try {
 			switch (req.query.m as string) {
 				case "auth_check":
-					if ( !req.user.canCallAPIToCheckAuthorization )
+					if ( !req.user.canListAuthorizations )
 						res.status(403).json({Message: 'Unauthorized'});
 					else {
 						if ( !req.query.sciper ) return res.status(404).json({Message: "Missing sciper number"});
@@ -193,7 +193,7 @@ export function makeRESTAPI(app, context) {
 
 	app.post("/api/auth_req", async (req, res) => {
 		try {
-			if ( !req.user.canCallAPIToPostAuthorization ) {
+			if ( !req.user.canEditAuthorizations ) {
 				res.status(403).json({Message: 'Unauthorized'});
 				return;
 			}
@@ -244,7 +244,7 @@ export function makeRESTAPI(app, context) {
 	});
 	app.post("/api/auth_renew", async (req, res) => {
 		try {
-			if ( !req.user.canCallAPIToRenewAuthorization ){
+			if ( !req.user.canEditAuthorizations ){
 				res.status(403).json({Message: 'Unauthorized'});
 				return;
 			}
@@ -290,7 +290,7 @@ export function makeRESTAPI(app, context) {
 	});
 	app.post("/api/add_chem", async (req, res) => {
 		try {
-			if ( !req.user.canCallAPIToPostChemicals ){
+			if ( !req.user.canEditChemicals ){
 				res.status(403).json({Message: 'Unauthorized'});
 				return;
 			}
@@ -317,7 +317,7 @@ export function makeRESTAPI(app, context) {
 	});
 	app.get("/api/get_chem", async (req, res) => {
 		try {
-			if ( !req.user.canCallAPIToGetChemicals ){
+			if ( !req.user.canListChemicals ){
 				res.status(403).json({Message: 'Unauthorized'});
 				return;
 			}
@@ -351,7 +351,7 @@ export function makeRESTAPI(app, context) {
 	});
 	app.get("/api/auth_check", async (req, res) => {
 		try {
-			if ( !req.user.canCallAPIToCheckAuthorization ){
+			if ( !req.user.canListAuthorizations ){
 				res.status(403).json({Message: 'Unauthorized'});
 				return;
 			}
