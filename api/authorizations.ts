@@ -60,15 +60,15 @@ export function makeRESTAPI(app, context) {
 							expiration_date: (new Date(expirationDate)).toLocaleDateString("en-GB"),
 							status: "Active",
 							type: "Chemical",
-							cas: [
-								cas.map(c => `{name: "${c}", status: "New"}`)
-							],
-							holders: [
-								scipers.map(sc => `{sciper: ${sc}, status: "New"}`)
-							],
-							rooms: [
-								roomIds.map(r => `{id: ${r}, status: "New"}`)
-							],
+							cas: cas.map(c => {
+									return {name: c, status: "New"};
+								}),
+							holders: scipers.map(sc => {
+									return {sciper: parseInt(sc), status: "New"};
+								}),
+							rooms: roomIds.map(r => {
+									return {id: parseInt(r), status: "New"};
+								}),
 						}
 						const add = await createAuthorization(args, context);
 						if (add.isSuccess)
@@ -221,15 +221,15 @@ export function makeRESTAPI(app, context) {
 				expiration_date: (new Date(expirationDate)).toLocaleDateString("en-GB"),
 				status: "Active",
 				type: "Chemical",
-				cas: [
-					cas.map(c => `{name: "${c}", status: "New"}`)
-				],
-				holders: [
-					scipers.map(sc => `{sciper: ${sc}, status: "New"}`)
-				],
-				rooms: [
-					roomIds.map(r => `{id: ${r}, status: "New"}`)
-				],
+				cas: cas.map(c => {
+						return {name: c, status: "New"};
+				}),
+				holders: scipers.map(sc => {
+						return {sciper: parseInt(sc), status: "New"};
+				}),
+				rooms: roomIds.map(r => {
+						return {id: parseInt(r), status: "New"};
+				}),
 			}
 			const add = await createAuthorization(args, context);
 			if ( add.isSuccess )
