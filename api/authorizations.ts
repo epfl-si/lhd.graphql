@@ -322,13 +322,7 @@ export function makeRESTAPI(app, context) {
 
 			const cas = (req.query.cas as string);
 
-			const argsChem = {
-				take: 0,
-				skip: 0,
-				search: ""
-			};
-
-			const resultNew = await getChemicalWithPagination(argsChem, context);
+			const resultNew = await getChemicalWithPagination([], 0, 0, context);
 			const all = resultNew.chemicals.map(chem => {
 				return {
 					cas_auth_chem: chem.cas_auth_chem,

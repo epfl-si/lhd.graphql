@@ -63,7 +63,9 @@ export const ChemicalsWithPaginationQuery = extendType({
 			},
 			authorize: (parent, args, context) => context.user.canListChemicals,
 			async resolve(parent, args, context) {
-				return await getChemicalWithPagination(args, context);
+				const queryArray = args.search.split("&");
+				const dictionary = queryArray.map(query => query.split("="));
+				return await getChemicalWithPagination(dictionary, args.take, args.skip, context);
 			}
 		});
 	},
@@ -183,14 +185,12 @@ export async function createChemical(args, context) {
 	});
 }
 
-export async function getChemicalWithPagination(args, context) {
-	const queryArray = args.search.split("&");
-	const dictionary = queryArray.map(query => query.split("="));
+export async function getChemicalWithPagination(whereConditionsDict, take, skip, context) {
 	const whereCondition = [];
-	if (dictionary.length == 0) {
+	if (whereConditionsDict.length == 0) {
 		whereCondition.push({ cas_auth_chem: { contains: '' }})
 	} else {
-		dictionary.forEach(query => {
+		whereConditionsDict.forEach(query => {
 			const value = decodeURIComponent(query[1]);
 			if (query[0] == 'CAS') {
 				whereCondition.push({ cas_auth_chem: { contains: value }})
@@ -213,7 +213,7 @@ export async function getChemicalWithPagination(args, context) {
 		]
 	});
 
-	const chemicals = args.take == 0 ? chemicalList : chemicalList.slice(args.skip, args.skip + args.take);
+	const chemicals = take == 0 ? chemicalList : chemicalList.slice(skip, skip + take);
 	const totalCount = chemicalList.length;
 
 	return { chemicals, totalCount };
