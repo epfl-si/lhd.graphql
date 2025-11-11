@@ -90,63 +90,59 @@ export const HazardFormMutations = extendType({
 			type: "HazardFormStatus",
 			authorize: (parent, args, context) => context.user.isAdmin,
 			async resolve(root, args, context) {
-				try {
-					return await context.prisma.$transaction(async (tx) => {
-						const id = IDObfuscator.getId(args.id);
-						if (id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
-							throw new Error(`Not allowed to update hazard form`);
-						}
+				return await context.prisma.$transaction(async (tx) => {
+					const id = IDObfuscator.getId(args.id);
+					if (id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
+						throw new Error(`Not allowed to update hazard form`);
+					}
 
-						let form = undefined;
-						if (id.eph_id == 'newHazard') {
-							const category = await tx.hazard_category.create(
-								{ data: {
-										hazard_category_name: args.hazard_category_name
-									}
-								});
-							form = await tx.hazard_form.create(
-								{ data: {
-										form: args.form,
-										version: args.version,
-										id_hazard_category: category.id_hazard_category
-									}
-								});
-						} else {
-							if (!IDObfuscator.checkSalt(id)) {
-								throw new Error(`Bad descrypted request`);
-							}
-							const idDeobfuscated = IDObfuscator.deobfuscateId(id);
-							form = await tx.hazard_form.findUnique({where: {id_hazard_form: idDeobfuscated}});
-							if (! form) {
-								throw new Error(`Hazard form not found.`);
-							}
-							const hazardFormObject =  getSHA256(JSON.stringify(getHazardFormToString(form)), id.salt);
-							if (IDObfuscator.getDataSHA256(id) !== hazardFormObject) {
-								throw new Error(`Hazard form has been changed from another user. Please reload the page to make modifications`);
-							}
-							await tx.hazard_form.update(
-								{ where: { id_hazard_form: form.id_hazard_form },
-									data: {
-										form: args.form,
-										version: args.version
-									}
-								});
-						}
-
-						await tx.hazard_form_history.create(
+					let form = undefined;
+					if (id.eph_id == 'newHazard') {
+						const category = await tx.hazard_category.create(
+							{ data: {
+									hazard_category_name: args.hazard_category_name
+								}
+							});
+						form = await tx.hazard_form.create(
 							{ data: {
 									form: args.form,
 									version: args.version,
-									id_hazard_form: form.id_hazard_form,
-									modified_by: context.user.preferred_username,
-									modified_on: new Date()
+									id_hazard_category: category.id_hazard_category
 								}
 							});
-						return mutationStatusType.success();
-					});
-				} catch ( e ) {
-					return mutationStatusType.error(e.message);
-				}
+					} else {
+						if (!IDObfuscator.checkSalt(id)) {
+							throw new Error(`Bad descrypted request`);
+						}
+						const idDeobfuscated = IDObfuscator.deobfuscateId(id);
+						form = await tx.hazard_form.findUnique({where: {id_hazard_form: idDeobfuscated}});
+						if (! form) {
+							throw new Error(`Hazard form not found.`);
+						}
+						const hazardFormObject =  getSHA256(JSON.stringify(getHazardFormToString(form)), id.salt);
+						if (IDObfuscator.getDataSHA256(id) !== hazardFormObject) {
+							throw new Error(`Hazard form has been changed from another user. Please reload the page to make modifications`);
+						}
+						await tx.hazard_form.update(
+							{ where: { id_hazard_form: form.id_hazard_form },
+								data: {
+									form: args.form,
+									version: args.version
+								}
+							});
+					}
+
+					await tx.hazard_form_history.create(
+						{ data: {
+								form: args.form,
+								version: args.version,
+								id_hazard_form: form.id_hazard_form,
+								modified_by: context.user.preferred_username,
+								modified_on: new Date()
+							}
+						});
+					return mutationStatusType.success();
+				});
 			}
 		});
 		t.nonNull.field('updateForm', {
@@ -155,40 +151,36 @@ export const HazardFormMutations = extendType({
 			type: "HazardFormStatus",
 			authorize: (parent, args, context) => context.user.isAdmin,
 			async resolve(root, args, context) {
-				try {
-					return await context.prisma.$transaction(async (tx) => {
-						const id = IDObfuscator.getId(args.id);
-						const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
-						const form = await tx.hazard_form.findUnique({where: {id_hazard_form: idDeobfuscated}});
-						if (! form) {
-							throw new Error(`Hazard form not found.`);
-						}
-						const hazardFormObject =  getSHA256(JSON.stringify(getHazardFormToString(form)), id.salt);
-						if (IDObfuscator.getDataSHA256(id) !== hazardFormObject) {
-							throw new Error(`Hazard form has been changed from another user. Please reload the page to make modifications`);
-						}
+				return await context.prisma.$transaction(async (tx) => {
+					const id = IDObfuscator.getId(args.id);
+					const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
+					const form = await tx.hazard_form.findUnique({where: {id_hazard_form: idDeobfuscated}});
+					if (! form) {
+						throw new Error(`Hazard form not found.`);
+					}
+					const hazardFormObject =  getSHA256(JSON.stringify(getHazardFormToString(form)), id.salt);
+					if (IDObfuscator.getDataSHA256(id) !== hazardFormObject) {
+						throw new Error(`Hazard form has been changed from another user. Please reload the page to make modifications`);
+					}
 
-						await tx.hazard_form.update(
-							{ where: { id_hazard_form: form.id_hazard_form },
-								data: {
-									form: args.form,
-									version: args.version
-								}
-							});
-						await tx.hazard_form_history.create(
-							{ data: {
-									form: args.form,
-									version: args.version,
-									id_hazard_form: form.id_hazard_form,
-									modified_by: context.user.preferred_username,
-									modified_on: new Date()
-								}
-							});
-						return mutationStatusType.success();
-					});
-				} catch ( e ) {
-					return mutationStatusType.error(e.message);
-				}
+					await tx.hazard_form.update(
+						{ where: { id_hazard_form: form.id_hazard_form },
+							data: {
+								form: args.form,
+								version: args.version
+							}
+						});
+					await tx.hazard_form_history.create(
+						{ data: {
+								form: args.form,
+								version: args.version,
+								id_hazard_form: form.id_hazard_form,
+								modified_by: context.user.preferred_username,
+								modified_on: new Date()
+							}
+						});
+					return mutationStatusType.success();
+				});
 			}
 		});
 	}

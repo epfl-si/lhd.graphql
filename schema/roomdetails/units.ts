@@ -188,18 +188,14 @@ async function findOrCreatePerson(tx, context, sciperId, firstName, lastName, em
 	let p = await tx.Person.findUnique({ where: { sciper: sciperId }});
 
 	if (!p) {
-		try {
-			p = await tx.Person.create({
-				data: {
-					name: firstName,
-					surname: lastName,
-					sciper: sciperId,
-					email: email
-				}
-			});
-		} catch ( e ) {
-			p = undefined;
-		}
+		p = await tx.Person.create({
+			data: {
+				name: firstName,
+				surname: lastName,
+				sciper: sciperId,
+				email: email
+			}
+		});
 	}
 	return p;
 }
@@ -213,72 +209,59 @@ export const UnitMutations = extendType({
 			type: "UnitStatus",
 			authorize: (parent, args, context) => context.user.canEditUnits,
 			async resolve(root, args, context) {
-				try {
-					return await context.prisma.$transaction(async (tx) => {
-						const errors: string[] = [];
-						for (const unit of args.units) {
-							if (unit.status == 'New') {
-								const newUnit = await tx.Unit.findUnique({ where: { unitId: unit.unitId }});
+				return await context.prisma.$transaction(async (tx) => {
+					for (const unit of args.units) {
+						if (unit.status == 'New') {
+							const newUnit = await tx.Unit.findUnique({ where: { unitId: unit.unitId }});
 
-								if (!newUnit) {
-									const parts: string[] = unit.path.split(' ');
-									const instituteName: string = parts[2];
-									let institute = await tx.Institute.findFirst({where: { name: instituteName}});
+							if (!newUnit) {
+								const parts: string[] = unit.path.split(' ');
+								const instituteName: string = parts[2];
+								let institute = await tx.Institute.findFirst({where: { name: instituteName}});
 
-									if (!institute) {
-										const facultyName: string = parts[1];
-										let faculty = await tx.School.findFirst({where: { name: facultyName}});
+								if (!institute) {
+									const facultyName: string = parts[1];
+									let faculty = await tx.School.findFirst({where: { name: facultyName}});
 
-										if (!faculty) {
-											faculty = await tx.School.create({
-												data: {
-													name: facultyName,
-												}
-											});
-										}
-
-										institute = await tx.Institute.create({
+									if (!faculty) {
+										faculty = await tx.School.create({
 											data: {
-												name: instituteName,
-												id_school: faculty.id
+												name: facultyName,
 											}
 										});
 									}
 
-									const responsible: Person = await findOrCreatePerson(tx, context,  unit.responsibleId, unit.responsibleFirstName, unit.responsibleLastName, unit.responsibleEmail);
-
-									const u = await tx.Unit.create({
+									institute = await tx.Institute.create({
 										data: {
-											name: unit.name,
-											unitId: unit.unitId,
-											id_institute: institute.id,
-											responsible_id: responsible?.id_person
+											name: instituteName,
+											id_school: faculty.id
 										}
 									});
-
-									if (!responsible) {
-										errors.push(`Sciper ${unit.responsibleId} not found.`);
-									} else {
-										try {
-											const newSubunpro = {
-												id_person: responsible.id_person,
-												id_unit: u.id
-											};
-											await tx.subunpro.create({
-												data: newSubunpro
-											});
-										} catch ( e ) {
-											errors.push(`DB error: relation not updated between unit ${unit.name} and sciper ${unit.responsibleId}.`)
-										}
-									}
 								}
+
+								const responsible: Person = await findOrCreatePerson(tx, context,  unit.responsibleId, unit.responsibleFirstName, unit.responsibleLastName, unit.responsibleEmail);
+
+								const u = await tx.Unit.create({
+									data: {
+										name: unit.name,
+										unitId: unit.unitId,
+										id_institute: institute.id,
+										responsible_id: responsible?.id_person
+									}
+								});
+
+								const newSubunpro = {
+									id_person: responsible.id_person,
+									id_unit: u.id
+								};
+								await tx.subunpro.create({
+									data: newSubunpro
+								});
 							}
 						}
-						return mutationStatusType.success();
-					});
-				} catch ( e ) {
-					return mutationStatusType.error(e.message);
-				}
+					}
+					return mutationStatusType.success();
+				});
 			}
 		});
 		t.nonNull.field('updateUnit', {
@@ -287,143 +270,92 @@ export const UnitMutations = extendType({
 			type: "UnitStatus",
 			authorize: (parent, args, context) => context.user.canEditUnits,
 			async resolve(root, args, context) {
-				try {
-					return await context.prisma.$transaction(async (tx) => {
-						const id = IDObfuscator.getId(args.id);
-						const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
-						const unit = await tx.Unit.findUnique({where: {id: idDeobfuscated}});
-						if (! unit) {
-							throw new Error(`Unit ${args.unit} not found.`);
-						}
-						const unitObject =  getSHA256(JSON.stringify(getUnitToString(unit)), id.salt);
-						if (IDObfuscator.getDataSHA256(id) !== unitObject) {
-							throw new Error(`Unit ${args.unit} has been changed from another user. Please reload the page to make modifications`);
-						}
+				return await context.prisma.$transaction(async (tx) => {
+					const id = IDObfuscator.getId(args.id);
+					const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
+					const unit = await tx.Unit.findUnique({where: {id: idDeobfuscated}});
+					if (! unit) {
+						throw new Error(`Unit ${args.unit} not found.`);
+					}
+					const unitObject =  getSHA256(JSON.stringify(getUnitToString(unit)), id.salt);
+					if (IDObfuscator.getDataSHA256(id) !== unitObject) {
+						throw new Error(`Unit ${args.unit} has been changed from another user. Please reload the page to make modifications`);
+					}
 
-						if (!unit.unitId) {
-							await tx.Unit.update(
-								{ where: { id: unit.id },
-									data: {
-										name: args.unit
-									}
-								});
+					if (!unit.unitId) {
+						await tx.Unit.update(
+							{ where: { id: unit.id },
+								data: {
+									name: args.unit
+								}
+							});
+					}
+
+					for (const person of args.profs) {
+						if (person.status == 'New') {
+							const p: Person = await findOrCreatePerson(tx, context, person.person.sciper, person.person.name, person.person.surname, person.person.email);
+							const newSubunpro = {
+								id_person: p.id_person,
+								id_unit: unit.id
+							};
+							await tx.subunpro.create({
+								data: newSubunpro
+							});
 						}
-
-						const errors: string[] = [];
-						try {
-							for (const person of args.profs) {
-								if (person.status == 'New') {
-									const p: Person = await findOrCreatePerson(tx, context, person.person.sciper, person.person.name, person.person.surname, person.person.email);
-									if (!p) {
-										errors.push(`Person ${person.person.sciper} not found.`);
-										continue;
-									}
-									try {
-										const newSubunpro = {
-											id_person: p.id_person,
-											id_unit: unit.id
-										};
-										await tx.subunpro.create({
-											data: newSubunpro
-										});
-									} catch ( e ) {
-										errors.push(`DB error: relation not updated between ${unit.name} and ${person.person.sciper}.`)
-									}
-								}
-								else if (person.status == 'Deleted') {
-									let p = await tx.Person.findUnique({ where: { sciper: person.person.sciper }});
-									if (!p) {
-										errors.push(`Person ${person.person.sciper} not found.`);
-										continue;
-									}
-									try {
-										const whereCondition = {
-											id_unit: unit.id,
-											id_person: p.id_person
-										};
-										await tx.subunpro.deleteMany({
-											where: whereCondition
-										});
-									} catch ( e ) {
-										errors.push(`DB error: relation unit-prof not deleted between ${unit.name} and ${person.person.sciper}.`)
-									}
-								}
-							}
-
-							for (const person of args.cosecs) {
-								if (person.status == 'New') {
-									const p: Person = await findOrCreatePerson(tx, context, person.person.sciper, person.person.name, person.person.surname, person.person.email);
-									if (!p) {
-										errors.push(`Person ${person.person.sciper} not found.`);
-										continue;
-									}
-									try {
-										const relationUnitCosec = {
-											id_person: p.id_person,
-											id_unit: unit.id
-										};
-										await tx.unit_has_cosec.create({
-											data: relationUnitCosec
-										});
-									} catch ( e ) {
-										errors.push(`DB error: relation not update between ${unit.name} and ${person.person.sciper}.`)
-									}
-								}
-								else if (person.status == 'Deleted') {
-									let p = await tx.Person.findUnique({ where: { sciper: person.person.sciper }});
-									if (!p) {
-										errors.push(`Person ${person.person.sciper} not found.`);
-										continue;
-									}
-									try {
-										const whereCondition = {
-											id_unit: unit.id,
-											id_person: p.id_person
-										};
-										await tx.unit_has_cosec.deleteMany({
-											where: whereCondition
-										});
-									} catch ( e ) {
-										errors.push(`DB error: relation unit-cosec not deleted between ${unit.name} and ${person.person.sciper}.`)
-									}
-								}
-							}
-
-							for (const subunit of args.subUnits) {
-								if (subunit.status == 'New') {
-									try {
-										await tx.Unit.create({
-											data: {
-												name: subunit.name,
-												id_institute: unit.id_institute
-											}
-										});
-									} catch ( e ) {
-										errors.push(`Error creating sub-unit ${subunit.name}.`);
-									}
-								}
-								else if (subunit.status == 'Deleted') {
-									const u = await tx.Unit.findFirst({ where: { name: subunit.name }});
-									if (u) {
-										errors.push(...await deleteUnit(tx, context, u));
-									} else {
-										errors.push(`Error deleting sub-unit ${subunit.name}.`)
-									}
-								}
-							}
-						} catch ( e ) {
-							errors.push(`Error updating unit.`)
+						else if (person.status == 'Deleted') {
+							let p = await tx.Person.findUnique({ where: { sciper: person.person.sciper }});
+							if (!p) continue;
+							const whereCondition = {
+								id_unit: unit.id,
+								id_person: p.id_person
+							};
+							await tx.subunpro.deleteMany({
+								where: whereCondition
+							});
 						}
+					}
 
-						if (errors.length > 0) {
-							throw new Error(`${errors.join('\n')}`);
-						} else {
-							return mutationStatusType.success();
+					for (const person of args.cosecs) {
+						if (person.status == 'New') {
+							const p: Person = await findOrCreatePerson(tx, context, person.person.sciper, person.person.name, person.person.surname, person.person.email);
+							const relationUnitCosec = {
+								id_person: p.id_person,
+								id_unit: unit.id
+							};
+							await tx.unit_has_cosec.create({
+								data: relationUnitCosec
+							});
 						}
-					});
-				} catch ( e ) {
-					return mutationStatusType.error(e.message);
-				}
+						else if (person.status == 'Deleted') {
+							let p = await tx.Person.findUnique({ where: { sciper: person.person.sciper }});
+							if (!p) continue;
+							const whereCondition = {
+								id_unit: unit.id,
+								id_person: p.id_person
+							};
+							await tx.unit_has_cosec.deleteMany({
+								where: whereCondition
+							});
+						}
+					}
+
+					for (const subunit of args.subUnits) {
+						if (subunit.status == 'New') {
+							await tx.Unit.create({
+								data: {
+									name: subunit.name,
+									id_institute: unit.id_institute
+								}
+							});
+						}
+						else if (subunit.status == 'Deleted') {
+							const u = await tx.Unit.findFirst({ where: { name: subunit.name }});
+							if (u) await deleteUnit(tx, context, u);
+						}
+					}
+
+					return mutationStatusType.success();
+				});
 			}
 		});
 		t.nonNull.field('deleteUnit', {
@@ -432,43 +364,27 @@ export const UnitMutations = extendType({
 			type: "UnitStatus",
 			authorize: (parent, args, context) => context.user.canEditUnits,
 			async resolve(root, args, context) {
-				try {
-					return await context.prisma.$transaction(async (tx) => {
-						const id = IDObfuscator.getId(args.id);
-						const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
-						const unit = await tx.Unit.findUnique({where: {id: idDeobfuscated}});
-						if (! unit) {
-							throw new Error(`Unit not found.`);
-						}
-						const unitObject =  getSHA256(JSON.stringify(getUnitToString(unit)), id.salt);
-						if (IDObfuscator.getDataSHA256(id) !== unitObject) {
-							throw new Error(`Unit has been changed from another user. Please reload the page to make modifications`);
-						}
+				return await context.prisma.$transaction(async (tx) => {
+					const id = IDObfuscator.getId(args.id);
+					const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
+					const unit = await tx.Unit.findUnique({where: {id: idDeobfuscated}});
+					if (! unit) {
+						throw new Error(`Unit not found.`);
+					}
+					const unitObject =  getSHA256(JSON.stringify(getUnitToString(unit)), id.salt);
+					if (IDObfuscator.getDataSHA256(id) !== unitObject) {
+						throw new Error(`Unit has been changed from another user. Please reload the page to make modifications`);
+					}
 
-						const errors: string[] = [];
-						try {
-							errors.push(...await deleteUnit(tx, context, unit));
-						} catch ( e ) {
-							errors.push(`Error updating unit.`)
-						}
-
-						if (errors.length > 0) {
-							throw new Error(`${errors.join('\n')}`);
-						} else {
-							return mutationStatusType.success();
-						}
-					});
-				} catch ( e ) {
-					return mutationStatusType.error(e.message);
-				}
+					await deleteUnit(tx, context, unit)
+					return mutationStatusType.success();
+				});
 			}
 		});
 	}
 });
 
 async function deleteUnit(tx, context, u:Unit) {
-	const errors: string[] = [];
-	try {
 		await tx.aa.deleteMany({
 			where: {
 				id_unit: u.id,
@@ -509,16 +425,11 @@ async function deleteUnit(tx, context, u:Unit) {
 			await deleteUnit(tx, context, subUnit);
 		}
 
-
 		await tx.Unit.delete({
 			where: {
 				id: u.id,
 			},
 		});
-	} catch ( e ) {
-		errors.push(`Error deleting ${u.name}: ${e.message}.`);
-	}
-	return errors;
 }
 
 export const UnitsWithPaginationStruct = objectType({
@@ -670,38 +581,34 @@ export const UnitReportFilesQuery = extendType({
 			},
 			authorize: (parent, args, context) => context.user.canListUnits,
 			async resolve(parent, args, context): Promise<any> {
-				try {
-					return await context.prisma.$transaction(async (tx) => {
-						const ids = IDObfuscator.getId(args.id);
-						const reportList = [];
-						await Promise.all(ids.map(async (id) => {
-							const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
-							const reportFolder = "report_audits/pdf/" + idDeobfuscated + "/";
-							const folderPath = process.env.DOCUMENTS_PATH + "/" + reportFolder;
-							if (fs.existsSync(folderPath)) {
-								const files = fs.readdirSync(folderPath);
-								const pdfFiles = files.filter(file => path.extname(file).toLowerCase() === '.pdf');
-								const unit = await tx.Unit.findUnique({where: {id: idDeobfuscated}});
-								if (! unit) {
-									throw new Error(`Unit not found.`);
-								}
-								const fileList = [];
-								pdfFiles.forEach(file =>
-								{
-									fileList.push({
-										name: path.basename(file),
-										path: reportFolder + file,
-										unitName: unit.name
-									});
-								});
-								reportList.push(fileList);
+				return await context.prisma.$transaction(async (tx) => {
+					const ids = IDObfuscator.getId(args.id);
+					const reportList = [];
+					await Promise.all(ids.map(async (id) => {
+						const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
+						const reportFolder = "report_audits/pdf/" + idDeobfuscated + "/";
+						const folderPath = process.env.DOCUMENTS_PATH + "/" + reportFolder;
+						if (fs.existsSync(folderPath)) {
+							const files = fs.readdirSync(folderPath);
+							const pdfFiles = files.filter(file => path.extname(file).toLowerCase() === '.pdf');
+							const unit = await tx.Unit.findUnique({where: {id: idDeobfuscated}});
+							if (! unit) {
+								throw new Error(`Unit not found.`);
 							}
-						}));
-						return reportList.flat();
-					});
-				} catch ( e ) {
-					throw new Error(`Error during fetch reports`);
-				}
+							const fileList = [];
+							pdfFiles.forEach(file =>
+							{
+								fileList.push({
+									name: path.basename(file),
+									path: reportFolder + file,
+									unitName: unit.name
+								});
+							});
+							reportList.push(fileList);
+						}
+					}));
+					return reportList.flat();
+				});
 			}
 		})
 	},

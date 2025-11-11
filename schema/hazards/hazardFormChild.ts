@@ -84,85 +84,36 @@ export const HazardFormChildMutations = extendType({
 			type: "HazardFormChildStatus",
 			authorize: (parent, args, context) => context.user.isAdmin,
 			async resolve(root, args, context) {
-				try {
-					return await context.prisma.$transaction(async (tx) => {
-						if (!args.id) {
-							throw new Error(`Not allowed to create a new hazard form child`);
-						}
-						const id: id = JSON.parse(args.id);
-						if (id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
-							throw new Error(`Not allowed to create a new hazard form child`);
-						}
+				return await context.prisma.$transaction(async (tx) => {
+					if (!args.id) {
+						throw new Error(`Not allowed to create a new hazard form child`);
+					}
+					const id: id = JSON.parse(args.id);
+					if (id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
+						throw new Error(`Not allowed to create a new hazard form child`);
+					}
 
-						let form = undefined;
-						if (id.eph_id == 'NewHazardFormChild') {
-							const category = await tx.hazard_category.findFirst({where: {hazard_category_name: args.category}});
-							if (!category) {
-								throw new Error(`Category ${args.category} not found`);
-							}
-
-							const hazardForm = await tx.hazard_form.findFirst({where: {id_hazard_category: category.id_hazard_category}});
-							if (!hazardForm) {
-								throw new Error(`Form not found for category ${args.category} not found`);
-							}
-
-							form = await tx.hazard_form_child.create(
-								{ data: {
-										form: args.form,
-										version: args.version,
-										hazard_form_child_name: args.hazard_form_child_name,
-										id_hazard_form: hazardForm.id_hazard_form
-									}
-								});
-
-							const newFormChildHistory = await tx.hazard_form_child_history.create(
-								{ data: {
-										form: args.form,
-										version: args.version,
-										id_hazard_form_child: form.id_hazard_form_child,
-										modified_by: context.user.preferred_username,
-										modified_on: new Date()
-									}
-								});
-							if ( !newFormChildHistory ) {
-								throw new Error(`Hazard form not updated.`);
-							}
-						} else {
-							throw new Error(`Not allowed to create a new hazard form child`);
-						}
-						return mutationStatusType.success();
-					});
-				} catch ( e ) {
-					return mutationStatusType.error(e.message);
-				}
-			}
-		});
-		t.nonNull.field('updateHazardFormChild', {
-			description: `Update form with a new version.`,
-			args: hazardFormChildChangesType,
-			type: "HazardFormStatus",
-			authorize: (parent, args, context) => context.user.isAdmin,
-			async resolve(root, args, context) {
-				try {
-					return await context.prisma.$transaction(async (tx) => {
-						const id = IDObfuscator.getId(args.id);
-						const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
-						const form = await tx.hazard_form_child.findUnique({where: {id_hazard_form_child: idDeobfuscated}});
-						if (! form) {
-							throw new Error(`Hazard form not found.`);
-						}
-						const hazardFormObject =  getSHA256(JSON.stringify(getHazardFormChildToString(form)), id.salt);
-						if (IDObfuscator.getDataSHA256(id) !== hazardFormObject) {
-							throw new Error(`Hazard form has been changed from another user. Please reload the page to make modifications`);
+					let form = undefined;
+					if (id.eph_id == 'NewHazardFormChild') {
+						const category = await tx.hazard_category.findFirst({where: {hazard_category_name: args.category}});
+						if (!category) {
+							throw new Error(`Category ${args.category} not found`);
 						}
 
-						await tx.hazard_form_child.update(
-							{ where: { id_hazard_form_child: form.id_hazard_form_child },
-								data: {
+						const hazardForm = await tx.hazard_form.findFirst({where: {id_hazard_category: category.id_hazard_category}});
+						if (!hazardForm) {
+							throw new Error(`Form not found for category ${args.category} not found`);
+						}
+
+						form = await tx.hazard_form_child.create(
+							{ data: {
 									form: args.form,
-									version: args.version
+									version: args.version,
+									hazard_form_child_name: args.hazard_form_child_name,
+									id_hazard_form: hazardForm.id_hazard_form
 								}
 							});
+
 						await tx.hazard_form_child_history.create(
 							{ data: {
 									form: args.form,
@@ -172,10 +123,48 @@ export const HazardFormChildMutations = extendType({
 									modified_on: new Date()
 								}
 							});
-					});
-				} catch ( e ) {
-					return mutationStatusType.error(e.message);
-				}
+					} else {
+						throw new Error(`Not allowed to create a new hazard form child`);
+					}
+					return mutationStatusType.success();
+				});
+			}
+		});
+		t.nonNull.field('updateHazardFormChild', {
+			description: `Update form with a new version.`,
+			args: hazardFormChildChangesType,
+			type: "HazardFormStatus",
+			authorize: (parent, args, context) => context.user.isAdmin,
+			async resolve(root, args, context) {
+				return await context.prisma.$transaction(async (tx) => {
+					const id = IDObfuscator.getId(args.id);
+					const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
+					const form = await tx.hazard_form_child.findUnique({where: {id_hazard_form_child: idDeobfuscated}});
+					if (! form) {
+						throw new Error(`Hazard form not found.`);
+					}
+					const hazardFormObject =  getSHA256(JSON.stringify(getHazardFormChildToString(form)), id.salt);
+					if (IDObfuscator.getDataSHA256(id) !== hazardFormObject) {
+						throw new Error(`Hazard form has been changed from another user. Please reload the page to make modifications`);
+					}
+
+					await tx.hazard_form_child.update(
+						{ where: { id_hazard_form_child: form.id_hazard_form_child },
+							data: {
+								form: args.form,
+								version: args.version
+							}
+						});
+					await tx.hazard_form_child_history.create(
+						{ data: {
+								form: args.form,
+								version: args.version,
+								id_hazard_form_child: form.id_hazard_form_child,
+								modified_by: context.user.preferred_username,
+								modified_on: new Date()
+							}
+						});
+				});
 			}
 		});
 	}

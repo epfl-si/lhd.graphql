@@ -92,7 +92,7 @@ export const ChemicalMutations = extendType({
 			type: "ChemicalStatus",
 			authorize: (parent, args, context) => context.user.canEditChemicals,
 			async resolve(root, args, context) {
-				return await ensureChemical(args, context);
+				return await createChemical(args, context);
 			}
 		});
 		t.nonNull.field('updateChemical', {
@@ -101,34 +101,30 @@ export const ChemicalMutations = extendType({
 			type: "ChemicalStatus",
 			authorize: (parent, args, context) => context.user.canEditChemicals,
 			async resolve(root, args, context) {
-				try {
-					return await context.prisma.$transaction(async (tx) => {
-						const id = IDObfuscator.getId(args.id);
-						const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
-						const chem = await tx.auth_chem.findUnique({where: {id_auth_chem: idDeobfuscated}});
-						if (! chem) {
-							throw new Error(`Chemical ${args.cas_auth_chem} not found.`);
-						}
-						const chemicalObject =  getSHA256(JSON.stringify(getChemicalToString(chem)), id.salt);
-						if (IDObfuscator.getDataSHA256(id) !== chemicalObject) {
-							throw new Error(`Chemical ${args.cas_auth_chem} has been changed from another user. Please reload the page to make modifications`);
-						}
+				return await context.prisma.$transaction(async (tx) => {
+					const id = IDObfuscator.getId(args.id);
+					const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
+					const chem = await tx.auth_chem.findUnique({where: {id_auth_chem: idDeobfuscated}});
+					if (! chem) {
+						throw new Error(`Chemical ${args.cas_auth_chem} not found.`);
+					}
+					const chemicalObject =  getSHA256(JSON.stringify(getChemicalToString(chem)), id.salt);
+					if (IDObfuscator.getDataSHA256(id) !== chemicalObject) {
+						throw new Error(`Chemical ${args.cas_auth_chem} has been changed from another user. Please reload the page to make modifications`);
+					}
 
-						await tx.auth_chem.update(
-							{ where: { id_auth_chem: chem.id_auth_chem },
-								data: {
-									cas_auth_chem: args.cas_auth_chem,
-									auth_chem_en: args.auth_chem_en,
-									flag_auth_chem: args.flag_auth_chem
-								}
-							});
+					await tx.auth_chem.update(
+						{ where: { id_auth_chem: chem.id_auth_chem },
+							data: {
+								cas_auth_chem: args.cas_auth_chem,
+								auth_chem_en: args.auth_chem_en,
+								flag_auth_chem: args.flag_auth_chem
+							}
+						});
 
-						await sendEmailsForChemical(context.user.preferred_username, tx);
-						return mutationStatusType.success();
-					});
-				} catch ( e ) {
-					return mutationStatusType.error(e.message);
-				}
+					await sendEmailsForChemical(context.user.preferred_username, tx);
+					return mutationStatusType.success();
+				});
 			}
 		});
 		t.nonNull.field('deleteChemical', {
@@ -137,63 +133,54 @@ export const ChemicalMutations = extendType({
 			type: "ChemicalStatus",
 			authorize: (parent, args, context) => context.user.canEditChemicals,
 			async resolve(root, args, context) {
-				try {
-					return await context.prisma.$transaction(async (tx) => {
-						if (!args.id) {
-							throw new Error(`Not allowed to delete chemical`);
-						}
-						const id: id = JSON.parse(args.id);
-						if (id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
-							throw new Error(`Not allowed to delete chemical`);
-						}
+				return await context.prisma.$transaction(async (tx) => {
+					if (!args.id) {
+						throw new Error(`Not allowed to delete chemical`);
+					}
+					const id: id = JSON.parse(args.id);
+					if (id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
+						throw new Error(`Not allowed to delete chemical`);
+					}
 
-						if (!IDObfuscator.checkSalt(id)) {
-							throw new Error(`Bad descrypted request`);
-						}
-						const idDeobfuscated = IDObfuscator.deobfuscateId(id);
-						const chem = await tx.auth_chem.findUnique({where: {id_auth_chem: idDeobfuscated}});
-						if (! chem) {
-							throw new Error(`Chemical ${args.cas_auth_chem} not found.`);
-						}
-						const chemicalObject =  getSHA256(JSON.stringify(getChemicalToString(chem)), id.salt);
-						if (IDObfuscator.getDataSHA256(id) !== chemicalObject) {
-							throw new Error(`Chemical ${args.cas_auth_chem} has been changed from another user. Please reload the page to make modifications`);
-						}
+					if (!IDObfuscator.checkSalt(id)) {
+						throw new Error(`Bad descrypted request`);
+					}
+					const idDeobfuscated = IDObfuscator.deobfuscateId(id);
+					const chem = await tx.auth_chem.findUnique({where: {id_auth_chem: idDeobfuscated}});
+					if (! chem) {
+						throw new Error(`Chemical ${args.cas_auth_chem} not found.`);
+					}
+					const chemicalObject =  getSHA256(JSON.stringify(getChemicalToString(chem)), id.salt);
+					if (IDObfuscator.getDataSHA256(id) !== chemicalObject) {
+						throw new Error(`Chemical ${args.cas_auth_chem} has been changed from another user. Please reload the page to make modifications`);
+					}
 
-						await tx.auth_chem_log.deleteMany({ where: { id_auth_chem: chem.id_auth_chem }});
-						await tx.auth_rchem.deleteMany({ where: { id_auth_chem: chem.id_auth_chem }});
-						await tx.auth_chem.delete({ where: { id_auth_chem: chem.id_auth_chem }});
+					await tx.auth_chem_log.deleteMany({ where: { id_auth_chem: chem.id_auth_chem }});
+					await tx.auth_rchem.deleteMany({ where: { id_auth_chem: chem.id_auth_chem }});
+					await tx.auth_chem.delete({ where: { id_auth_chem: chem.id_auth_chem }});
 
-						//TODO delete authorizations?
-						await sendEmailsForChemical(context.user.preferred_username, tx);
-						return mutationStatusType.success();
-					});
-				} catch ( e ) {
-					return mutationStatusType.error(e.message);
-				}
+					//TODO delete authorizations?
+					await sendEmailsForChemical(context.user.preferred_username, tx);
+					return mutationStatusType.success();
+				});
 			}
 		});
 	}
 });
 
-export async function ensureChemical(args, context) {
-	try {
-		return await context.prisma.$transaction(async (tx) => {
-			await tx.auth_chem.create({
-				data: {
-					cas_auth_chem: args.cas_auth_chem,
-					auth_chem_en: args.auth_chem_en,
-					flag_auth_chem: args.flag_auth_chem
-				}
-			});
-			await sendEmailsForChemical(context.user.preferred_username, tx);
-			return mutationStatusType.success();
+export async function createChemical(args, context) {
+	return await context.prisma.$transaction(async (tx) => {
+
+		await tx.auth_chem.create({
+			data: {
+				cas_auth_chem: args.cas_auth_chem,
+				auth_chem_en: args.auth_chem_en,
+				flag_auth_chem: args.flag_auth_chem
+			}
 		});
-	} catch ( e ) {
-		if ( e.message.indexOf("Unique constraint failed on the constraint: `auth_chem_en`") > -1 )
-			return mutationStatusType.success();
-		return mutationStatusType.error(e.message);
-	}
+		await sendEmailsForChemical(context.user.preferred_username, tx);
+		return mutationStatusType.success();
+	});
 }
 
 export async function getChemicalWithPagination(args, context) {

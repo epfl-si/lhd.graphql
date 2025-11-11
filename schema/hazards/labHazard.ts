@@ -98,146 +98,142 @@ export const RoomHazardMutations = extendType({
 			type: "RoomHazardStatus",
 			authorize: (parent, args, context) => context.user.canEditHazards,
 			async resolve(root, args, context) {
-				try {
-					return await context.prisma.$transaction(async (tx) => {
-						const room = await tx.Room.findFirst(
-							{
-								where: { name: args.room },
-								include: {
-									unit_has_room: { include: { unit: { include: { unit_has_cosec: { include: { cosec: true } } } } } },
-									lab_has_hazards: true
-								}
-							});
+				return await context.prisma.$transaction(async (tx) => {
+					const room = await tx.Room.findFirst(
+						{
+							where: { name: args.room },
+							include: {
+								unit_has_room: { include: { unit: { include: { unit_has_cosec: { include: { cosec: true } } } } } },
+								lab_has_hazards: true
+							}
+						});
 
-						if (! room) {
-							throw new Error(`Room ${args.room} not found.`);
+					if (! room) {
+						throw new Error(`Room ${args.room} not found.`);
+					}
+					const submissionsHazards: submission[] = JSON.parse(args.submission);
+
+					const category = await tx.hazard_category.findFirst({ where: { hazard_category_name: args.category }});
+
+					for ( const h of submissionsHazards ) {
+						if (h.id == undefined || h.id.eph_id == undefined || h.id.eph_id == '' || h.id.salt == undefined || h.id.salt == '') {
+							throw new Error(`Not allowed to update hazards`);
 						}
-						const submissionsHazards: submission[] = JSON.parse(args.submission);
 
-						const category = await tx.hazard_category.findFirst({ where: { hazard_category_name: args.category }});
+						const form = await tx.hazard_form.findFirst({ where: { id_hazard_category: category.id_hazard_category}});
 
-						for ( const h of submissionsHazards ) {
-							if (h.id == undefined || h.id.eph_id == undefined || h.id.eph_id == '' || h.id.salt == undefined || h.id.salt == '') {
-								throw new Error(`Not allowed to update hazards`);
+						const historyLastVersion = await tx.hazard_form_history.findFirst({
+							where: {
+								id_hazard_form: form.id_hazard_form,
+								version: form.version
+							}
+						});
+
+						if (h.id.eph_id.startsWith('newHazard') && h.submission.data['status'] == 'Default') {
+							const hazard = await tx.lab_has_hazards.create({
+								data: {
+									id_lab: room.id,
+									id_hazard_form_history: historyLastVersion.id_hazard_form_history,
+									submission: JSON.stringify(h.submission)
+								}
+							})
+
+							for await (const child of h.children) {
+								await updateHazardFormChild(child, tx, context, args.room, hazard.id_lab_has_hazards)
+							}
+						}
+						else if (!h.id.eph_id.startsWith('newHazard')) {
+							if (!IDObfuscator.checkSalt(h.id)) {
+								throw new Error(`Bad descrypted request`);
+							}
+							const id = IDObfuscator.deobfuscateId(h.id);
+							const hazardsInRoom = await tx.lab_has_hazards.findUnique({where: {id_lab_has_hazards: id}});
+							if (! hazardsInRoom) {
+								throw new Error(`Hazard not found.`);
+							}
+							const labHasHazardObject =  getSHA256(JSON.stringify(getLabHasHazardToString(hazardsInRoom)), h.id.salt);
+							if (IDObfuscator.getDataSHA256(h.id) !== labHasHazardObject) {
+								throw new Error(`Hazard has been changed from another user. Please reload the page to make modifications`);
 							}
 
-							const form = await tx.hazard_form.findFirst({ where: { id_hazard_category: category.id_hazard_category}});
-
-							const historyLastVersion = await tx.hazard_form_history.findFirst({
-								where: {
-									id_hazard_form: form.id_hazard_form,
-									version: form.version
-								}
-							});
-
-							if (h.id.eph_id.startsWith('newHazard') && h.submission.data['status'] == 'Default') {
-								const hazard = await tx.lab_has_hazards.create({
-									data: {
-										id_lab: room.id,
-										id_hazard_form_history: historyLastVersion.id_hazard_form_history,
-										submission: JSON.stringify(h.submission)
-									}
-								})
+							if (h.submission.data['status'] == 'Default'){
+								const hazard = await tx.lab_has_hazards.update(
+									{ where: { id_lab_has_hazards: id },
+										data: {
+											id_hazard_form_history: historyLastVersion.id_hazard_form_history,
+											submission: JSON.stringify(h.submission)
+										}
+									});
 
 								for await (const child of h.children) {
 									await updateHazardFormChild(child, tx, context, args.room, hazard.id_lab_has_hazards)
 								}
 							}
-							else if (!h.id.eph_id.startsWith('newHazard')) {
-								if (!IDObfuscator.checkSalt(h.id)) {
-									throw new Error(`Bad descrypted request`);
-								}
-								const id = IDObfuscator.deobfuscateId(h.id);
-								const hazardsInRoom = await tx.lab_has_hazards.findUnique({where: {id_lab_has_hazards: id}});
-								if (! hazardsInRoom) {
-									throw new Error(`Hazard not found.`);
-								}
-								const labHasHazardObject =  getSHA256(JSON.stringify(getLabHasHazardToString(hazardsInRoom)), h.id.salt);
-								if (IDObfuscator.getDataSHA256(h.id) !== labHasHazardObject) {
-									throw new Error(`Hazard has been changed from another user. Please reload the page to make modifications`);
-								}
-
-								if (h.submission.data['status'] == 'Default'){
-									const hazard = await tx.lab_has_hazards.update(
-										{ where: { id_lab_has_hazards: id },
-											data: {
-												id_hazard_form_history: historyLastVersion.id_hazard_form_history,
-												submission: JSON.stringify(h.submission)
-											}
-										});
-
-									for await (const child of h.children) {
-										await updateHazardFormChild(child, tx, context, args.room, hazard.id_lab_has_hazards)
+							else if (h.submission.data['status'] == 'Deleted') {
+								await tx.lab_has_hazards_child.deleteMany({
+									where: {
+										id_lab_has_hazards: id
 									}
-								}
-								else if (h.submission.data['status'] == 'Deleted') {
-									await tx.lab_has_hazards_child.deleteMany({
+								});
+
+								await tx.lab_has_hazards.delete({
 										where: {
 											id_lab_has_hazards: id
 										}
 									});
-
-									await tx.lab_has_hazards.delete({
-											where: {
-												id_lab_has_hazards: id
-											}
-										});
-								}
 							}
 						}
+					}
 
-						let filePath = '';
+					let filePath = '';
 
-						if (args.additionalInfo.file && args.additionalInfo.file != '' && args.additionalInfo.fileName && args.additionalInfo.fileName != '') {
-							filePath = saveBase64File(args.additionalInfo.file,  HAZARD_DOCUMENT_FOLDER + args.category + '/' + room.id + '/', args.additionalInfo.fileName)
-						}
+					if (args.additionalInfo.file && args.additionalInfo.file != '' && args.additionalInfo.fileName && args.additionalInfo.fileName != '') {
+						filePath = saveBase64File(args.additionalInfo.file,  HAZARD_DOCUMENT_FOLDER + args.category + '/' + room.id + '/', args.additionalInfo.fileName)
+					}
 
-						const additionalInfoResult = await tx.lab_has_hazards_additional_info.findFirst({
-							where: {
-								id_hazard_category: category.id_hazard_category,
-								id_lab: room.id
-							}});
-						if (additionalInfoResult) {
-							const userInfo = await getUserInfoFromAPI(context.user.preferred_username);
-							await tx.lab_has_hazards_additional_info.update(
-								{ where: { id_lab_has_hazards_additional_info: additionalInfoResult.id_lab_has_hazards_additional_info },
-									data: {
-										modified_by: `${userInfo.userFullName} (${userInfo.sciper})`,
-										modified_on: new Date(),
-										comment: args.additionalInfo.comment ? args.additionalInfo.comment : '',
-										filePath: filePath != '' ? filePath : additionalInfoResult.filePath
-									}
-								});
-						} else {
-							const userInfo = await getUserInfoFromAPI(context.user.preferred_username);
-							await tx.lab_has_hazards_additional_info.create({
+					const additionalInfoResult = await tx.lab_has_hazards_additional_info.findFirst({
+						where: {
+							id_hazard_category: category.id_hazard_category,
+							id_lab: room.id
+						}});
+					if (additionalInfoResult) {
+						const userInfo = await getUserInfoFromAPI(context.user.preferred_username);
+						await tx.lab_has_hazards_additional_info.update(
+							{ where: { id_lab_has_hazards_additional_info: additionalInfoResult.id_lab_has_hazards_additional_info },
 								data: {
 									modified_by: `${userInfo.userFullName} (${userInfo.sciper})`,
 									modified_on: new Date(),
 									comment: args.additionalInfo.comment ? args.additionalInfo.comment : '',
-									filePath: filePath,
-									id_hazard_category: category.id_hazard_category,
-									id_lab: room.id
+									filePath: filePath != '' ? filePath : additionalInfoResult.filePath
 								}
 							});
-						}
+					} else {
+						const userInfo = await getUserInfoFromAPI(context.user.preferred_username);
+						await tx.lab_has_hazards_additional_info.create({
+							data: {
+								modified_by: `${userInfo.userFullName} (${userInfo.sciper})`,
+								modified_on: new Date(),
+								comment: args.additionalInfo.comment ? args.additionalInfo.comment : '',
+								filePath: filePath,
+								id_hazard_category: category.id_hazard_category,
+								id_lab: room.id
+							}
+						});
+					}
 
-						const cosecs = [];
+					const cosecs = [];
 
-						room.unit_has_room.forEach(uhr => {
-							uhr.unit.unit_has_cosec.forEach(uhc => {
-								if (!cosecs.includes(uhc.cosec.email))
-									cosecs.push(uhc.cosec.email);
-							})
+					room.unit_has_room.forEach(uhr => {
+						uhr.unit.unit_has_cosec.forEach(uhc => {
+							if (!cosecs.includes(uhc.cosec.email))
+								cosecs.push(uhc.cosec.email);
 						})
+					})
 
-						await sendEmailsForHazards(context.user.preferred_username, args, room, cosecs, tx);
+					await sendEmailsForHazards(context.user.preferred_username, args, room, cosecs, tx);
 
-						return mutationStatusType.success();
-					});
-				} catch ( e ) {
-					return mutationStatusType.error(e.message);
-				}
+					return mutationStatusType.success();
+				});
 			}
 		});
 	}

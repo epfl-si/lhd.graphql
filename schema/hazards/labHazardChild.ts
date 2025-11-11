@@ -397,47 +397,43 @@ export const HazardChildMutations = extendType({
 			type: "HazardChildStatus",
 			authorize: (parent, args, context) => context.user.canEditHazards,
 			async resolve(root, args, context) {
-				try {
-					return await context.prisma.$transaction(async (tx) => {
-						if (!args.id) {
-							throw new Error(`Not allowed to delete hazard child`);
-						}
-						const id: id = JSON.parse(args.id);
-						if (id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
-							throw new Error(`Not allowed to delete hazard child`);
-						}
+				return await context.prisma.$transaction(async (tx) => {
+					if (!args.id) {
+						throw new Error(`Not allowed to delete hazard child`);
+					}
+					const id: id = JSON.parse(args.id);
+					if (id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
+						throw new Error(`Not allowed to delete hazard child`);
+					}
 
-						if (!IDObfuscator.checkSalt(id)) {
-							throw new Error(`Bad descrypted request`);
-						}
-						const idDeobfuscated = IDObfuscator.deobfuscateId(id);
-						const child = await tx.lab_has_hazards_child.findUnique({where: {id_lab_has_hazards_child: idDeobfuscated}});
-						if (! child) {
-							throw new Error(`Hazard child not found.`);
-						}
-						const childObject =  getSHA256(JSON.stringify(getLabHasHazardChildToString(child)), id.salt);
-						if (IDObfuscator.getDataSHA256(id) !== childObject) {
-							throw new Error(`Hazard child has been changed from another user. Please reload the page to make modifications`);
-						}
+					if (!IDObfuscator.checkSalt(id)) {
+						throw new Error(`Bad descrypted request`);
+					}
+					const idDeobfuscated = IDObfuscator.deobfuscateId(id);
+					const child = await tx.lab_has_hazards_child.findUnique({where: {id_lab_has_hazards_child: idDeobfuscated}});
+					if (! child) {
+						throw new Error(`Hazard child not found.`);
+					}
+					const childObject =  getSHA256(JSON.stringify(getLabHasHazardChildToString(child)), id.salt);
+					if (IDObfuscator.getDataSHA256(id) !== childObject) {
+						throw new Error(`Hazard child has been changed from another user. Please reload the page to make modifications`);
+					}
 
-						await tx.lab_has_hazards_child.delete({
+					await tx.lab_has_hazards_child.delete({
+						where: {
+								id_lab_has_hazards_child: idDeobfuscated
+						}
+					});
+					const lab_has_hazardsList = await tx.lab_has_hazards_child.findMany({where: {id_lab_has_hazards: child.id_lab_has_hazards}});
+					if (lab_has_hazardsList.length == 0) {
+						await tx.lab_has_hazards.delete({
 							where: {
-									id_lab_has_hazards_child: idDeobfuscated
+								id_lab_has_hazards: child.id_lab_has_hazards
 							}
 						});
-						const lab_has_hazardsList = await tx.lab_has_hazards_child.findMany({where: {id_lab_has_hazards: child.id_lab_has_hazards}});
-						if (lab_has_hazardsList.length == 0) {
-							await tx.lab_has_hazards.delete({
-								where: {
-									id_lab_has_hazards: child.id_lab_has_hazards
-								}
-							});
-						}
-						return mutationStatusType.success();
-					});
-				} catch ( e ) {
-					return mutationStatusType.error(e.message);
-				}
+					}
+					return mutationStatusType.success();
+				});
 			}
 		});
 	}

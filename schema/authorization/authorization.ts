@@ -234,7 +234,7 @@ export const AuthorizationMutations = extendType({
 			type: "AuthorizationStatus",
 			authorize: (parent, args, context) => context.user.canEditAuthorizations,
 			async resolve(root, args, context) {
-				return await ensureAuthorization(args, context);
+				return await createAuthorization(args, context);
 			}
 		});
 		t.nonNull.field('updateAuthorization', {
@@ -252,85 +252,68 @@ export const AuthorizationMutations = extendType({
 			type: "AuthorizationStatus",
 			authorize: (parent, args, context) => context.user.canEditAuthorizations,
 			async resolve(root, args, context) {
-				try {
-					return await context.prisma.$transaction(async (tx) => {
-						const id = IDObfuscator.getId(args.id);
-						const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
-						const auth = await tx.authorization.findUnique({where: {id_authorization: idDeobfuscated}});
-						if (! auth) {
-							throw new Error(`Authorization ${args.authorization} not found.`);
-						}
-						const authorizationObject =  getSHA256(JSON.stringify(getAuthorizationToString(auth)), id.salt);
-						if (IDObfuscator.getDataSHA256(id) !== authorizationObject) {
-							throw new Error(`Authorization ${args.authorization} has been changed from another user. Please reload the page to make modifications`);
-						}
+				return await context.prisma.$transaction(async (tx) => {
+					const id = IDObfuscator.getId(args.id);
+					const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
+					const auth = await tx.authorization.findUnique({where: {id_authorization: idDeobfuscated}});
+					if (! auth) {
+						throw new Error(`Authorization ${args.authorization} not found.`);
+					}
+					const authorizationObject =  getSHA256(JSON.stringify(getAuthorizationToString(auth)), id.salt);
+					if (IDObfuscator.getDataSHA256(id) !== authorizationObject) {
+						throw new Error(`Authorization ${args.authorization} has been changed from another user. Please reload the page to make modifications`);
+					}
 
-						await tx.authorization_has_room.deleteMany({ where: { id_authorization: auth.id_authorization }});
-						await tx.authorization_has_chemical.deleteMany({ where: { id_authorization: auth.id_authorization }});
-						await tx.authorization_has_holder.deleteMany({ where: { id_authorization: auth.id_authorization }});
-						await tx.authorization_has_radiation.deleteMany({ where: { id_authorization: auth.id_authorization }});
-						await tx.authorization.delete({ where: { id_authorization: auth.id_authorization }});
+					await tx.authorization_has_room.deleteMany({ where: { id_authorization: auth.id_authorization }});
+					await tx.authorization_has_chemical.deleteMany({ where: { id_authorization: auth.id_authorization }});
+					await tx.authorization_has_holder.deleteMany({ where: { id_authorization: auth.id_authorization }});
+					await tx.authorization_has_radiation.deleteMany({ where: { id_authorization: auth.id_authorization }});
+					await tx.authorization.delete({ where: { id_authorization: auth.id_authorization }});
 
-						return mutationStatusType.success();
-					});
-				} catch ( e ) {
-					return mutationStatusType.error(e.message);
-				}
+					return mutationStatusType.success();
+				});
 			}
 		});
 	}
 });
 
 async function checkRelations(tx, context, args, authorization) {
-	const errors: string[] = [];
 	if (args.holders) {
 		for ( const holder of args.holders ) {
 			if ( holder.status == 'New' ) {
 				let p = await tx.Person.findUnique({where: {sciper: holder.sciper}});
 
 				if ( !p ) {
-					try {
-						const ldapUsers = await getUsersFromApi(holder.sciper + "");
-						const ldapUser = ldapUsers["persons"].find(p => p.id == holder.sciper + "");
+					const ldapUsers = await getUsersFromApi(holder.sciper + "");
+					const ldapUser = ldapUsers["persons"].find(p => p.id == holder.sciper + "");
 
-						p = await tx.Person.create({
-							data: {
-								surname: ldapUser.lastname,
-								name: ldapUser.firstname,
-								email: ldapUser.email,
-								sciper: parseInt(ldapUser.id)
-							}
-						});
-					} catch ( e ) {
-						throw new Error(`Sciper ${holder} not found`);
-					}
-				}
-
-				try {
-					const relation = {
-						id_person: Number(p.id_person),
-						id_authorization: Number(authorization.id_authorization)
-					};
-					await tx.authorization_has_holder.create({
-						data: relation
+					p = await tx.Person.create({
+						data: {
+							surname: ldapUser.lastname,
+							name: ldapUser.firstname,
+							email: ldapUser.email,
+							sciper: parseInt(ldapUser.id)
+						}
 					});
-				} catch ( e ) {
-					throw new Error(`Relation not update between ${authorization.authorization} and ${holder}.`);
 				}
+
+				const relation = {
+					id_person: Number(p.id_person),
+					id_authorization: Number(authorization.id_authorization)
+				};
+				await tx.authorization_has_holder.create({
+					data: relation
+				});
 			} else if ( holder.status == 'Deleted' ) {
 				let p = await tx.Person.findUnique({where: {sciper: holder.sciper}});
 				if ( p ) {
-					try {
-						const whereCondition = {
-							id_authorization: authorization.id_authorization,
-							id_person: p.id_person
-						};
-						await tx.authorization_has_holder.deleteMany({
-							where: whereCondition
-						});
-					} catch ( e ) {
-						errors.push(`DB error: relation authorization-holder not deleted between ${authorization.authorizations} and ${holder.sciper}.`)
-					}
+					const whereCondition = {
+						id_authorization: authorization.id_authorization,
+						id_person: p.id_person
+					};
+					await tx.authorization_has_holder.deleteMany({
+						where: whereCondition
+					});
 				}
 			}
 		}
@@ -346,31 +329,23 @@ async function checkRelations(tx, context, args, authorization) {
 					r = await tx.Room.findUnique({where: {id: room.id}})
 				}
 				if ( !r ) throw new Error(`Authorization not created`);
-				try {
-					const relation = {
-						id_lab: Number(r.id),
-						id_authorization: Number(authorization.id_authorization)
-					};
-					await tx.authorization_has_room.create({
-						data: relation
-					});
-				} catch ( e ) {
-					throw new Error(`Relation not update between ${authorization.authorization} and ${room.name}.`);
-				}
+				const relation = {
+					id_lab: Number(r.id),
+					id_authorization: Number(authorization.id_authorization)
+				};
+				await tx.authorization_has_room.create({
+					data: relation
+				});
 			} else if ( room.status == 'Deleted' ) {
 				let p = await tx.Room.findFirst({where: {name: room.name}});
 				if ( p ) {
-					try {
-						const whereCondition = {
-							id_authorization: authorization.id_authorization,
-							id_lab: p.id
-						};
-						await tx.authorization_has_room.deleteMany({
-							where: whereCondition
-						});
-					} catch ( e ) {
-						errors.push(`DB error: relation authorization-room not deleted between ${authorization.authorizations} and ${room.name}.`)
-					}
+					const whereCondition = {
+						id_authorization: authorization.id_authorization,
+						id_lab: p.id
+					};
+					await tx.authorization_has_room.deleteMany({
+						where: whereCondition
+					});
 				}
 			}
 		}
@@ -379,29 +354,21 @@ async function checkRelations(tx, context, args, authorization) {
 	if (args.radiations) {
 		for ( const source of args.radiations ) {
 			if ( source.status == 'New' ) {
-				try {
-					const relation = {
-						id_authorization: Number(authorization.id_authorization),
-						source: source.name
-					};
-					await tx.authorization_has_radiation.create({
-						data: relation
-					});
-				} catch ( e ) {
-					throw new Error(`Relation not update between ${authorization.authorization} and ${source.name}.`);
-				}
+				const relation = {
+					id_authorization: Number(authorization.id_authorization),
+					source: source.name
+				};
+				await tx.authorization_has_radiation.create({
+					data: relation
+				});
 			} else if ( source.status == 'Deleted' ) {
-				try {
-					const whereCondition = {
-						id_authorization: authorization.id_authorization,
-						source: source.name
-					};
-					await tx.authorization_has_radiation.deleteMany({
-						where: whereCondition
-					});
-				} catch ( e ) {
-					errors.push(`DB error: relation authorization-radiation not deleted between ${authorization.authorizations} and ${source.name}.`)
-				}
+				const whereCondition = {
+					id_authorization: authorization.id_authorization,
+					source: source.name
+				};
+				await tx.authorization_has_radiation.deleteMany({
+					where: whereCondition
+				});
 			}
 		}
 	}
@@ -415,122 +382,100 @@ async function checkRelations(tx, context, args, authorization) {
 					throw new Error(`CAS ${cas.name} not found`);
 				}
 
-				try {
-					const relation = {
-						id_chemical: Number(p.id_auth_chem),
-						id_authorization: Number(authorization.id_authorization)
-					};
-					await tx.authorization_has_chemical.create({
-						data: relation
-					});
-				} catch ( e ) {
-					throw new Error(`Relation not update between ${authorization.authorizations} and ${cas.name}.`);
-				}
+				const relation = {
+					id_chemical: Number(p.id_auth_chem),
+					id_authorization: Number(authorization.id_authorization)
+				};
+				await tx.authorization_has_chemical.create({
+					data: relation
+				});
 			} else if ( cas.status == 'Deleted' ) {
 				let p = await tx.auth_chem.findUnique({where: {cas_auth_chem: cas.name}});
 				if (p) {
-					try {
-						const whereCondition = {
-							id_authorization: authorization.id_authorization,
-							id_chemical: p.id_auth_chem
-						};
-						await tx.authorization_has_chemical.deleteMany({
-							where: whereCondition
-						});
-					} catch ( e ) {
-						errors.push(`DB error: relation authorization-chemical not deleted between ${authorization.authorizations} and ${cas.name}.`)
-					}
+					const whereCondition = {
+						id_authorization: authorization.id_authorization,
+						id_chemical: p.id_auth_chem
+					};
+					await tx.authorization_has_chemical.deleteMany({
+						where: whereCondition
+					});
 				}
 			}
 		}
 	}
-
-	if (errors.length > 0) {
-		throw new Error(`${errors.join('\n')}`);
-	}
 }
 
-export async function ensureAuthorization(args, context) {
-	try {
-		let unitId = parseInt(args.id_unit);
-		if (!['SNOW', 'CATALYSE'].includes(context.user.preferred_username)) {
-			const id = IDObfuscator.getId(args.id_unit);
-			const idDeobfuscatedForUnit = IDObfuscator.getIdDeobfuscated(id);
-			const unit = await context.prisma.Unit.findUnique({where: {id: idDeobfuscatedForUnit}})
-			if (!unit) throw new Error(`Authorization not created`);
-			unitId = unit.id;
-		}
-
-		return await context.prisma.$transaction(async (tx) => {
-			const [dayCrea, monthCrea, yearCrea] = args.creation_date.split("/").map(Number);
-			const [day, month, year] = args.expiration_date.split("/").map(Number);
-			const authorization = await tx.authorization.create({
-				data: {
-					authorization: args.authorization,
-					status: args.status,
-					creation_date: new Date(yearCrea, monthCrea - 1, dayCrea, 12),
-					expiration_date: new Date(year, month - 1, day, 12),
-					id_unit: unitId,
-					renewals: 0,
-					type: args.type,
-					authority: args.authority
-				}
-			});
-
-			await checkRelations(tx, context, args, authorization);
-			return mutationStatusType.success();
-		});
-	} catch ( e ) {
-		if (e.message.indexOf("Unique constraint failed on the constraint: `authorization`") > -1)
-			return mutationStatusType.success();
-		return mutationStatusType.error(e.message);
+export async function createAuthorization(args, context) {
+	let unitId = parseInt(args.id_unit);
+	if (!['SNOW', 'CATALYSE'].includes(context.user.preferred_username)) {
+		const id = IDObfuscator.getId(args.id_unit);
+		const idDeobfuscatedForUnit = IDObfuscator.getIdDeobfuscated(id);
+		const unit = await context.prisma.Unit.findUnique({where: {id: idDeobfuscatedForUnit}})
+		if (!unit) throw new Error(`Authorization not created`);
+		unitId = unit.id;
 	}
+
+	return await context.prisma.$transaction(async (tx) => {
+		const [dayCrea, monthCrea, yearCrea] = args.creation_date.split("/").map(Number);
+		const [day, month, year] = args.expiration_date.split("/").map(Number);
+		const authorization = await tx.authorization.create({
+			data: {
+				authorization: args.authorization,
+				status: args.status,
+				creation_date: new Date(yearCrea, monthCrea - 1, dayCrea, 12),
+				expiration_date: new Date(year, month - 1, day, 12),
+				id_unit: unitId,
+				renewals: 0,
+				type: args.type,
+				authority: args.authority
+			}
+		});
+
+		await checkRelations(tx, context, args, authorization);
+		return mutationStatusType.success();
+	});
 }
 
 export async function updateAuthorization(args, context) {
-	try {
-		return await context.prisma.$transaction(async (tx) => {
-			const id = IDObfuscator.getId(args.id);
-			const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
-			const auth = await tx.authorization.findUnique({where: {id_authorization: idDeobfuscated}});
-			if (! auth) {
-				throw new Error(`Authorization ${args.authorization} not found.`);
-			}
-			const authorizationObject =  getSHA256(JSON.stringify(getAuthorizationToString(auth)), id.salt);
-			if (IDObfuscator.getDataSHA256(id) !== authorizationObject) {
-				throw new Error(`Authorization ${args.authorization} has been changed from another user. Please reload the page to make modifications`);
-			}
+	return await context.prisma.$transaction(async (tx) => {
+		const id = IDObfuscator.getId(args.id);
+		const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
+		const auth = await tx.authorization.findUnique({where: {id_authorization: idDeobfuscated}});
+		if (! auth) {
+			throw new Error(`Authorization ${args.authorization} not found.`);
+		}
+		const authorizationObject =  getSHA256(JSON.stringify(getAuthorizationToString(auth)), id.salt);
+		if (IDObfuscator.getDataSHA256(id) !== authorizationObject) {
+			throw new Error(`Authorization ${args.authorization} has been changed from another user. Please reload the page to make modifications`);
+		}
 
-			const [day, month, year] = args.expiration_date.split("/").map(Number);
-			const newExpDate = new Date(year, month - 1, day, 12);
-			const ren = args.renewals ?? (newExpDate > auth.expiration_date ? (auth.renewals + 1) : auth.renewals);
-			const data = {
-				status: args.status,
-				expiration_date: newExpDate,
-				authority: args.authority ?? auth.authority,
-				renewals: ren
+		const [day, month, year] = args.expiration_date.split("/").map(Number);
+		const newExpDate = new Date(year, month - 1, day, 12);
+		const ren = args.renewals ?? (newExpDate > auth.expiration_date ? (auth.renewals + 1) : auth.renewals);
+		const data = {
+			status: args.status,
+			expiration_date: newExpDate,
+			authority: args.authority ?? auth.authority,
+			renewals: ren
+		}
+		if (args.id_unit) {
+			const idunit = IDObfuscator.getId(args.id_unit);
+			const idDeobfuscatedForUnit = IDObfuscator.getIdDeobfuscated(idunit);
+			const unit = await context.prisma.Unit.findUnique({where: {id: idDeobfuscatedForUnit}})
+			if ( !unit ) {
+				throw new Error(`Authorization not updated`);
 			}
-			if (args.id_unit) {
-				const idunit = IDObfuscator.getId(args.id_unit);
-				const idDeobfuscatedForUnit = IDObfuscator.getIdDeobfuscated(idunit);
-				const unit = await context.prisma.Unit.findUnique({where: {id: idDeobfuscatedForUnit}})
-				if ( !unit ) {
-					throw new Error(`Authorization not updated`);
-				}
-				data['id_unit'] = unit.id;
-			}
+			data['id_unit'] = unit.id;
+		}
 
-			const updatedAuthorization = await tx.authorization.update(
-				{ where: { id_authorization: auth.id_authorization },
-					data: data
-				});
+		const updatedAuthorization = await tx.authorization.update(
+			{ where: { id_authorization: auth.id_authorization },
+				data: data
+			});
 
-			await checkRelations(tx, context, args, updatedAuthorization);
-			return mutationStatusType.success();
-		});
-	} catch ( e ) {
-		return mutationStatusType.error(e.message);
-	}
+		await checkRelations(tx, context, args, updatedAuthorization);
+		return mutationStatusType.success();
+	});
 }
 
 export async function getAuthorizationsWithPagination(args, context) {

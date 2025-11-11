@@ -103,36 +103,32 @@ export const OrganismMutations = extendType({
 			type: "OrganismStatus",
 			authorize: (parent, args, context) => context.user.canEditOrganisms,
 			async resolve(root, args, context) {
-				try {
-					return await context.prisma.$transaction(async (tx) => {
-						const userInfo = await getUserInfoFromAPI(context.user.preferred_username);
-						const organism = await tx.bio_org.create({
-							data: {
-								organism: args.organismName,
-								risk_group: args.risk,
-								updated_on: new Date(),
-								updated_by: `${userInfo.userFullName} (${userInfo.sciper})`,
-							}
-						});
-
-						let filePath = '';
-						if (args.fileContent != '' && args.fileName != '') {
-							filePath = saveBase64File(args.fileContent,  'd_bio/' + organism.id_bio_org + '/', args.fileName)
+				return await context.prisma.$transaction(async (tx) => {
+					const userInfo = await getUserInfoFromAPI(context.user.preferred_username);
+					const organism = await tx.bio_org.create({
+						data: {
+							organism: args.organismName,
+							risk_group: args.risk,
+							updated_on: new Date(),
+							updated_by: `${userInfo.userFullName} (${userInfo.sciper})`,
 						}
-						await tx.bio_org.update({
-							data: {
-								filePath: filePath
-							},
-							where: {
-								id_bio_org: organism.id_bio_org
-							}
-						});
-
-						return mutationStatusType.success();
 					});
-				} catch ( e ) {
-					return mutationStatusType.error(e.message);
-				}
+
+					let filePath = '';
+					if (args.fileContent != '' && args.fileName != '') {
+						filePath = saveBase64File(args.fileContent,  'd_bio/' + organism.id_bio_org + '/', args.fileName)
+					}
+					await tx.bio_org.update({
+						data: {
+							filePath: filePath
+						},
+						where: {
+							id_bio_org: organism.id_bio_org
+						}
+					});
+
+					return mutationStatusType.success();
+				});
 			}
 		});
 		t.nonNull.field('updateOrganism', {
@@ -141,42 +137,38 @@ export const OrganismMutations = extendType({
 			type: "OrganismStatus",
 			authorize: (parent, args, context) => context.user.canEditOrganisms,
 			async resolve(root, args, context) {
-				try {
-					return await context.prisma.$transaction(async (tx) => {
-						const id = IDObfuscator.getId(args.id);
-						const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
-						const org = await tx.bio_org.findUnique({where: {id_bio_org: idDeobfuscated}});
-						if (! org) {
-							throw new Error(`Organism ${args.organismName} not found.`);
-						}
-						const organismObject =  getSHA256(JSON.stringify(getBioOrgToString(org)), id.salt);
-						if (IDObfuscator.getDataSHA256(id) !== organismObject) {
-							throw new Error(`Organism ${args.organismName} has been changed from another user. Please reload the page to make modifications`);
-						}
+				return await context.prisma.$transaction(async (tx) => {
+					const id = IDObfuscator.getId(args.id);
+					const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
+					const org = await tx.bio_org.findUnique({where: {id_bio_org: idDeobfuscated}});
+					if (! org) {
+						throw new Error(`Organism ${args.organismName} not found.`);
+					}
+					const organismObject =  getSHA256(JSON.stringify(getBioOrgToString(org)), id.salt);
+					if (IDObfuscator.getDataSHA256(id) !== organismObject) {
+						throw new Error(`Organism ${args.organismName} has been changed from another user. Please reload the page to make modifications`);
+					}
 
-						let filePath = org.filePath;
-						if (args.fileContent != '' && args.fileName != '') {
-							filePath = saveBase64File(args.fileContent,  'd_bio/' + org.id_bio_org + '/', args.fileName)
-						}
+					let filePath = org.filePath;
+					if (args.fileContent != '' && args.fileName != '') {
+						filePath = saveBase64File(args.fileContent,  'd_bio/' + org.id_bio_org + '/', args.fileName)
+					}
 
-						const userInfo = await getUserInfoFromAPI(context.user.preferred_username);
-						const updatedOrganism = await tx.bio_org.update(
-							{ where: { id_bio_org: org.id_bio_org },
-								data: {
-									organism: args.organismName,
-									risk_group: args.risk,
-									updated_on: new Date(),
-									updated_by: `${userInfo.userFullName} (${userInfo.sciper})`,
-									filePath: filePath
-								}
-							});
+					const userInfo = await getUserInfoFromAPI(context.user.preferred_username);
+					const updatedOrganism = await tx.bio_org.update(
+						{ where: { id_bio_org: org.id_bio_org },
+							data: {
+								organism: args.organismName,
+								risk_group: args.risk,
+								updated_on: new Date(),
+								updated_by: `${userInfo.userFullName} (${userInfo.sciper})`,
+								filePath: filePath
+							}
+						});
 
-						await updateBioOrg(org, updatedOrganism, tx, context);
-						return mutationStatusType.success();
-					});
-				} catch ( e ) {
-					return mutationStatusType.error(e.message);
-				}
+					await updateBioOrg(org, updatedOrganism, tx, context);
+					return mutationStatusType.success();
+				});
 			}
 		});
 		t.nonNull.field('deleteOrganism', {
@@ -185,37 +177,33 @@ export const OrganismMutations = extendType({
 			type: "OrganismStatus",
 			authorize: (parent, args, context) => context.user.canEditOrganisms,
 			async resolve(root, args, context) {
-				try {
-					return await context.prisma.$transaction(async (tx) => {
-						if (!args.id) {
-							throw new Error(`Not allowed to delete organism`);
-						}
-						const id: id = JSON.parse(args.id);
-						if (id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
-							throw new Error(`Not allowed to delete organism`);
-						}
+				return await context.prisma.$transaction(async (tx) => {
+					if (!args.id) {
+						throw new Error(`Not allowed to delete organism`);
+					}
+					const id: id = JSON.parse(args.id);
+					if (id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
+						throw new Error(`Not allowed to delete organism`);
+					}
 
-						if (!IDObfuscator.checkSalt(id)) {
-							throw new Error(`Bad descrypted request`);
-						}
-						const idDeobfuscated = IDObfuscator.deobfuscateId(id);
-						const org = await tx.bio_org.findUnique({where: {id_bio_org: idDeobfuscated}});
-						if (! org) {
-							throw new Error(`Organism ${args.organismName} not found.`);
-						}
-						const organismObject =  getSHA256(JSON.stringify(getBioOrgToString(org)), id.salt);
-						if (IDObfuscator.getDataSHA256(id) !== organismObject) {
-							throw new Error(`Organism ${args.organismName} has been changed from another user. Please reload the page to make modifications`);
-						}
+					if (!IDObfuscator.checkSalt(id)) {
+						throw new Error(`Bad descrypted request`);
+					}
+					const idDeobfuscated = IDObfuscator.deobfuscateId(id);
+					const org = await tx.bio_org.findUnique({where: {id_bio_org: idDeobfuscated}});
+					if (! org) {
+						throw new Error(`Organism ${args.organismName} not found.`);
+					}
+					const organismObject =  getSHA256(JSON.stringify(getBioOrgToString(org)), id.salt);
+					if (IDObfuscator.getDataSHA256(id) !== organismObject) {
+						throw new Error(`Organism ${args.organismName} has been changed from another user. Please reload the page to make modifications`);
+					}
 
-						await tx.bio_org_lab.deleteMany({ where: { id_bio_org: org.id_bio_org }});
-						await tx.bio_org.delete({ where: { id_bio_org: org.id_bio_org }});
+					await tx.bio_org_lab.deleteMany({ where: { id_bio_org: org.id_bio_org }});
+					await tx.bio_org.delete({ where: { id_bio_org: org.id_bio_org }});
 
-						return mutationStatusType.success();
-					});
-				} catch ( e ) {
-					return mutationStatusType.error(e.message);
-				}
+					return mutationStatusType.success();
+				});
 			}
 		});
 	}

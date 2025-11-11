@@ -1,10 +1,12 @@
 import {getNow} from "../libs/date";
 import {
-	ensureAuthorization, getAuthorization,
-	getAuthorizationsWithPagination, getAuthorizationToString,
+	createAuthorization,
+	getAuthorization,
+	getAuthorizationsWithPagination,
+	getAuthorizationToString,
 	updateAuthorization
 } from "../schema/authorization/authorization";
-import {ensureChemical, getChemicalWithPagination} from "../schema/authorization/chemicals";
+import {createChemical, getChemicalWithPagination} from "../schema/authorization/chemicals";
 import {IDObfuscator} from "../utils/IDObfuscator";
 import {getRoomsWithPagination} from "../schema/global/rooms";
 import {getParentUnit, getUnitByName} from "../schema/roomdetails/units";
@@ -68,7 +70,7 @@ export function makeRESTAPI(app, context) {
 								roomIds.map(r => `{id: ${r}, status: "New"}`)
 							],
 						}
-						const add = await ensureAuthorization(args, context);
+						const add = await createAuthorization(args, context);
 						if (add.isSuccess)
 							res.json({Message: "Ok"});
 						else {
@@ -125,7 +127,7 @@ export function makeRESTAPI(app, context) {
 							cas_auth_chem: req.query.cas as string,
 							flag_auth_chem: (req.query.auth as string).toLowerCase() == 'yes' || (req.query.auth as string) == '1'
 						}
-						const resultNewChem = await ensureChemical(argsChem, context);
+						const resultNewChem = await createChemical(argsChem, context);
 						if ( resultNewChem.isSuccess )
 							res.json({Message: "Ok"});
 						else {
@@ -229,7 +231,7 @@ export function makeRESTAPI(app, context) {
 					roomIds.map(r => `{id: ${r}, status: "New"}`)
 				],
 			}
-			const add = await ensureAuthorization(args, context);
+			const add = await createAuthorization(args, context);
 			if ( add.isSuccess )
 				res.json({Message: "Ok"});
 			else {
@@ -302,7 +304,7 @@ export function makeRESTAPI(app, context) {
 				cas_auth_chem: req.query.cas as string,
 				flag_auth_chem: (req.query.auth as string).toLowerCase() == 'yes' || (req.query.auth as string) == '1'
 			}
-			const resultNewChem = await ensureChemical(argsChem, context);
+			const resultNewChem = await createChemical(argsChem, context);
 			if ( resultNewChem.isSuccess )
 				res.json({Message: "Ok"});
 			else {

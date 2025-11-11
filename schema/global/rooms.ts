@@ -439,38 +439,34 @@ export const RoomMutations = extendType({
 			type: "RoomStatus",
 			authorize: (parent, args, context) => context.user.canEditRooms,
 			async resolve(root, args, context) {
-				try {
-					return await context.prisma.$transaction(async (tx) => {
-						for (const room of args.rooms) {
-							if (room.status == 'New') {
-								const newRoom = await tx.Room.findUnique({ where: { sciper_lab: room.id }});
+				return await context.prisma.$transaction(async (tx) => {
+					for (const room of args.rooms) {
+						if (room.status == 'New') {
+							const newRoom = await tx.Room.findUnique({ where: { sciper_lab: room.id }});
 
-								if (!newRoom) {
-									const parts: string[] = room.name.split(' ');
+							if (!newRoom) {
+								const parts: string[] = room.name.split(' ');
 
-									const labType = await tx.RoomKind.findFirst({where: {name: room.facultyuse}});
-									await tx.Room.create({
-										data: {
-											sciper_lab: room.id,
-											building: room.building,
-											sector: room.sector,
-											floor: room.floor,
-											roomNo: parts[parts.length - 1],
-											name: room.name,
-											site: room.site,
-											vol: room.vol,
-											lab_type_is_different: false,
-											id_labType: labType ? labType.id_labType : null
-										}
-									});
-								}
+								const labType = await tx.RoomKind.findFirst({where: {name: room.facultyuse}});
+								await tx.Room.create({
+									data: {
+										sciper_lab: room.id,
+										building: room.building,
+										sector: room.sector,
+										floor: room.floor,
+										roomNo: parts[parts.length - 1],
+										name: room.name,
+										site: room.site,
+										vol: room.vol,
+										lab_type_is_different: false,
+										id_labType: labType ? labType.id_labType : null
+									}
+								});
 							}
 						}
-						return mutationStatusType.success();
-					});
-				} catch ( e ) {
-					return mutationStatusType.error(e.message);
-				}
+					}
+					return mutationStatusType.success();
+				});
 			}
 		});
 		t.nonNull.field('updateRoom', {
@@ -479,74 +475,51 @@ export const RoomMutations = extendType({
 			type: "RoomStatus",
 			authorize: (parent, args, context) => context.user.canEditRooms,
 			async resolve(root, args, context) {
-				try {
-					return await context.prisma.$transaction(async (tx) => {
-						const id = IDObfuscator.getId(args.id);
-						const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
-						const room = await tx.Room.findUnique({where: {id: idDeobfuscated}});
-						if (! room) {
-							throw new Error(`Room ${args.name} not found.`);
-						}
-						const roomObject =  getSHA256(JSON.stringify(getRoomToString(room)), id.salt);
-						if (IDObfuscator.getDataSHA256(id) !== roomObject) {
-							throw new Error(`Room ${args.name} has been changed from another user. Please reload the page to make modifications`);
-						}
+				return await context.prisma.$transaction(async (tx) => {
+					const id = IDObfuscator.getId(args.id);
+					const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
+					const room = await tx.Room.findUnique({where: {id: idDeobfuscated}});
+					if (! room) {
+						throw new Error(`Room ${args.name} not found.`);
+					}
+					const roomObject =  getSHA256(JSON.stringify(getRoomToString(room)), id.salt);
+					if (IDObfuscator.getDataSHA256(id) !== roomObject) {
+						throw new Error(`Room ${args.name} has been changed from another user. Please reload the page to make modifications`);
+					}
 
-						const roomKind = await tx.RoomKind.findFirst({where: {name: args.kind}})
-						await tx.Room.update(
-							{ where: { id: room.id },
+					const roomKind = await tx.RoomKind.findFirst({where: {name: args.kind}})
+					await tx.Room.update(
+						{ where: { id: room.id },
+							data: {
+								vent: args.vent,
+								lab_type_is_different: args.lab_type_is_different,
+								kind: { connect: { id_labType: roomKind.id_labType}},
+							}
+						});
+
+					for (const unitToChange of args.units) {
+						const unit = await tx.Unit.findFirst({ where: { name: unitToChange.name }});
+						if (unitToChange.status == 'New') {
+							await tx.unit_has_room.create({
 								data: {
-									vent: args.vent,
-									lab_type_is_different: args.lab_type_is_different,
-									kind: { connect: { id_labType: roomKind.id_labType}},
+									id_lab: room.id,
+									id_unit: unit.id
 								}
+							})
+						}
+						else if (unitToChange.status == 'Deleted') {
+							const whereConditionForDelete = {
+								id_lab: room.id,
+								id_unit: unit.id
+							};
+							await tx.unit_has_room.deleteMany({
+								where: whereConditionForDelete
 							});
-
-						const errors: string[] = [];
-						for (const unitToChange of args.units) {
-
-							const unit = await tx.Unit.findFirst({ where: { name: unitToChange.name }});
-
-							if (!unit) {
-								errors.push(`Unit ${unitToChange.name} not found.`);
-								continue;
-							}
-							if (unitToChange.status == 'New') {
-								try {
-									await tx.unit_has_room.create({
-										data: {
-											id_lab: room.id,
-											id_unit: unit.id
-										}
-									})
-								} catch ( e ) {
-									errors.push(`Error creating unit ${unit.name}.`);
-								}
-							}
-							else if (unitToChange.status == 'Deleted') {
-								try {
-									const whereConditionForDelete = {
-										id_lab: room.id,
-										id_unit: unit.id
-									};
-									await tx.unit_has_room.deleteMany({
-										where: whereConditionForDelete
-									});
-								} catch ( e ) {
-									errors.push(`Error creating unit ${unit.name}.`);
-								}
-							}  // Else do nothing (client should not transmit these, but oh well)
 						}
+					}
 
-						if (errors.length > 0) {
-							throw new Error(`${errors.join('\n')}`);
-						} else {
-							return mutationStatusType.success();
-						}
-					});
-				} catch ( e ) {
-					return mutationStatusType.error(e.message);
-				}
+					return mutationStatusType.success();
+				});
 			}
 		});
 		t.nonNull.field('deleteRoom', {
@@ -555,24 +528,20 @@ export const RoomMutations = extendType({
 			type: "RoomStatus",
 			authorize: (parent, args, context) => context.user.canEditRooms,
 			async resolve(root, args, context) {
-				try {
-					return await context.prisma.$transaction(async (tx) => {
-						const id = IDObfuscator.getId(args.id);
-						const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
-						const room = await tx.Room.findUnique({where: {id: idDeobfuscated}});
-						if (! room) {
-							throw new Error(`Room not found.`);
-						}
-						const roomObject =  getSHA256(JSON.stringify(getRoomToString(room)), id.salt);
-						if (IDObfuscator.getDataSHA256(id) !== roomObject) {
-							throw new Error(`Room has been changed from another user. Please reload the page to make modifications`);
-						}
-						await deleteRoom(tx, context, room);
-						return mutationStatusType.success();
-					});
-				} catch ( e ) {
-					return mutationStatusType.error(e.message);
-				}
+				return await context.prisma.$transaction(async (tx) => {
+					const id = IDObfuscator.getId(args.id);
+					const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
+					const room = await tx.Room.findUnique({where: {id: idDeobfuscated}});
+					if (! room) {
+						throw new Error(`Room not found.`);
+					}
+					const roomObject =  getSHA256(JSON.stringify(getRoomToString(room)), id.salt);
+					if (IDObfuscator.getDataSHA256(id) !== roomObject) {
+						throw new Error(`Room has been changed from another user. Please reload the page to make modifications`);
+					}
+					await deleteRoom(tx, context, room);
+					return mutationStatusType.success();
+				});
 			}
 		});
 	}
