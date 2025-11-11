@@ -56,7 +56,6 @@ export function makeRESTAPI(app, context) {
 						const args = {
 							id_unit: idUnit,
 							authorization: request,
-							creation_date: (new Date()).toLocaleDateString("en-GB"),
 							expiration_date: (new Date(expirationDate)).toLocaleDateString("en-GB"),
 							status: "Active",
 							type: "Chemical",
@@ -217,7 +216,6 @@ export function makeRESTAPI(app, context) {
 			const args = {
 				id_unit: idUnit,
 				authorization: request,
-				creation_date: (new Date()).toLocaleDateString("en-GB"),
 				expiration_date: (new Date(expirationDate)).toLocaleDateString("en-GB"),
 				status: "Active",
 				type: "Chemical",

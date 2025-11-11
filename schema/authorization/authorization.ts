@@ -416,7 +416,8 @@ export async function createAuthorization(args, context) {
 	}
 
 	return await context.prisma.$transaction(async (tx) => {
-		const [dayCrea, monthCrea, yearCrea] = args.creation_date.split("/").map(Number);
+		const date = args.creation_date ?? (new Date()).toLocaleDateString("en-GB");
+		const [dayCrea, monthCrea, yearCrea] = date.split("/").map(Number);
 		const [day, month, year] = args.expiration_date.split("/").map(Number);
 		const authorization = await tx.authorization.create({
 			data: {
