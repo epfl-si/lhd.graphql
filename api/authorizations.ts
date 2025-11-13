@@ -10,6 +10,16 @@ import {createChemical, getChemicalWithPagination} from "../schema/authorization
 import {IDObfuscator} from "../utils/IDObfuscator";
 import {getRoomsWithPagination} from "../schema/global/rooms";
 import {getParentUnit, getUnitByName} from "../schema/roomdetails/units";
+import {checkAPICall} from "./lib/checkedAPICalls";
+import {
+	casRegexp,
+	reqRegexp,
+	roomNameRegexp,
+	textRegexp,
+	unitNameRegexp,
+	validateCAS,
+	validateCommaSeparatedNumbers
+} from "./lib/lhdValidators";
 
 export function makeRESTAPI(app, context) {
 	app.use('/api', (req, res, next) => {
@@ -188,72 +198,69 @@ export function makeRESTAPI(app, context) {
 		}
 	});
 
-
-
-	app.post("/api/auth_req", async (req, res) => {
-		try {
-			if ( !req.user.canEditAuthorizations ) {
-				res.status(403).json({Message: 'Unauthorized'});
-				return;
-			}
-
-			const request = req.query.req as string;
-			if ( !request ) return res.status(404).json({Message: "missing <req> string for request+authorisation number of the form req=AUTH_SST-AUTH_REQ"});
-
-			if ( !req.query.date ) return res.status(404).json({Message: "missing authorisation expiration <date>"});
-			const expirationDate = new Date(req.query.date as string);
-
-			const idUnit = parseInt(req.query.id_unit as string);
-			if ( !idUnit ) return res.status(404).json({Message: "missing <id_unit>"});
-
-			if ( !req.query.room_ids ) return res.status(404).json({Message: "missing <room_ids> list of lab ids"});
-			const roomIds = (req.query.room_ids as string).split(',');
-
-			if ( !req.query.scipers ) return res.status(404).json({Message: "missing <scipers> list of authorisation holders"});
-			const scipers = (req.query.scipers as string).split(',');
-
-			const cas = (req.query.cas as string).split(',');
+	app.post("/api/auth_req",
+		checkAPICall(
+			{
+				authorize: (req) => req.user.canEditAuthorizations,
+				required: {
+					req (req) { return req.query.req; },
+					date (req) { return req.query.date; },
+					id_unit (req) { return req.query.id_unit; },
+					room_ids (req) { return req.query.room_ids },
+					scipers (req) { return req.query.scipers },
+					cas (req) { return req.query.cas },
+				},
+				validate: {
+					req: reqRegexp,
+					date: Date,
+					id_unit: Number,
+					room_ids: validateCommaSeparatedNumbers,
+					scipers: validateCommaSeparatedNumbers,
+					cas: validateCAS
+				}
+			}),
+		async (req, res, next) => {
 			const args = {
-				id_unit: idUnit,
-				authorization: request,
-				expiration_date: (new Date(expirationDate)).toLocaleDateString("en-GB"),
+				id_unit: req.params.id_unit,
+				authorization: req.params.req,
+				expiration_date: req.params.date.toLocaleDateString("en-GB"),
 				status: "Active",
 				type: "Chemical",
-				cas: cas.map(c => {
-						return {name: c, status: "New"};
+				cas: req.params.cas.map(c => {
+					return {name: c, status: "New"};
 				}),
-				holders: scipers.map(sc => {
-						return {sciper: parseInt(sc), status: "New"};
+				holders: req.params.scipers.map(sc => {
+					return {sciper: sc, status: "New"};
 				}),
-				rooms: roomIds.map(r => {
-						return {id: parseInt(r), status: "New"};
+				rooms: req.params.room_ids.map(r => {
+					return {id: r, status: "New"};
 				}),
 			}
 			const add = await createAuthorization(args, context);
 			if ( add.isSuccess )
 				res.json({Message: "Ok"});
 			else {
-				const error = add.errors.map(err => err.message).join(', ');
-				res.json({Message: error});
-			}
-		} catch (err: any) {
-			res.status(500).json({Message: err.message});
+					const error = add.errors.map(err => err.message).join(', ');
+					res.json({Message: error});
+				}
 		}
-	});
-	app.post("/api/auth_renew", async (req, res) => {
-		try {
-			if ( !req.user.canEditAuthorizations ){
-				res.status(403).json({Message: 'Unauthorized'});
-				return;
-			}
+	);
 
-			const request = req.query.req as string;
-			if ( !request ) return res.status(404).json({Message: "missing <req> string for request+authorisation number of the form req=AUTH_SST-AUTH_REQ"});
-
-			if ( !req.query.date ) return res.status(404).json({Message: "missing authorisation expiration <date>"});
-			const expirationDate = new Date(req.query.date as string);
-
-			const reqParts = request.split("-");
+	app.post("/api/auth_renew",
+		checkAPICall(
+			{
+				authorize: (req) => req.user.canEditAuthorizations,
+				required: {
+					req (req) { return req.query.req; },
+					date (req) { return req.query.date; }
+				},
+				validate: {
+					req: reqRegexp,
+					date: Date
+				}
+			}),
+		async (req, res) => {
+			const reqParts = req.params.req.split("-");
 			const requestNumber = `${reqParts[0]}-${reqParts[1]}`;
 			const argsRenew = {
 				take: 0,
@@ -270,7 +277,7 @@ export function makeRESTAPI(app, context) {
 				});
 				const argsUpdate = {
 					id: JSON.stringify(encryptedID),
-					expiration_date: (new Date(expirationDate)).toLocaleDateString("en-GB"),
+					expiration_date: (new Date(req.params.date)).toLocaleDateString("en-GB"),
 					status: "Active",
 					renewals: parseInt(reqParts[2])
 				};
@@ -282,25 +289,33 @@ export function makeRESTAPI(app, context) {
 			} else {
 				return res.status(404).json({Message: "Could not find parent authorisation"});
 			}
-		} catch (err: any) {
-			res.status(500).json({Message: err.message});
 		}
-	});
-	app.post("/api/add_chem", async (req, res) => {
-		try {
-			if ( !req.user.canEditChemicals ){
-				res.status(403).json({Message: 'Unauthorized'});
-				return;
-			}
+	);
 
-			if ( !req.query.cas ) return res.status(404).json({Message: "missing <cas> code for chemical product"});
-			if ( !req.query.en ) return res.status(404).json({Message: "missing <en> english translation of the chemical name or description"});
-			if ( !req.query.auth ) return res.status(404).json({Message: "missing <auth> flag for setting if the new chemical requires authorisation"});
-
+	app.post("/api/add_chem",
+		checkAPICall(
+			{
+				authorize: (req) => req.user.canEditChemicals,
+				required: {
+					cas (req) { return req.query.cas; },
+					en (req) { return req.query.en; },
+					auth (req) { return req.query.auth; }
+				},
+				validate: {
+					cas: casRegexp,
+					en: textRegexp,
+					fr: textRegexp,
+					auth: new RegExp("yes|no|1|0"),
+				},
+				optional: {
+					fr (req) { return req.query.fr; }
+				}
+			}),
+		async (req, res) => {
 			const argsChem = {
-				auth_chem_en: req.query.en as string,
-				cas_auth_chem: req.query.cas as string,
-				flag_auth_chem: (req.query.auth as string).toLowerCase() == 'yes' || (req.query.auth as string) == '1'
+				auth_chem_en: req.params.en as string,
+				cas_auth_chem: req.params.cas as string,
+				flag_auth_chem: (req.params.auth as string).toLowerCase() == 'yes' || (req.params.auth as string) == '1' //TODO move into validator
 			}
 			const resultNewChem = await createChemical(argsChem, context);
 			if ( resultNewChem.isSuccess )
@@ -309,18 +324,21 @@ export function makeRESTAPI(app, context) {
 				const error = resultNewChem.errors.map(err => err.message).join(', ');
 				res.json({Message: error});
 			}
-		} catch (err: any) {
-			res.status(500).json({Message: err.message});
-		}
 	});
-	app.get("/api/get_chem", async (req, res) => {
-		try {
-			if ( !req.user.canListChemicals ){
-				res.status(403).json({Message: 'Unauthorized'});
-				return;
-			}
 
-			const cas = (req.query.cas as string);
+	app.get("/api/get_chem",
+		checkAPICall(
+			{
+				authorize: (req) => req.user.canListChemicals,
+				validate: {
+					cas: textRegexp
+				},
+				optional: {
+					cas (req) { return req.query.cas; },
+				}
+			}),
+		async (req, res) => {
+			const cas = (req.params.cas as string);
 
 			const resultNew = await getChemicalWithPagination([], 0, 0, context);
 			const all = resultNew.chemicals.map(chem => {
@@ -337,21 +355,24 @@ export function makeRESTAPI(app, context) {
 			} else {
 				res.json({Message: "Ok", Data: all});
 			}
-		} catch (err: any) {
-			res.status(500).json({Message: err.message});
-		}
-	});
-	app.get("/api/auth_check", async (req, res) => {
-		try {
-			if ( !req.user.canListAuthorizations ){
-				res.status(403).json({Message: 'Unauthorized'});
-				return;
-			}
+		});
 
-			if ( !req.query.sciper ) return res.status(404).json({Message: "Missing sciper number"});
-			if ( !req.query.cas ) return res.status(404).json({Message: "Missing cas number"});
-			const sciper = (req.query.sciper as string);
-			const cas = (req.query.cas as string).split(',');
+	app.get("/api/auth_check",
+		checkAPICall(
+			{
+				authorize: (req) => req.user.canListAuthorizations,
+				required: {
+					scipers (req) { return req.query.scipers },
+					cas (req) { return req.query.cas },
+				},
+				validate: {
+					scipers: Number,
+					cas: casRegexp
+				}
+			}),
+		async (req, res) => {
+			const sciper = (req.params.sciper as string);
+			const cas = (req.params.cas as string).split(',');
 
 			const argsCheck = {
 				take: 0,
@@ -375,20 +396,25 @@ export function makeRESTAPI(app, context) {
 				}
 			})
 			res.json({Message: "Ok", Data: [casAuth]});
-		} catch (err: any) {
-			res.status(500).json({Message: err.message});
-		}
-	});
-	app.get("/api/get_labs_and_units", async (req, res) => {
-		try {
-			if ( !req.user.canListRooms ){
-				res.status(403).json({Message: 'Unauthorized'});
-				return;
-			}
+		});
 
+	app.get("/api/get_labs_and_units",
+		checkAPICall(
+			{
+				authorize: (req) => req.user.canListRooms,
+				validate: {
+					unit: unitNameRegexp,
+					room: roomNameRegexp
+				},
+				optional: {
+					unit (req) { return req.query.unit; },
+					room (req) { return req.query.room; },
+				}
+			}),
+		async (req, res) => {
 			const conditions = [];
-			if (req.query.unit) conditions.push(req.query.unit as string);
-			if (req.query.room) conditions.push(req.query.room as string);
+			if (req.params.unit) conditions.push(req.params.unit as string);
+			if (req.params.room) conditions.push(req.params.room as string);
 			const args = {
 				search: conditions.join('&'),
 				take: 0
@@ -419,19 +445,22 @@ export function makeRESTAPI(app, context) {
 				}))
 			);
 			res.json({Message: "Ok", Data: flatted});
-		} catch (err: any) {
-			res.status(500).json({Message: err.message});
-		}
-	});
-	app.get("/api/get_profs_and_cosecs", async (req, res) => {
-		try {
-			if ( !req.user.canListUnits ){
-				res.status(403).json({Message: 'Unauthorized'});
-				return;
-			}
+		});
 
+	app.get("/api/get_profs_and_cosecs",
+		checkAPICall(
+			{
+				authorize: (req) => req.user.canListUnits,
+				validate: {
+					unit: unitNameRegexp,
+				},
+				optional: {
+					unit (req) { return req.query.unit; },
+				}
+			}),
+		async (req, res) => {
 			const args = {
-				search: req.query.unit ? req.query.unit as string : '',
+				search: req.params.unit,
 			};
 			const resultNew = await getUnitByName(args, context);
 			const unitMap: { [unit: string]: {unit: string, id_unit: number, sciper: string[], sciper_cosec: string[], rooms: string[] }; } = {};
@@ -468,8 +497,5 @@ export function makeRESTAPI(app, context) {
 				return {unit: value.unit, id_unit: value.id_unit, sciper: value.sciper.join(','), sciper_cosec: value.sciper_cosec.join(',')}
 			});
 			res.json({Message: "Ok", Data: result});
-		} catch (err: any) {
-			res.status(500).json({Message: err.message});
-		}
-	});
+		});
 }

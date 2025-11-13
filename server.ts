@@ -16,6 +16,7 @@ import {ApolloServer} from "@apollo/server";
 import {expressMiddleware} from "@as-integrations/express5";
 import {getToken, VALID_TOKENS_FOR_API} from "./libs/authentication";
 import {makeRESTAPI} from "./api/authorizations";
+import {errorHandler} from "./api/lib/errorHandler";
 
 type TestInjections = {
 	insecure?: boolean;
@@ -156,6 +157,10 @@ export async function makeServer(
 			}
 		})
 	);
+
+	// The error-handling middleware must be registered after all other routes and middleware, at the end
+	app.use(errorHandler); //TODO move it into makeRESTAPI
+
 	return httpServer;
 }
 
