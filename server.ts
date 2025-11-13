@@ -33,7 +33,7 @@ export async function makeServer(
 		if (! clientOptions.log) clientOptions.log = [];
 		clientOptions.log.push({ level: 'query', emit: 'event' });
 	}
-       if (debug.enabled('prisma:query')) {
+		if (debug.enabled('prisma:query')) {
 		if (! clientOptions.log) clientOptions.log = [];
 		clientOptions.log.push('query');
 	}
