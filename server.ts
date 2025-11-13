@@ -14,7 +14,7 @@ import {loginResponse, UserInfo} from './serverTypes';
 import * as path from "node:path";
 import {registerLegacyApi} from "./api";
 import {ApolloServer} from "@apollo/server";
-import {expressMiddleware} from "@as-integrations/express4";
+import {expressMiddleware} from "@as-integrations/express5";
 
 type TestInjections = {
 	insecure?: boolean;
