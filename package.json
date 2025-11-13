@@ -4,6 +4,8 @@
   "description": "GraphQL server for the LHD MySQL database",
   "main": "index.ts",
   "dependencies": {
+    "@apollo/server": "^5.1.0",
+    "@as-integrations/express4": "^1.1.2",
     "@mercurialweb/nexus-plugin-prisma": "0.49.2",
     "@prisma/client": "^5.12.1",
     "@types/chai": "^4.3.6",
@@ -15,7 +17,7 @@
     "debug": "^4.3.2",
     "dotenv": "^10.0.0",
     "express-session": "^1.17.3",
-    "graphql": "^15.5.2",
+    "graphql": "^16.12.0",
     "inherits": "^2.0.4",
     "isarray": "^1.0.0",
     "keycloak-connect": "^19.0.2",
