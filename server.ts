@@ -1,7 +1,6 @@
 import {Prisma, PrismaClient} from '@prisma/client';
-import {ApolloServer} from 'apollo-server-express';
-import {ApolloServerPluginDrainHttpServer, PluginDefinition,} from 'apollo-server-core';
 import {debug} from 'debug';
+import {ApolloServerPluginDrainHttpServer} from '@apollo/server/plugin/drainHttpServer';
 
 import * as dotenv from 'dotenv';
 import * as express from 'express';
@@ -14,6 +13,8 @@ import {errors, Issuer} from 'openid-client';
 import {loginResponse, UserInfo} from './serverTypes';
 import * as path from "node:path";
 import {registerLegacyApi} from "./api";
+import {ApolloServer} from "@apollo/server";
+import {expressMiddleware} from "@as-integrations/express4";
 
 type TestInjections = {
 	insecure?: boolean;
@@ -46,13 +47,14 @@ export async function makeServer(
 
 	const httpServer = http.createServer(app);
 
-	const server = new ApolloServer({
-		context: (express) => ({ prisma, user: express.req.user}),
+	interface Context {
+		prisma: any;
+		user: any;
+	}
+
+	const server = new ApolloServer<Context>({
 		schema,
-		plugins: [
-			onServerStop(() => prisma.$disconnect()),
-			ApolloServerPluginDrainHttpServer({ httpServer }),
-		],
+		plugins: [ApolloServerPluginDrainHttpServer({ httpServer })]
 	});
 
 	await server.start();
@@ -111,8 +113,11 @@ export async function makeServer(
 		}
 	});
 
-	server.applyMiddleware({ path: '/', bodyParserConfig: { limit: '50mb' }, app });
-
+	app.use('/',
+		expressMiddleware(server, {
+			context: async ({ req }) => ({ prisma, user: req.user  }),
+		})
+	);
 	return httpServer;
 }
 
@@ -123,19 +128,6 @@ type BackendConfig = {
 export function configFromDotEnv(): BackendConfig {
 	dotenv.config();
 	return process.env as BackendConfig;
-}
-
-/**
- * An arbitrary stop-time callback, packaged as an ApolloServer plugin.
- */
-function onServerStop(cb: () => Promise<void>): PluginDefinition {
-	return {
-		async serverWillStart() {
-			return {
-				serverWillStop: cb,
-			};
-		},
-	};
 }
 
 /**

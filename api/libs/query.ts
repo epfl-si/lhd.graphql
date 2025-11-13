@@ -23,5 +23,5 @@ export async function makeQuery(query: string, user: string) {
 		if (result.errors) {
 			throw new Error(result.errors.join("\n"));
 		}
-		return result.data;
+		return result.data as any;
 }
