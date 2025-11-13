@@ -219,7 +219,7 @@ export function makeRESTAPI(app, context) {
 					cas: validateCAS
 				}
 			}),
-		async (req, res, next) => {
+		async (req, res) => {
 			const args = {
 				id_unit: req.params.id_unit,
 				authorization: req.params.req,
@@ -240,9 +240,9 @@ export function makeRESTAPI(app, context) {
 			if ( add.isSuccess )
 				res.json({Message: "Ok"});
 			else {
-					const error = add.errors.map(err => err.message).join(', ');
-					res.json({Message: error});
-				}
+				const error = add.errors.map(err => err.message).join(', ');
+				res.json({Message: error});
+			}
 		}
 	);
 
