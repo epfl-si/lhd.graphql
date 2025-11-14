@@ -17,6 +17,7 @@ import {expressMiddleware} from "@as-integrations/express5";
 import {getToken, VALID_TOKENS_FOR_API} from "./libs/authentication";
 import {makeRESTAPI} from "./api/authorizations";
 import {errorHandler} from "./api/lib/errorHandler";
+import {getErrorMessage} from "./utils/GraphQLErrors";
 
 type TestInjections = {
 	insecure?: boolean;
@@ -91,6 +92,10 @@ export async function makeServer(
 
 	const server = new ApolloServer<Context>({
 		schema,
+		formatError(err) {
+			console.error('Server error:', err);
+			return getErrorMessage(err);
+		},
 		plugins: [ApolloServerPluginDrainHttpServer({ httpServer })]
 	});
 
@@ -126,24 +131,19 @@ export async function makeServer(
 	})
 
 	app.post('/files/', async (req, res) => {
-		try {
-			console.error('Getting file');
-			const filePath = path.join(req.body.filePath as string);
-			const fileName = path.basename(filePath);
-			const fullFilePath = path.join(process.env.DOCUMENTS_PATH, filePath);
-			console.error('Getting file', fullFilePath);
-			res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-			res.sendFile(fullFilePath, (err) => {
-				if ( err ) {
-					console.error('Error sending file:', err);
-					res.status(500).send(err.message);
-				}
-				console.error('Getting file success', fullFilePath);
-			});
-		} catch ( e ) {
-			console.error('Error sending file:', e);
-			res.status(404).send('File not found');
-		}
+		console.error('Getting file');
+		const filePath = path.join(req.body.filePath as string);
+		const fileName = path.basename(filePath);
+		const fullFilePath = path.join(process.env.DOCUMENTS_PATH, filePath);
+		console.error('Getting file', fullFilePath);
+		res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+		res.sendFile(fullFilePath, (err) => {
+			if ( err ) {
+				console.error('Error sending file:', err);
+				res.status(500).send(err.message);
+			}
+			console.error('Getting file success', fullFilePath);
+		});
 	});
 
 	makeRESTAPI(app,{ prisma: basePrisma });
