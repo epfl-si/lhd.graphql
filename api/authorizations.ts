@@ -12,12 +12,12 @@ import {getRoomsWithPagination} from "../schema/global/rooms";
 import {getParentUnit, getUnitByName} from "../schema/roomdetails/units";
 import {checkAPICall} from "./lib/checkedAPICalls";
 import {
-	casRegexp,
+	singleCAS,
 	reqRegexp,
 	roomNameRegexp,
 	textRegexp,
 	unitNameRegexp,
-	validateCAS,
+	validateCASList,
 	validateCommaSeparatedNumbers
 } from "./lib/lhdValidators";
 
@@ -216,7 +216,7 @@ export function makeRESTAPI(app, context) {
 					id_unit: Number,
 					room_ids: validateCommaSeparatedNumbers,
 					scipers: validateCommaSeparatedNumbers,
-					cas: validateCAS
+					cas: validateCASList
 				}
 			}),
 		async (req, res) => {
@@ -302,7 +302,7 @@ export function makeRESTAPI(app, context) {
 					auth (req) { return req.query.auth; }
 				},
 				validate: {
-					cas: casRegexp,
+					cas: singleCAS,
 					en: textRegexp,
 					fr: textRegexp,
 					auth: new RegExp("yes|no|1|0"),
@@ -331,14 +331,14 @@ export function makeRESTAPI(app, context) {
 			{
 				authorize: (req) => req.user.canListChemicals,
 				validate: {
-					cas: textRegexp
+					cas: validateCASList
 				},
 				optional: {
 					cas (req) { return req.query.cas; },
 				}
 			}),
 		async (req, res) => {
-			const cas = (req.params.cas as string);
+			const cas = req.params.cas as string;
 
 			const resultNew = await getChemicalWithPagination([], 0, 0, context);
 			const all = resultNew.chemicals.map(chem => {
@@ -349,8 +349,7 @@ export function makeRESTAPI(app, context) {
 				}
 			});
 			if ( cas ) {
-				const casList = cas.split(',');
-				const data = all.filter(chem => casList.includes(chem.cas_auth_chem));
+				const data = all.filter(chem => cas.includes(chem.cas_auth_chem));
 				res.json({Message: "Ok", Data: data});
 			} else {
 				res.json({Message: "Ok", Data: all});
@@ -362,17 +361,17 @@ export function makeRESTAPI(app, context) {
 			{
 				authorize: (req) => req.user.canListAuthorizations,
 				required: {
-					scipers (req) { return req.query.scipers },
+					sciper (req) { return req.query.sciper },
 					cas (req) { return req.query.cas },
 				},
 				validate: {
-					scipers: Number,
-					cas: casRegexp
+					sciper: Number,
+					cas: validateCASList
 				}
 			}),
 		async (req, res) => {
 			const sciper = (req.params.sciper as string);
-			const cas = (req.params.cas as string).split(',');
+			const cas = req.params.cas;
 
 			const argsCheck = {
 				take: 0,
