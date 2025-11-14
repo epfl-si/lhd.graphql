@@ -9,6 +9,6 @@ export function errorHandler(
 	res: Response,
 	next: NextFunction
 ): void {
-	const message = 'toto';//err instanceof Error ? err.message : 'Internal Server Error';
+	const message = err instanceof Error ? err.message : 'Internal Server Error';
 	res.status(500).json({error: message});
 }
