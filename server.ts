@@ -80,7 +80,7 @@ export async function makeServer(
 	});
 
 
-	app.use('/',
+	app.use('/graphql',
 		expressMiddleware(server, {
 			context: async ( { req } ) => {
 				const user = await authenticate(req);
