@@ -12,14 +12,23 @@ import {getRoomsWithPagination} from "../schema/global/rooms";
 import {getParentUnit, getUnitByName} from "../schema/roomdetails/units";
 import {checkAPICall} from "./lib/checkedAPICalls";
 import {
-	singleCAS,
 	reqRegexp,
 	roomNameRegexp,
+	singleCAS,
 	textRegexp,
 	unitNameRegexp,
 	validateCASList,
 	validateCommaSeparatedNumbers
 } from "./lib/lhdValidators";
+import * as express from "express";
+import {Request} from "express";
+import {restAuthenticate} from "./lib/restAuthentication";
+import {getPrismaForUser} from "../libs/auditablePrisma";
+import {configFromDotEnv} from "../libs/config";
+import { errorHandler } from "./lib/errorHandler";
+
+export function makeRESTAPI() {
+	const app = express();
 
 	app.use(restAuthenticate);
 	app.use((req: Request, _res, next) => {
@@ -500,4 +509,5 @@ import {
 			});
 			res.json({Message: "Ok", Data: result});
 		});
+	return app;
 }

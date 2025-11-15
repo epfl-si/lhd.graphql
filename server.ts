@@ -13,7 +13,6 @@ import {ApolloServer} from "@apollo/server";
 import {expressMiddleware} from "@as-integrations/express5";
 import {getBearerToken} from "./libs/authentication";
 import {makeRESTAPI} from "./api/authorizations";
-import {errorHandler} from "./api/lib/errorHandler";
 import {getErrorMessage} from "./utils/GraphQLErrors";
 import {getPrismaForUser} from "./libs/auditablePrisma";
 import {BackendConfig} from "./libs/config";
@@ -80,7 +79,6 @@ export async function makeServer(
 		});
 	});
 
-	makeRESTAPI(app,{ prisma: basePrisma });
 
 	app.use('/',
 		expressMiddleware(server, {
@@ -92,8 +90,7 @@ export async function makeServer(
 		})
 	);
 
-	// The error-handling middleware must be registered after all other routes and middleware, at the end
-	app.use(errorHandler); //TODO move it into makeRESTAPI
+	app.use(makeRESTAPI());
 
 	return httpServer;
 }

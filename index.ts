@@ -1,5 +1,6 @@
-import { makeServer, configFromDotEnv } from './server';
+import {makeServer} from './server';
 import * as dns from 'dns';
+import {configFromDotEnv} from "./libs/config";
 // Otherwise localhost is [::1], but unfortunately docker doesn't believe in ipv6
 dns.setDefaultResultOrder('ipv4first');
 
