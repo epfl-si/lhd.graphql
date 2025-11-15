@@ -42,7 +42,7 @@ export async function getUserInfoFromAPI(username: string) {
 	let userEmail = '';
 	let sciper = '';
 	const ldapUsers = await getUsersFromApi(username);
-	const ldapUser = ldapUsers["persons"].filter(u => u.account && u.account.username == username);
+	const ldapUser = ldapUsers && ldapUsers["persons"] ? ldapUsers["persons"].filter(u => u.account && u.account.username == username) : [];
 	if (ldapUser.length == 1) {
 		userFullName = ldapUser[0].display;
 		userEmail = ldapUser[0].email;
