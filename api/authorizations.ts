@@ -516,5 +516,8 @@ export function makeRESTAPI() {
 			});
 			res.json({Message: "Ok", Data: result});
 		});
+
+	app.use(errorHandler);
+
 	return app;
 }
