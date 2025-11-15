@@ -29,60 +29,6 @@ export async function makeServer(
 	{ insecure, onQuery }: TestInjections = {}
 ) {
 	const app = express();
-	const clientOptions: Prisma.PrismaClientOptions = {};
-	if (onQuery) {
-		if (! clientOptions.log) clientOptions.log = [];
-		clientOptions.log.push({ level: 'query', emit: 'event' });
-	}
-		if (debug.enabled('prisma:query')) {
-		if (! clientOptions.log) clientOptions.log = [];
-		clientOptions.log.push('query');
-	}
-
-	const basePrisma = new PrismaClient();
-
-	function getPrismaForUser(user) {
-		return basePrisma.$extends({
-			query: {
-				async $allOperations({ model, operation, args, query }) {
-					let newValue = {};
-					if (['create', 'update', 'delete', 'deleteMany'].includes(operation)) {
-						const oldValue = operation === 'create' ? null : await basePrisma[model].findMany({ where: args.where });
-						newValue = await query(args);
-						try {
-							const source = operation === "create" ? newValue : (operation == 'deleteMany' ? null : oldValue[0]);
-							const key = source ? Object.keys(source).find(k => k.startsWith("id")) : undefined;
-							const id = key ? source[key] : 0;
-							await basePrisma['mutation_logs'].create({
-								data: {
-									modified_by: user.preferred_username,
-									modified_on: new Date(),
-									table_name: model,
-									table_id: id,
-									column_name: '',
-									old_value: oldValue ? JSON.stringify(oldValue) : '',
-									new_value: ['delete','deleteMany'].includes(operation) ? '' : JSON.stringify(newValue),
-									action: operation.toUpperCase()
-								}
-							});
-						} catch ( e ) {
-							console.log(`Log not in the DB ${e.message}`);
-						}
-					} else {
-						newValue = await query(args);
-					}
-					return newValue;
-				},
-			},
-			datasources: { db: { url: config.LHD_DB_URL } },
-			...clientOptions,
-		});
-	}
-
-	if (onQuery) {
-		(basePrisma as any).$on('query', onQuery);
-	}
-
 	const httpServer = http.createServer(app);
 
 	interface Context {
