@@ -150,24 +150,17 @@ async function getLoggedInUserInfos(req): Promise<loginResponse> {
 		userinfo.canEditAuthorizations = userinfo.isAdmin || userinfo.isManager;
 		userinfo.canListPersons = userinfo.isAdmin || userinfo.isManager;
 
-				return {
-					loggedIn: true,
-					user: userinfo,
-					httpCode: 200,
-					message: 'Correct access rights and token are working, user logged in.',
-				};
-			}
-			throw new Error('Wrong access rights');
-		} catch (e: any) {
-			throw new Error('Unauthorized');
-		}
+		return {
+			user: userinfo,
+			httpCode: 200,
+			message: 'Correct access rights and token are working, user logged in.',
+		};
 	}
 
 	const matched = getBearerToken(req);
 	if (!matched) {
 		return {
 			user: undefined,
-			loggedIn: false,
 			httpCode: 401,
 			message: `Unauthorized`
 		};
