@@ -65,7 +65,7 @@ export const ChemicalsWithPaginationQuery = extendType({
 			async resolve(parent, args, context) {
 				const queryArray = args.search.split("&");
 				const dictionary = queryArray.map(query => query.split("="));
-				return await getChemicalWithPagination(dictionary, args.take, args.skip, context);
+				return await getChemicalWithPagination(dictionary, args.take, args.skip, context.prisma);
 			}
 		});
 	},
@@ -170,8 +170,8 @@ export const ChemicalMutations = extendType({
 	}
 });
 
-export async function createChemical(args, context) {
-	return await context.prisma.$transaction(async (tx) => {
+export async function createChemical(args, {prisma, user}) {
+	return await prisma.$transaction(async (tx) => {
 
 		await tx.auth_chem.create({
 			data: {
@@ -185,7 +185,7 @@ export async function createChemical(args, context) {
 	});
 }
 
-export async function getChemicalWithPagination(whereConditionsDict, take, skip, context) {
+export async function getChemicalWithPagination(whereConditionsDict, take, skip, prisma) {
 	const whereCondition = [];
 	if (whereConditionsDict.length == 0) {
 		whereCondition.push({ cas_auth_chem: { contains: '' }})
@@ -202,7 +202,7 @@ export async function getChemicalWithPagination(whereConditionsDict, take, skip,
 		})
 	}
 
-	const chemicalList = await context.prisma.auth_chem.findMany({
+	const chemicalList = await prisma.auth_chem.findMany({
 		where: {
 			AND: whereCondition
 		},

@@ -97,7 +97,7 @@ export function makeRESTAPI() {
 									return {id: parseInt(r), status: "New"};
 								}),
 						}
-						const add = await createAuthorization(args, context);
+						const add = await createAuthorization(args, args.id_unit, req.prisma);
 						if (add.isSuccess)
 							res.json({Message: "Ok"});
 						else {
@@ -119,7 +119,7 @@ export function makeRESTAPI() {
 							type: "Chemical"
 						}
 
-						const resultForAuth = await getAuthorization(argsRenew, context);
+						const resultForAuth = await getAuthorization(argsRenew, req.prisma);
 						if ( resultForAuth.totalCount === 1 ) {
 							const encryptedID = IDObfuscator.obfuscate({
 								id: resultForAuth.authorizations[0].id_authorization,
@@ -131,7 +131,7 @@ export function makeRESTAPI() {
 								status: "Active",
 								renewals: parseInt(reqParts[2])
 							};
-							const resultRenew = await updateAuthorization(argsUpdate, context)
+							const resultRenew = await updateAuthorization(argsUpdate, req.prisma)
 							if ( resultRenew.isSuccess )
 								res.json({Message: "Ok"});
 							else
@@ -154,7 +154,7 @@ export function makeRESTAPI() {
 							cas_auth_chem: req.query.cas as string,
 							flag_auth_chem: (req.query.auth as string).toLowerCase() == 'yes' || (req.query.auth as string) == '1'
 						}
-						const resultNewChem = await createChemical(argsChem, context);
+						const resultNewChem = await createChemical(argsChem, req);
 						if ( resultNewChem.isSuccess )
 							res.json({Message: "Ok"});
 						else {
@@ -189,7 +189,7 @@ export function makeRESTAPI() {
 							search: `Holder=${sciper}`,
 							type: "Chemical"
 						}
-						const result = await getAuthorizationsWithPagination(argsCheck, context);
+						const result = await getAuthorizationsWithPagination(argsCheck, req.prisma);
 						const casResult = result.authorizations
 							.filter(auth => auth.expiration_date > new Date())
 							.flatMap(auth => auth.authorization_has_chemical)
@@ -255,7 +255,7 @@ export function makeRESTAPI() {
 					return {id: r, status: "New"};
 				}),
 			}
-			const add = await createAuthorization(args, context);
+			const add = await createAuthorization(args, args.id_unit, req.prisma);
 			if ( add.isSuccess )
 				res.json({Message: "Ok"});
 			else {
@@ -288,7 +288,7 @@ export function makeRESTAPI() {
 				type: "Chemical"
 			}
 
-			const resultForAuth = await getAuthorization(argsRenew, context);
+			const resultForAuth = await getAuthorization(argsRenew, req.prisma);
 			if ( resultForAuth.totalCount === 1 ) {
 				const encryptedID = IDObfuscator.obfuscate({
 					id: resultForAuth.authorizations[0].id_authorization,
@@ -300,7 +300,7 @@ export function makeRESTAPI() {
 					status: "Active",
 					renewals: parseInt(reqParts[2])
 				};
-				const resultRenew = await updateAuthorization(argsUpdate, context)
+				const resultRenew = await updateAuthorization(argsUpdate, req.prisma)
 				if ( resultRenew.isSuccess )
 					res.json({Message: "Ok"});
 				else
@@ -336,7 +336,7 @@ export function makeRESTAPI() {
 				cas_auth_chem: req.params.cas as string,
 				flag_auth_chem: (req.params.auth as string).toLowerCase() == 'yes' || (req.params.auth as string) == '1' //TODO move into validator
 			}
-			const resultNewChem = await createChemical(argsChem, context);
+			const resultNewChem = await createChemical(argsChem, req);
 			if ( resultNewChem.isSuccess )
 				res.json({Message: "Ok"});
 			else {
@@ -359,7 +359,7 @@ export function makeRESTAPI() {
 		async (req: Request<GetChemParams>, res) => {
 			const cas = req.params.cas as string;
 
-			const resultNew = await getChemicalWithPagination([], 0, 0, context);
+			const resultNew = await getChemicalWithPagination([], 0, 0, req.prisma);
 			const all = resultNew.chemicals.map(chem => {
 				return {
 					cas_auth_chem: chem.cas_auth_chem,
@@ -398,7 +398,7 @@ export function makeRESTAPI() {
 				search: `Holder=${sciper}`,
 				type: "Chemical"
 			}
-			const result = await getAuthorizationsWithPagination(argsCheck, context);
+			const result = await getAuthorizationsWithPagination(argsCheck, req.prisma);
 			const casResult = result.authorizations
 				.filter(auth => auth.expiration_date > new Date())
 				.flatMap(auth => auth.authorization_has_chemical)
@@ -437,13 +437,13 @@ export function makeRESTAPI() {
 				search: conditions.join('&'),
 				take: 0
 			};
-			const resultNew = await getRoomsWithPagination(args, context);
+			const resultNew = await getRoomsWithPagination(args, req.prisma);
 			for ( let i = 0; i<resultNew.rooms.length; i++) {
 				for ( let j = 0; j<resultNew.rooms[i].unit_has_room.length; j++) {
 					resultNew.rooms[i].unit_has_room[j].realID = resultNew.rooms[i].unit_has_room[j].id_unit;
 					if ( resultNew.rooms[i].unit_has_room[j].unit.unitId == null) {
 						const parentName = resultNew.rooms[i].unit_has_room[j].unit.name.substring(0, resultNew.rooms[i].unit_has_room[j].unit.name.indexOf(' ('));
-						const parent = await getParentUnit(parentName, context);
+						const parent = await getParentUnit(parentName, req.prisma);
 						resultNew.rooms[i].unit_has_room[j].realID = parent.length > 0 ? parent[0].id : null;
 					}
 				}
@@ -480,7 +480,7 @@ export function makeRESTAPI() {
 			const args = {
 				search: req.params.unit,
 			};
-			const resultNew = await getUnitByName(args, context);
+			const resultNew = await getUnitByName(args, req.prisma);
 			const unitMap: { [unit: string]: {unit: string, id_unit: number, sciper: string[], sciper_cosec: string[], rooms: string[] }; } = {};
 			resultNew.forEach(unit => {
 				const unitName = unit.name.split(' (')[0];

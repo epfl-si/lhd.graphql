@@ -270,13 +270,13 @@ export const RoomsWithPaginationQuery = extendType({
 			},
 			authorize: (parent, args, context) => context.user.canListRooms,
 			async resolve(parent, args, context) {
-				return await getRoomsWithPagination(args, context);
+				return await getRoomsWithPagination(args, context.prisma);
 			}
 		});
 	},
 });
 
-export async function getRoomsWithPagination(args, context) {
+export async function getRoomsWithPagination(args, prisma) {
 	const queryArray = args.search.split("&");
 	const dictionary = queryArray.map(query => query.split("="));
 	const whereCondition = [];
@@ -351,7 +351,7 @@ export async function getRoomsWithPagination(args, context) {
 		})
 	}
 
-	const roomsList = await context.prisma.Room.findMany({
+	const roomsList = await prisma.Room.findMany({
 		where: {
 			AND: whereCondition
 		},

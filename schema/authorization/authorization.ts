@@ -130,7 +130,7 @@ export const AuthorizationsWithPaginationQuery = extendType({
 			},
 			authorize: (parent, args, context) => context.user.canListAuthorizations,
 			async resolve(parent, args, context) {
-				return await getAuthorizationsWithPagination(args, context);
+				return await getAuthorizationsWithPagination(args, context.prisma);
 			}
 		});
 	},
@@ -234,7 +234,13 @@ export const AuthorizationMutations = extendType({
 			type: "AuthorizationStatus",
 			authorize: (parent, args, context) => context.user.canEditAuthorizations,
 			async resolve(root, args, context) {
-				return await createAuthorization(args, context);
+
+				const id = IDObfuscator.getId(args.id_unit);
+				const idDeobfuscatedForUnit = IDObfuscator.getIdDeobfuscated(id);
+				const unit = await context.prisma.Unit.findUnique({where: {id: idDeobfuscatedForUnit}})
+				if (!unit) throw new Error(`Authorization not created`);
+
+				return await createAuthorization(args, unit.id, context.prisma);
 			}
 		});
 		t.nonNull.field('updateAuthorization', {
@@ -243,7 +249,7 @@ export const AuthorizationMutations = extendType({
 			type: "AuthorizationStatus",
 			authorize: (parent, args, context) => context.user.canEditAuthorizations,
 			async resolve(root, args, context) {
-				return await updateAuthorization(args, context);
+				return await updateAuthorization(args, context.prisma);
 			}
 		});
 		t.nonNull.field('deleteAuthorization', {
@@ -277,7 +283,7 @@ export const AuthorizationMutations = extendType({
 	}
 });
 
-async function checkRelations(tx, context, args, authorization) {
+async function checkRelations(tx, args, authorization) {
 	if (args.holders) {
 		for ( const holder of args.holders ) {
 			if ( holder.status == 'New' ) {
@@ -405,17 +411,8 @@ async function checkRelations(tx, context, args, authorization) {
 	}
 }
 
-export async function createAuthorization(args, context) {
-	let unitId = parseInt(args.id_unit);
-	if (!['SNOW', 'CATALYSE'].includes(context.user.preferred_username)) {
-		const id = IDObfuscator.getId(args.id_unit);
-		const idDeobfuscatedForUnit = IDObfuscator.getIdDeobfuscated(id);
-		const unit = await context.prisma.Unit.findUnique({where: {id: idDeobfuscatedForUnit}})
-		if (!unit) throw new Error(`Authorization not created`);
-		unitId = unit.id;
-	}
-
-	return await context.prisma.$transaction(async (tx) => {
+export async function createAuthorization(args, unitId, prisma) {
+	return await prisma.$transaction(async (tx) => {
 		const date = args.creation_date ?? (new Date()).toLocaleDateString("en-GB");
 		const [dayCrea, monthCrea, yearCrea] = date.split("/").map(Number);
 		const [day, month, year] = args.expiration_date.split("/").map(Number);
@@ -432,13 +429,13 @@ export async function createAuthorization(args, context) {
 			}
 		});
 
-		await checkRelations(tx, context, args, authorization);
+		await checkRelations(tx, args, authorization);
 		return mutationStatusType.success();
 	});
 }
 
-export async function updateAuthorization(args, context) {
-	return await context.prisma.$transaction(async (tx) => {
+export async function updateAuthorization(args, prisma) {
+	return await prisma.$transaction(async (tx) => {
 		const id = IDObfuscator.getId(args.id);
 		const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
 		const auth = await tx.authorization.findUnique({where: {id_authorization: idDeobfuscated}});
@@ -462,7 +459,7 @@ export async function updateAuthorization(args, context) {
 		if (args.id_unit) {
 			const idunit = IDObfuscator.getId(args.id_unit);
 			const idDeobfuscatedForUnit = IDObfuscator.getIdDeobfuscated(idunit);
-			const unit = await context.prisma.Unit.findUnique({where: {id: idDeobfuscatedForUnit}})
+			const unit = await prisma.Unit.findUnique({where: {id: idDeobfuscatedForUnit}})
 			if ( !unit ) {
 				throw new Error(`Authorization not updated`);
 			}
@@ -474,12 +471,12 @@ export async function updateAuthorization(args, context) {
 				data: data
 			});
 
-		await checkRelations(tx, context, args, updatedAuthorization);
+		await checkRelations(tx, args, updatedAuthorization);
 		return mutationStatusType.success();
 	});
 }
 
-export async function getAuthorizationsWithPagination(args, context) {
+export async function getAuthorizationsWithPagination(args, prisma) {
 	const queryArray = args.search.split("&");
 	const dictionary = queryArray.map(query => query.split("="));
 	const whereCondition = [];
@@ -523,7 +520,7 @@ export async function getAuthorizationsWithPagination(args, context) {
 		})
 	}
 
-	const authorizationList = await context.prisma.authorization.findMany({
+	const authorizationList = await prisma.authorization.findMany({
 		where: {
 			AND: whereCondition
 		},
@@ -542,12 +539,12 @@ export async function getAuthorizationsWithPagination(args, context) {
 }
 
 
-export async function getAuthorization(args, context) {
+export async function getAuthorization(args, prisma) {
 	const whereCondition = [];
 	whereCondition.push({ type: args.type})
 	whereCondition.push({ authorization: args.search })
 
-	const authorizationList = await context.prisma.authorization.findMany({
+	const authorizationList = await prisma.authorization.findMany({
 		where: {
 			AND: whereCondition
 		},

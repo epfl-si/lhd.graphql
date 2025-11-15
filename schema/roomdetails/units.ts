@@ -484,14 +484,14 @@ export const UnitFullTextQuery = extendType({
 			},
 			authorize: (parent, args, context) => context.user.canListUnits,
 			async resolve(parent, args, context) {
-				return await getUnitByName(args, context);
+				return await getUnitByName(args, context.prisma);
 			}
 		})
 	},
 })
 
-export async function getUnitByName(args, context) {
-	return await context.prisma.Unit.findMany({
+export async function getUnitByName(args, prisma) {
+	return await prisma.Unit.findMany({
 		where: {
 			OR: [
 				{ name: { contains: args.search }},
@@ -508,8 +508,8 @@ export async function getUnitByName(args, context) {
 	});
 }
 
-export async function getParentUnit(nameParent: string, context) {
-	return await context.prisma.Unit.findMany({
+export async function getParentUnit(nameParent: string, prisma) {
+	return await prisma.Unit.findMany({
 		where: {name: nameParent},
 		orderBy: [
 			{
