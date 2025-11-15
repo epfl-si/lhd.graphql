@@ -21,12 +21,15 @@ import {
 	validateCommaSeparatedNumbers
 } from "./lib/lhdValidators";
 
-export function makeRESTAPI(app, context) {
+	app.use(restAuthenticate);
+	app.use((req: Request, _res, next) => {
+		req.prisma = getPrismaForUser(configFromDotEnv(), req.user);
+
+		next();
+	});
+
 	app.use('/api', (req, res, next) => {
 		console.log(`API CALL - [${getNow()}] - ${req.method} - ${req.protocol}://${req.hostname}${req.originalUrl}`);
-
-		context.user = req.user;
-		context.prisma = req.prisma;
 
 		//TODO delete when Catalyse can change the call
 		if (req.url.indexOf(".php") > -1) {

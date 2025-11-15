@@ -1,8 +1,5 @@
-import {Prisma, PrismaClient} from '@prisma/client';
-import {debug} from 'debug';
+import {Prisma} from '@prisma/client';
 import {ApolloServerPluginDrainHttpServer} from '@apollo/server/plugin/drainHttpServer';
-
-import * as dotenv from 'dotenv';
 import * as express from 'express';
 import * as http from 'http';
 import * as cors from 'cors';
@@ -14,7 +11,7 @@ import {loginResponse, UserInfo} from './serverTypes';
 import * as path from "node:path";
 import {ApolloServer} from "@apollo/server";
 import {expressMiddleware} from "@as-integrations/express5";
-import {getToken, VALID_TOKENS_FOR_API} from "./libs/authentication";
+import {getBearerToken} from "./libs/authentication";
 import {makeRESTAPI} from "./api/authorizations";
 import {errorHandler} from "./api/lib/errorHandler";
 import {getErrorMessage} from "./utils/GraphQLErrors";
@@ -52,25 +49,14 @@ export async function makeServer(
 	app.use(express.json({ limit: '50mb' }));
 	app.use(cors());
 
-	if (! insecure) {
-		app.use(async function (req: any, res, next) {
-			try {
-				var loginResponse = await getLoggedInUserInfos(req);
-				req.user = loginResponse.user;
-				req.prisma = getPrismaForUser(req.user);
-
-				if (req.method === 'POST' && !isHarmless(req) && !loginResponse.loggedIn) {
-					res.status(loginResponse.httpCode);
-					res.send(loginResponse.message);
-				} else {
-					next();
-				}
-			} catch (e) {
-				console.error(e, e.stack);
-				res.status(e.message == 'Unauthorized' ? 403 : 500);
-				res.send(`GraphQL Error: ${e}`);
+	async function authenticate(req) {
+		var loginResponse = await getLoggedInUserInfos(req);
+		if (!insecure) {
+			if ( req.method === 'POST' && !isHarmless(req) && !loginResponse.user ) {
+				throw new Error('Unauthorized');
 			}
-		});
+		}
+		return loginResponse.user;
 	}
 
 	app.get('/graphiql', async (req, res) => {
@@ -99,8 +85,8 @@ export async function makeServer(
 	app.use('/',
 		expressMiddleware(server, {
 			context: async ( { req } ) => {
-				const user = req.user;
-				const prisma = getPrismaForUser(user);
+				const user = await authenticate(req);
+				const prisma = getPrismaForUser(config, user, {onQuery});
 				return { prisma, user };
 			}
 		})
@@ -140,37 +126,32 @@ async function getLoggedInUserInfos(req): Promise<loginResponse> {
 		const issuer_ = await issuer();
 		const client = new issuer_.Client({ client_id: 'LHDv3 server' });
 
-		try {
-			let userinfo: UserInfo;
-			const apiUser = Object.keys(VALID_TOKENS_FOR_API).find(k => VALID_TOKENS_FOR_API[k] === access_token) || null;
-			if (apiUser == null) {
-				userinfo = await client.userinfo(access_token);
-			} else {
-				userinfo = {
-					preferred_username: apiUser,
-					groups:[]
-				};
-			}
-			const allowedGroups = process.env.ALLOWED_GROUPS.split(',');
-			console.log('Logged in', userinfo);
-			console.log('Allowed groups', allowedGroups);
-			if ((userinfo.groups && userinfo.groups.some(e => allowedGroups.includes(e)) || apiUser != null)) {
-				userinfo.isAdmin = userinfo.groups.indexOf(process.env.ADMIN_GROUP) > -1;
-				userinfo.isManager = userinfo.groups.indexOf(process.env.LHD_GROUP) > -1;
-				userinfo.isCosec = userinfo.groups.indexOf(process.env.COSEC_GROUP) > -1;
-				userinfo.canListRooms = userinfo.isAdmin || userinfo.isManager || ['SNOW'].includes(userinfo.preferred_username);
-				userinfo.canEditRooms = userinfo.isAdmin || userinfo.isManager;
-				userinfo.canListHazards = userinfo.isAdmin || userinfo.isManager;
-				userinfo.canEditHazards = userinfo.isAdmin || userinfo.isManager;
-				userinfo.canListUnits = userinfo.isAdmin || userinfo.isManager || ['SNOW'].includes(userinfo.preferred_username);
-				userinfo.canEditUnits = userinfo.isAdmin || userinfo.isManager;
-				userinfo.canListOrganisms = userinfo.isAdmin || userinfo.isManager || userinfo.isCosec;
-				userinfo.canEditOrganisms = userinfo.isAdmin || userinfo.isManager;
-				userinfo.canListChemicals = userinfo.isAdmin || userinfo.isManager || ['SNOW'].includes(userinfo.preferred_username);
-				userinfo.canEditChemicals = userinfo.isAdmin || userinfo.isManager || ['SNOW'].includes(userinfo.preferred_username);
-				userinfo.canListAuthorizations = userinfo.isAdmin || userinfo.isManager || ['CATALYSE'].includes(userinfo.preferred_username);
-				userinfo.canEditAuthorizations = userinfo.isAdmin || userinfo.isManager || ['SNOW'].includes(userinfo.preferred_username);
-				userinfo.canListPersons = userinfo.isAdmin || userinfo.isManager;
+		let userinfo: UserInfo;
+		userinfo = await client.userinfo(access_token);
+		const allowedGroups = process.env.ALLOWED_GROUPS.split(',');
+		console.log('Logged in', userinfo);
+		console.log('Allowed groups', allowedGroups);
+
+		if (!(userinfo.groups && userinfo.groups.some(e => allowedGroups.includes(e)))) {
+			throw new Error('Wrong access rights');
+		}
+
+		userinfo.isAdmin = userinfo.groups.indexOf(process.env.ADMIN_GROUP) > -1;
+		userinfo.isManager = userinfo.groups.indexOf(process.env.LHD_GROUP) > -1;
+		userinfo.isCosec = userinfo.groups.indexOf(process.env.COSEC_GROUP) > -1;
+		userinfo.canListRooms = userinfo.isAdmin || userinfo.isManager;
+		userinfo.canEditRooms = userinfo.isAdmin || userinfo.isManager;
+		userinfo.canListHazards = userinfo.isAdmin || userinfo.isManager;
+		userinfo.canEditHazards = userinfo.isAdmin || userinfo.isManager;
+		userinfo.canListUnits = userinfo.isAdmin || userinfo.isManager;
+		userinfo.canEditUnits = userinfo.isAdmin || userinfo.isManager;
+		userinfo.canListOrganisms = userinfo.isAdmin || userinfo.isManager || userinfo.isCosec;
+		userinfo.canEditOrganisms = userinfo.isAdmin || userinfo.isManager;
+		userinfo.canListChemicals = userinfo.isAdmin || userinfo.isManager;
+		userinfo.canEditChemicals = userinfo.isAdmin || userinfo.isManager;
+		userinfo.canListAuthorizations = userinfo.isAdmin || userinfo.isManager;
+		userinfo.canEditAuthorizations = userinfo.isAdmin || userinfo.isManager;
+		userinfo.canListPersons = userinfo.isAdmin || userinfo.isManager;
 
 				return {
 					loggedIn: true,
@@ -185,7 +166,7 @@ async function getLoggedInUserInfos(req): Promise<loginResponse> {
 		}
 	}
 
-	const matched = getToken(req);
+	const matched = getBearerToken(req);
 	if (!matched) {
 		return {
 			user: undefined,
