@@ -29,6 +29,12 @@ import { errorHandler } from "./lib/errorHandler";
 
 export function makeRESTAPI() {
 	const app = express();
+	type AuthRenewParams = any; //TODO
+	type AddChemParams = any; //TODO
+	type GetChemParams = any; //TODO
+	type AuthCheckParams = any; //TODO
+	type GetLabsAndUnitsParams = any; //TODO
+	type GetProfsAndCosecsParams = any; //TODO
 
 	app.use(restAuthenticate);
 	app.use((req: Request, _res, next) => {
@@ -51,7 +57,7 @@ export function makeRESTAPI() {
 
 
 	//TODO delete when Catalyse and SNOW can change their calls
-	app.post("/api/snow.php", async (req, res) => {
+	app.post("/api/snow.php", async (req: any, res) => {
 		try {
 			const method = req.query.m as string;
 			const request = req.query.req as string;
@@ -165,7 +171,7 @@ export function makeRESTAPI() {
 			res.status(500).json({Message: err.message});
 		}
 	});
-	app.get("/api/catalyse.php", async (req, res) => {
+	app.get("/api/catalyse.php", async (req: any, res) => {
 		try {
 			switch (req.query.m as string) {
 				case "auth_check":
@@ -210,6 +216,7 @@ export function makeRESTAPI() {
 		}
 	});
 
+	type AuthReqParams = {id_unit: number, req: string, date: Date, scipers: number[], cas: string[], room_ids: number[]};
 	app.post("/api/auth_req",
 		checkAPICall(
 			{
@@ -231,7 +238,7 @@ export function makeRESTAPI() {
 					cas: validateCASList
 				}
 			}),
-		async (req, res) => {
+		async (req: Request<AuthReqParams>, res) => {
 			const args = {
 				id_unit: req.params.id_unit,
 				authorization: req.params.req,
@@ -271,7 +278,7 @@ export function makeRESTAPI() {
 					date: Date
 				}
 			}),
-		async (req, res) => {
+		async (req: Request<AuthRenewParams>, res) => {
 			const reqParts = req.params.req.split("-");
 			const requestNumber = `${reqParts[0]}-${reqParts[1]}`;
 			const argsRenew = {
@@ -323,7 +330,7 @@ export function makeRESTAPI() {
 					fr (req) { return req.query.fr; }
 				}
 			}),
-		async (req, res) => {
+		async (req: Request<AddChemParams>, res) => {
 			const argsChem = {
 				auth_chem_en: req.params.en as string,
 				cas_auth_chem: req.params.cas as string,
@@ -349,7 +356,7 @@ export function makeRESTAPI() {
 					cas (req) { return req.query.cas; },
 				}
 			}),
-		async (req, res) => {
+		async (req: Request<GetChemParams>, res) => {
 			const cas = req.params.cas as string;
 
 			const resultNew = await getChemicalWithPagination([], 0, 0, context);
@@ -381,7 +388,7 @@ export function makeRESTAPI() {
 					cas: validateCASList
 				}
 			}),
-		async (req, res) => {
+		async (req: Request<AuthCheckParams>, res) => {
 			const sciper = (req.params.sciper as string);
 			const cas = req.params.cas;
 
@@ -422,7 +429,7 @@ export function makeRESTAPI() {
 					room (req) { return req.query.room; },
 				}
 			}),
-		async (req, res) => {
+		async (req: Request<GetLabsAndUnitsParams>, res) => {
 			const conditions = [];
 			if (req.params.unit) conditions.push(req.params.unit as string);
 			if (req.params.room) conditions.push(req.params.room as string);
@@ -469,7 +476,7 @@ export function makeRESTAPI() {
 					unit (req) { return req.query.unit; },
 				}
 			}),
-		async (req, res) => {
+		async (req: Request<GetProfsAndCosecsParams>, res) => {
 			const args = {
 				search: req.params.unit,
 			};
