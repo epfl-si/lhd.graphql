@@ -18,6 +18,8 @@ import {getToken, VALID_TOKENS_FOR_API} from "./libs/authentication";
 import {makeRESTAPI} from "./api/authorizations";
 import {errorHandler} from "./api/lib/errorHandler";
 import {getErrorMessage} from "./utils/GraphQLErrors";
+import {getPrismaForUser} from "./libs/auditablePrisma";
+import {BackendConfig} from "./libs/config";
 
 type TestInjections = {
 	insecure?: boolean;
@@ -108,15 +110,6 @@ export async function makeServer(
 	app.use(errorHandler); //TODO move it into makeRESTAPI
 
 	return httpServer;
-}
-
-type BackendConfig = {
-	LHD_DB_URL: string;
-};
-
-export function configFromDotEnv(): BackendConfig {
-	dotenv.config();
-	return process.env as BackendConfig;
 }
 
 /**
