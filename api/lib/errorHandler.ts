@@ -9,6 +9,7 @@ export function errorHandler(
 	res: Response,
 	next: NextFunction
 ): void {
+	console.error("API error: ", err);
 	const message = err instanceof Error ? err.message : 'Internal Server Error';
 	res.status(500).json({error: message});
 }
