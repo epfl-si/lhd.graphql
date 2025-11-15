@@ -154,7 +154,7 @@ export const ConnectedUserInfoQuery = extendType({
 			async resolve(parent, args, context) {
 				return {
 					groups: context.user.groups,
-					userName: context.user.preferred_username,
+					userName: context.user.username,
 					given_name: context.user.given_name,
 					family_name: context.user.family_name,
 					//...cans(['EditHazardForms', 'EdtHazards', ...])

@@ -197,7 +197,7 @@ export const RoomHazardMutations = extendType({
 							id_lab: room.id
 						}});
 					if (additionalInfoResult) {
-						const userInfo = await getUserInfoFromAPI(context.user.preferred_username);
+						const userInfo = await getUserInfoFromAPI(context.user.username);
 						await tx.lab_has_hazards_additional_info.update(
 							{ where: { id_lab_has_hazards_additional_info: additionalInfoResult.id_lab_has_hazards_additional_info },
 								data: {
@@ -208,7 +208,7 @@ export const RoomHazardMutations = extendType({
 								}
 							});
 					} else {
-						const userInfo = await getUserInfoFromAPI(context.user.preferred_username);
+						const userInfo = await getUserInfoFromAPI(context.user.username);
 						await tx.lab_has_hazards_additional_info.create({
 							data: {
 								modified_by: `${userInfo.userFullName} (${userInfo.sciper})`,
@@ -230,7 +230,7 @@ export const RoomHazardMutations = extendType({
 						})
 					})
 
-					await sendEmailsForHazards(context.user.preferred_username, args, room, cosecs, tx);
+					await sendEmailsForHazards(context.user.username, args, room, cosecs, tx);
 
 					return mutationStatusType.success();
 				});

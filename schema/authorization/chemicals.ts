@@ -124,7 +124,7 @@ export const ChemicalMutations = extendType({
 							}
 						});
 
-					await sendEmailsForChemical(context.user.preferred_username, tx);
+					await sendEmailsForChemical(context.user.username, tx);
 					return mutationStatusType.success();
 				});
 			}
@@ -162,7 +162,7 @@ export const ChemicalMutations = extendType({
 					await tx.auth_chem.delete({ where: { id_auth_chem: chem.id_auth_chem }});
 
 					//TODO delete authorizations?
-					await sendEmailsForChemical(context.user.preferred_username, tx);
+					await sendEmailsForChemical(context.user.username, tx);
 					return mutationStatusType.success();
 				});
 			}
@@ -180,7 +180,7 @@ export async function createChemical(args, {prisma, user}) {
 				flag_auth_chem: args.flag_auth_chem
 			}
 		});
-		await sendEmailsForChemical(context.user.preferred_username, tx);
+		await sendEmailsForChemical(user.username, tx);
 		return mutationStatusType.success();
 	});
 }

@@ -5,7 +5,7 @@ export type UserInfo = {
 	given_name?: string;
 	family_name?: string;
 	groups: string[];
-	preferred_username: string;
+	username: string;
 	canEditHazards?: boolean;
 	canEditRooms?: boolean;
 	canListUnits?: boolean;
@@ -23,7 +23,6 @@ export type UserInfo = {
 };
 
 export type loginResponse = {
-	loggedIn: boolean;
 	user: object;
 	httpCode: number;
 	message: string;

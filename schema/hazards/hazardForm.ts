@@ -137,7 +137,7 @@ export const HazardFormMutations = extendType({
 								form: args.form,
 								version: args.version,
 								id_hazard_form: form.id_hazard_form,
-								modified_by: context.user.preferred_username,
+								modified_by: context.user.username,
 								modified_on: new Date()
 							}
 						});
@@ -175,7 +175,7 @@ export const HazardFormMutations = extendType({
 								form: args.form,
 								version: args.version,
 								id_hazard_form: form.id_hazard_form,
-								modified_by: context.user.preferred_username,
+								modified_by: context.user.username,
 								modified_on: new Date()
 							}
 						});
