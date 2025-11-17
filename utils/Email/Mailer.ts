@@ -80,10 +80,12 @@ export async function sendEmailsForHazards(user: string,
 	console.log(created || deleted)
 	if (process.env.HAZARD_TYPES_TO_EMAIL_AFTER_UPDATE.includes(args.category) && (created || deleted)) {
 		const userInfo = await getUserInfoFromAPI(user);
-		await sendEmailCAE(userInfo.userFullName, userInfo.userEmail, args.room,
-			logAction(created, deleted), args.category, args.additionalInfo.comment);
-		await sendEmailCosec(userInfo.userFullName, userInfo.userEmail, args.room,
-			logAction(created, deleted), args.category, cosecs);
+		if (userInfo.userEmail !== '') {
+			await sendEmailCAE(userInfo.userFullName, userInfo.userEmail, args.room,
+				logAction(created, deleted), args.category, args.additionalInfo.comment);
+			await sendEmailCosec(userInfo.userFullName, userInfo.userEmail, args.room,
+				logAction(created, deleted), args.category, cosecs);
+		}
 	}
 }
 
@@ -108,13 +110,15 @@ export async function sendEmailsForChemical(user: string, tx: any) {
 
 	const csv: string = chemicals.map(chem => `${chem.cas_auth_chem},"${chem.auth_chem_en}"`).join('\n');
 
-	await mailer.sendMail({
-		from: `"No Reply" <${process.env.SMTP_USER}>`,
-		to: process.env.ENVIRONMENT == 'prod' ? process.env.CATALYSE_EMAIL : userInfo.userEmail,
-		subject: template.subject,
-		html: process.env.ENVIRONMENT == 'prod' ? template.body : `${logRecipients([process.env.CATALYSE_EMAIL], [], [] )}\n${template.body}`,
-		attachments: [{raw: ["Content-Type: text/csv; charset=utf-8", `Content-Disposition: attachment; filename="chemicals-${getFormattedDate()}.csv"`, "", csv].join("\r\n"),}]
-	});
+	if (userInfo.userEmail !== '') {
+		await mailer.sendMail({
+			from: `"No Reply" <${process.env.SMTP_USER}>`,
+			to: process.env.ENVIRONMENT == 'prod' ? process.env.CATALYSE_EMAIL : userInfo.userEmail,
+			subject: template.subject,
+			html: process.env.ENVIRONMENT == 'prod' ? template.body : `${logRecipients([process.env.CATALYSE_EMAIL], [], [])}\n${template.body}`,
+			attachments: [{raw: ["Content-Type: text/csv; charset=utf-8", `Content-Disposition: attachment; filename="chemicals-${getFormattedDate()}.csv"`, "", csv].join("\r\n"),}]
+		});
+	}
 }
 
 function getFormattedDate() {
