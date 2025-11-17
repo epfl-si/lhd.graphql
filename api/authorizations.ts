@@ -12,7 +12,7 @@ import {getRoomsWithPagination} from "../schema/global/rooms";
 import {getParentUnit, getUnitByName} from "../schema/roomdetails/units";
 import {checkAPICall} from "./lib/checkedAPICalls";
 import {
-	reqRegexp,
+	reqRegexp, reqRenewRegexp,
 	roomNameRegexp,
 	singleCAS,
 	textRegexp,
@@ -29,12 +29,6 @@ import { errorHandler } from "./lib/errorHandler";
 
 export function makeRESTAPI() {
 	const app = express();
-	type AuthRenewParams = any; //TODO
-	type AddChemParams = any; //TODO
-	type GetChemParams = any; //TODO
-	type AuthCheckParams = any; //TODO
-	type GetLabsAndUnitsParams = any; //TODO
-	type GetProfsAndCosecsParams = any; //TODO
 
 	app.use(restAuthenticate);
 	app.use((req: Request, _res, next) => {
@@ -265,6 +259,7 @@ export function makeRESTAPI() {
 		}
 	);
 
+	type AuthRenewParams = {req: string, date: Date};
 	app.post("/api/auth_renew",
 		checkAPICall(
 			{
@@ -274,7 +269,7 @@ export function makeRESTAPI() {
 					date (req) { return req.query.date; }
 				},
 				validate: {
-					req: reqRegexp,
+					req: reqRenewRegexp,
 					date: Date
 				}
 			}),
@@ -311,6 +306,7 @@ export function makeRESTAPI() {
 		}
 	);
 
+	type AddChemParams = {cas: string, en: string, auth: 'yes' | 'no' | 1 | 0, fr?: string};
 	app.post("/api/add_chem",
 		checkAPICall(
 			{
@@ -332,8 +328,8 @@ export function makeRESTAPI() {
 			}),
 		async (req: Request<AddChemParams>, res) => {
 			const argsChem = {
-				auth_chem_en: req.params.en as string,
-				cas_auth_chem: req.params.cas as string,
+				auth_chem_en: req.params.en,
+				cas_auth_chem: req.params.cas,
 				flag_auth_chem: (req.params.auth as string).toLowerCase() == 'yes' || (req.params.auth as string) == '1' //TODO move into validator
 			}
 			const resultNewChem = await createChemical(argsChem, req);
@@ -345,6 +341,7 @@ export function makeRESTAPI() {
 			}
 	});
 
+	type GetChemParams = {cas?: string[]};
 	app.get("/api/get_chem",
 		checkAPICall(
 			{
@@ -357,8 +354,6 @@ export function makeRESTAPI() {
 				}
 			}),
 		async (req: Request<GetChemParams>, res) => {
-			const cas = req.params.cas as string;
-
 			const resultNew = await getChemicalWithPagination([], 0, 0, req.prisma);
 			const all = resultNew.chemicals.map(chem => {
 				return {
@@ -367,14 +362,15 @@ export function makeRESTAPI() {
 					flag_auth_chem: chem.flag_auth_chem
 				}
 			});
-			if ( cas ) {
-				const data = all.filter(chem => cas.includes(chem.cas_auth_chem));
+			if ( req.params.cas ) {
+				const data = all.filter(chem => req.params.cas.includes(chem.cas_auth_chem));
 				res.json({Message: "Ok", Data: data});
 			} else {
 				res.json({Message: "Ok", Data: all});
 			}
 		});
 
+	type AuthCheckParams = {cas: string[], sciper: Number};
 	app.get("/api/auth_check",
 		checkAPICall(
 			{
@@ -389,13 +385,10 @@ export function makeRESTAPI() {
 				}
 			}),
 		async (req: Request<AuthCheckParams>, res) => {
-			const sciper = (req.params.sciper as string);
-			const cas = req.params.cas;
-
 			const argsCheck = {
 				take: 0,
 				skip: 0,
-				search: `Holder=${sciper}`,
+				search: `Holder=${req.params.sciper}`,
 				type: "Chemical"
 			}
 			const result = await getAuthorizationsWithPagination(argsCheck, req.prisma);
@@ -406,7 +399,7 @@ export function makeRESTAPI() {
 				.filter(chem => chem.flag_auth_chem == 1)
 				.flatMap(cas => cas.cas_auth_chem);
 			const casAuth = {};
-			cas.forEach(c => {
+			req.params.cas.forEach(c => {
 				if ( casResult.includes(c) ) {
 					casAuth[c] = 1;
 				} else {
@@ -416,6 +409,7 @@ export function makeRESTAPI() {
 			res.json({Message: "Ok", Data: [casAuth]});
 		});
 
+	type GetLabsAndUnitsParams = {unit?: string, room?: string};
 	app.get("/api/get_labs_and_units",
 		checkAPICall(
 			{
@@ -431,8 +425,8 @@ export function makeRESTAPI() {
 			}),
 		async (req: Request<GetLabsAndUnitsParams>, res) => {
 			const conditions = [];
-			if (req.params.unit) conditions.push(req.params.unit as string);
-			if (req.params.room) conditions.push(req.params.room as string);
+			if (req.params.unit) conditions.push(`Unit=${req.params.unit}`);
+			if (req.params.room) conditions.push(`Room=${req.params.room}`);
 			const args = {
 				search: conditions.join('&'),
 				take: 0
@@ -451,12 +445,12 @@ export function makeRESTAPI() {
 			const all = resultNew.rooms.map(r => {
 				return {
 					id_lab: r.id,
-					id_unit: r.unit_has_room.map(uhr => uhr.realID),
+					units: r.unit_has_room.filter(uhr => uhr.unit.name.indexOf(req.params.unit ?? '') > -1).map(uhr => uhr.realID),
 					lab_display: r.name
 				}
 			});
 			const flatted = all.flatMap(item =>
-				item.id_unit.map(unit => ({
+				item.units.map(unit => ({
 					id_lab: item.id_lab,
 					id_unit: unit,
 					lab_display: item.lab_display
@@ -465,6 +459,7 @@ export function makeRESTAPI() {
 			res.json({Message: "Ok", Data: flatted});
 		});
 
+	type GetProfsAndCosecsParams = {unit?: string};
 	app.get("/api/get_profs_and_cosecs",
 		checkAPICall(
 			{
