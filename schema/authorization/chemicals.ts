@@ -4,6 +4,7 @@ import {auth_chem} from "nexus-prisma";
 import {mutationStatusType} from "../statuses";
 import {getSHA256} from "../../utils/HashingTools";
 import {sendEmailsForChemical} from "../../utils/Email/Mailer";
+import {createChemical, getChemicalWithPagination} from "../../controllers/chemicals";
 
 export const ChemicalStruct = objectType({
 	name: auth_chem.$name,
@@ -94,7 +95,8 @@ export const ChemicalMutations = extendType({
 			type: "ChemicalStatus",
 			authorize: (parent, args, context) => context.user.canEditChemicals,
 			async resolve(root, args, context) {
-				return await createChemical(args, context);
+				await createChemical(args, context);
+				return mutationStatusType.success();
 			}
 		});
 		t.nonNull.field('updateChemical', {
@@ -169,52 +171,3 @@ export const ChemicalMutations = extendType({
 		});
 	}
 });
-
-export async function createChemical(args, {prisma, user}) {
-	return await prisma.$transaction(async (tx) => {
-
-		await tx.auth_chem.create({
-			data: {
-				cas_auth_chem: args.cas_auth_chem,
-				auth_chem_en: args.auth_chem_en,
-				flag_auth_chem: args.flag_auth_chem
-			}
-		});
-		await sendEmailsForChemical(user.username, tx);
-		return mutationStatusType.success();
-	});
-}
-
-export async function getChemicalWithPagination(whereConditionsDict, take, skip, prisma) {
-	const whereCondition = [];
-	if (whereConditionsDict.length == 0) {
-		whereCondition.push({ cas_auth_chem: { contains: '' }})
-	} else {
-		whereConditionsDict.forEach(query => {
-			const value = decodeURIComponent(query[1]);
-			if (query[0] == 'CAS') {
-				whereCondition.push({ cas_auth_chem: { contains: value }})
-			} else if (query[0] == 'Name') {
-				whereCondition.push({ auth_chem_en : { contains: value }})
-			} else if (query[0] == 'Status') {
-				whereCondition.push({ flag_auth_chem : value == 'Active' })
-			}
-		})
-	}
-
-	const chemicalList = await prisma.auth_chem.findMany({
-		where: {
-			AND: whereCondition
-		},
-		orderBy: [
-			{
-				cas_auth_chem: 'asc',
-			},
-		]
-	});
-
-	const chemicals = take == 0 ? chemicalList : chemicalList.slice(skip, skip + take);
-	const totalCount = chemicalList.length;
-
-	return { chemicals, totalCount };
-}

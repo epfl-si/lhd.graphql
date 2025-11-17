@@ -4,11 +4,13 @@ import {InstituteStruct} from './institutes';
 import {PersonStruct} from "../global/people";
 import {Person} from "@prisma/client";
 import {mutationStatusType} from "../statuses";
-import {id, IDObfuscator} from "../../utils/IDObfuscator";
+import {IDObfuscator} from "../../utils/IDObfuscator";
 import {getSHA256} from "../../utils/HashingTools";
 import {getUnitsFromApi} from "../../utils/CallAPI";
 import * as path from "node:path";
 import * as fs from "fs";
+import {findOrCreatePerson} from "../../controllers/persons";
+import {deleteUnit, getUnitByName} from "../../controllers/units";
 
 export const UnitStruct = objectType({
 	name: Unit.$name,
@@ -184,22 +186,6 @@ const unitDeleteType = {
 	id: stringArg()
 };
 
-async function findOrCreatePerson(tx, context, sciperId, firstName, lastName, email): Promise<Person> {
-	let p = await tx.Person.findUnique({ where: { sciper: sciperId }});
-
-	if (!p) {
-		p = await tx.Person.create({
-			data: {
-				name: firstName,
-				surname: lastName,
-				sciper: sciperId,
-				email: email
-			}
-		});
-	}
-	return p;
-}
-
 export const UnitMutations = extendType({
 	type: 'Mutation',
 	definition(t) {
@@ -239,7 +225,7 @@ export const UnitMutations = extendType({
 									});
 								}
 
-								const responsible: Person = await findOrCreatePerson(tx, context,  unit.responsibleId, unit.responsibleFirstName, unit.responsibleLastName, unit.responsibleEmail);
+								const responsible: Person = await findOrCreatePerson(tx, unit.responsibleId, unit.responsibleFirstName, unit.responsibleLastName, unit.responsibleEmail);
 
 								const u = await tx.Unit.create({
 									data: {
@@ -293,7 +279,7 @@ export const UnitMutations = extendType({
 
 					for (const person of args.profs) {
 						if (person.status == 'New') {
-							const p: Person = await findOrCreatePerson(tx, context, person.person.sciper, person.person.name, person.person.surname, person.person.email);
+							const p: Person = await findOrCreatePerson(tx, person.person.sciper, person.person.name, person.person.surname, person.person.email);
 							const newSubunpro = {
 								id_person: p.id_person,
 								id_unit: unit.id
@@ -317,7 +303,7 @@ export const UnitMutations = extendType({
 
 					for (const person of args.cosecs) {
 						if (person.status == 'New') {
-							const p: Person = await findOrCreatePerson(tx, context, person.person.sciper, person.person.name, person.person.surname, person.person.email);
+							const p: Person = await findOrCreatePerson(tx, person.person.sciper, person.person.name, person.person.surname, person.person.email);
 							const relationUnitCosec = {
 								id_person: p.id_person,
 								id_unit: unit.id
@@ -384,54 +370,6 @@ export const UnitMutations = extendType({
 	}
 });
 
-async function deleteUnit(tx, context, u:Unit) {
-		await tx.aa.deleteMany({
-			where: {
-				id_unit: u.id,
-			}
-		});
-
-		await tx.unit_has_cosec.deleteMany({
-			where: {
-				id_unit: u.id,
-			}
-		});
-
-		await tx.unit_has_room.deleteMany({
-			where: {
-				id_unit: u.id,
-			}
-		});
-
-		await tx.subunpro.deleteMany({
-			where: {
-				id_unit: u.id,
-			},
-		});
-
-		await tx.unit_has_storage_for_room.deleteMany({
-			where: {
-				id_unit: u.id,
-			},
-		});
-
-		const subUnitList = await tx.Unit.findMany({
-			where: {
-				name: { startsWith: u.name },
-				id: { not: u.id }
-			}
-		});
-		for await (const subUnit of subUnitList) {
-			await deleteUnit(tx, context, subUnit);
-		}
-
-		await tx.Unit.delete({
-			where: {
-				id: u.id,
-			},
-		});
-}
-
 export const UnitsWithPaginationStruct = objectType({
 	name: 'UnitsWithPagination',
 	definition(t) {
@@ -490,34 +428,6 @@ export const UnitFullTextQuery = extendType({
 	},
 })
 
-export async function getUnitByName(args, prisma) {
-	return await prisma.Unit.findMany({
-		where: {
-			OR: [
-				{ name: { contains: args.search }},
-				{ institute : { name: { contains: args.search } }},
-				{ institute : { school: { name: { contains: args.search } } }},
-			]
-		},
-		include: { unit_has_cosec: { include: { cosec: true } }, subunpro: { include: { person: true } }, institute: { include: { school: true } }, unit_has_room: { include: true } },
-		orderBy: [
-			{
-				name: 'asc',
-			},
-		]
-	});
-}
-
-export async function getParentUnit(nameParent: string, prisma) {
-	return await prisma.Unit.findMany({
-		where: {name: nameParent},
-		orderBy: [
-			{
-				name: 'asc',
-			},
-		]
-	});
-}
 export const UnitFromAPI = objectType({
 	name: "UnitFromAPI",
 	definition(t) {

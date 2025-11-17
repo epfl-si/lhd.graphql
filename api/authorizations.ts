@@ -1,18 +1,10 @@
 import {getNow} from "../libs/date";
-import {
-	createAuthorization,
-	getAuthorization,
-	getAuthorizationsWithPagination,
-	getAuthorizationToString,
-	updateAuthorization
-} from "../schema/authorization/authorization";
-import {createChemical, getChemicalWithPagination} from "../schema/authorization/chemicals";
+import {getAuthorizationToString,} from "../schema/authorization/authorization";
 import {IDObfuscator} from "../utils/IDObfuscator";
-import {getRoomsWithPagination} from "../schema/global/rooms";
-import {getParentUnit, getUnitByName} from "../schema/roomdetails/units";
 import {checkAPICall} from "./lib/checkedAPICalls";
 import {
-	reqRegexp, reqRenewRegexp,
+	reqRegexp,
+	reqRenewRegexp,
 	roomNameRegexp,
 	singleCAS,
 	textRegexp,
@@ -25,7 +17,16 @@ import {Request} from "express";
 import {restAuthenticate} from "./lib/restAuthentication";
 import {getPrismaForUser} from "../libs/auditablePrisma";
 import {configFromDotEnv} from "../libs/config";
-import { errorHandler } from "./lib/errorHandler";
+import {errorHandler} from "./lib/errorHandler";
+import {
+	createAuthorization,
+	getAuthorization,
+	getAuthorizationsWithPagination,
+	updateAuthorization
+} from "../controllers/authorization";
+import {createChemical, getChemicalWithPagination} from "../controllers/chemicals";
+import {getRoomsWithPagination} from "../controllers/rooms";
+import {getParentUnit, getUnitByName} from "../controllers/units";
 
 export function makeRESTAPI() {
 	const app = express();
@@ -91,13 +92,8 @@ export function makeRESTAPI() {
 									return {id: parseInt(r), status: "New"};
 								}),
 						}
-						const add = await createAuthorization(args, args.id_unit, req.prisma);
-						if (add.isSuccess)
-							res.json({Message: "Ok"});
-						else {
-							const error = add.errors.map(err => err.message).join(', ');
-							res.json({Message: error});
-						}
+						await createAuthorization(args, args.id_unit, req.prisma);
+						res.json({Message: "Ok"});
 					}
 					break;
 				case "auth_renew":
@@ -125,11 +121,8 @@ export function makeRESTAPI() {
 								status: "Active",
 								renewals: parseInt(reqParts[2])
 							};
-							const resultRenew = await updateAuthorization(argsUpdate, req.prisma)
-							if ( resultRenew.isSuccess )
-								res.json({Message: "Ok"});
-							else
-								res.json({Message: resultRenew.errors.map(err => err.message).join(', ')});
+							await updateAuthorization(argsUpdate, req.prisma)
+							res.json({Message: "Ok"});
 						} else {
 							return res.status(404).json({Message: "Could not find parent authorisation"});
 						}
@@ -148,13 +141,8 @@ export function makeRESTAPI() {
 							cas_auth_chem: req.query.cas as string,
 							flag_auth_chem: (req.query.auth as string).toLowerCase() == 'yes' || (req.query.auth as string) == '1'
 						}
-						const resultNewChem = await createChemical(argsChem, req);
-						if ( resultNewChem.isSuccess )
-							res.json({Message: "Ok"});
-						else {
-							const error = resultNewChem.errors.map(err => err.message).join(', ');
-							res.json({Message: error});
-						}
+						await createChemical(argsChem, req);
+						res.json({Message: "Ok"});
 					}
 					break;
 				default:
@@ -210,6 +198,7 @@ export function makeRESTAPI() {
 		}
 	});
 
+
 	type AuthReqParams = {id_unit: number, req: string, date: Date, scipers: number[], cas: string[], room_ids: number[]};
 	app.post("/api/auth_req",
 		checkAPICall(
@@ -249,13 +238,8 @@ export function makeRESTAPI() {
 					return {id: r, status: "New"};
 				}),
 			}
-			const add = await createAuthorization(args, args.id_unit, req.prisma);
-			if ( add.isSuccess )
-				res.json({Message: "Ok"});
-			else {
-				const error = add.errors.map(err => err.message).join(', ');
-				res.json({Message: error});
-			}
+			await createAuthorization(args, args.id_unit, req.prisma);
+			res.json({Message: "Ok"});
 		}
 	);
 
@@ -295,11 +279,8 @@ export function makeRESTAPI() {
 					status: "Active",
 					renewals: parseInt(reqParts[2])
 				};
-				const resultRenew = await updateAuthorization(argsUpdate, req.prisma)
-				if ( resultRenew.isSuccess )
-					res.json({Message: "Ok"});
-				else
-					res.json({Message: resultRenew.errors.map(err => err.message).join(', ')});
+				await updateAuthorization(argsUpdate, req.prisma)
+				res.json({Message: "Ok"});
 			} else {
 				return res.status(404).json({Message: "Could not find parent authorisation"});
 			}
@@ -332,13 +313,8 @@ export function makeRESTAPI() {
 				cas_auth_chem: req.params.cas,
 				flag_auth_chem: (req.params.auth as string).toLowerCase() == 'yes' || (req.params.auth as string) == '1' //TODO move into validator
 			}
-			const resultNewChem = await createChemical(argsChem, req);
-			if ( resultNewChem.isSuccess )
-				res.json({Message: "Ok"});
-			else {
-				const error = resultNewChem.errors.map(err => err.message).join(', ');
-				res.json({Message: error});
-			}
+			await createChemical(argsChem, req);
+			res.json({Message: "Ok"});
 	});
 
 	type GetChemParams = {cas?: string[]};
