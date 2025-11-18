@@ -93,7 +93,7 @@ export async function getRoomsWithPagination(args, prisma) {
 export async function deleteRoom(tx, context, r:Room) {
 	const where = { where: { id_lab: r.id } }
 
-	const bioOrg = await context.prisma.bio.findMany({ where: { id_lab: r.id } });
+	const bioOrg = await context.prisma.bio.findMany(where);
 	for ( const h of bioOrg ) {
 		await tx.bio_org_lab.deleteMany({
 			where: {
@@ -102,7 +102,7 @@ export async function deleteRoom(tx, context, r:Room) {
 		});
 	}
 
-	const hazards = await context.prisma.lab_has_hazards.findMany({ where: { id_lab: r.id } });
+	const hazards = await context.prisma.lab_has_hazards.findMany(where);
 	for ( const h of hazards ) {
 		await tx.lab_has_hazards_child.deleteMany({
 			where: {
@@ -111,13 +111,26 @@ export async function deleteRoom(tx, context, r:Room) {
 		});
 	}
 
-	const dewar = await context.prisma.dewar.findMany({ where: { id_lab: r.id } });
+	const dewar = await context.prisma.dewar.findMany(where);
 	for ( const d of dewar ) {
 		await tx.cryo.deleteMany({
 			where: {
 				id_dewar: d.id_dewar
 			}
 		});
+	}
+
+	const auth = await context.prisma.authorization_has_room.findMany(where);
+	for ( const a of auth ) {
+		const date = (new Date()).toLocaleDateString("en-GB");
+		const [dayCrea, monthCrea, yearCrea] = date.split("/").map(Number);
+		await tx.authorization.update(
+			{ where: { id_authorization: a.id_authorization },
+				data: {
+					status: 'Expired',
+					expiration_date: new Date(yearCrea, monthCrea - 1, dayCrea, 12),
+				}
+			});
 	}
 
 	await tx.aa.deleteMany(where);
@@ -144,9 +157,7 @@ export async function deleteRoom(tx, context, r:Room) {
 	await tx.tdegree.deleteMany(where);
 	await tx.unit_has_room.deleteMany(where);
 	await tx.unit_has_storage_for_room.deleteMany(where);
-	//await tx.authorization_has_room.deleteMany(where); We don't delete authorizations
 
-	// TODO change status to authorization
 	await tx.DispensationInRoomRelation.deleteMany({
 		where: {
 			id_room: r.id
