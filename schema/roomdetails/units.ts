@@ -105,17 +105,8 @@ export const UnitQuery = extendType({
 	type: 'Query',
 	definition(t) {
 		t.crud.units({ filtering: true,
+			authorize: (parent, args, context) => context.user.canListUnits,
 			resolve: async (root, args, context, info, originalResolve) => {
-				// Ensure user is authenticated
-				if (!context.user) {
-					throw new Error('Unauthorized');
-				}
-
-				// Check if user has the right to access rooms (customize this logic)
-				if (!context.user.canListUnits) {
-					throw new Error('Permission denied');
-				}
-
 				// Call the original resolver if user is authorized
 				return originalResolve(root, args, context, info);
 			} });

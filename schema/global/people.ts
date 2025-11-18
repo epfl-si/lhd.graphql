@@ -35,17 +35,8 @@ export const PersonQuery = extendType({
   type: 'Query',
   definition(t) {
     t.crud.people({ filtering: true,
+			authorize: (parent, args, context) => context.user.canListPersons,
 			resolve: async (root, args, context, info, originalResolve) => {
-				// Ensure user is authenticated
-				if (!context.user) {
-					throw new Error('Unauthorized');
-				}
-
-				// Check if user has the right to access rooms (customize this logic)
-				if (!context.user.canListPersons) {
-					throw new Error('Permission denied');
-				}
-
 				// Call the original resolver if user is authorized
 				return originalResolve(root, args, context, info);
 			} });
