@@ -197,11 +197,11 @@ async function checkRelations(tx, args, authorization) {
 			if ( room.status == 'New' ) {
 				let r = undefined;
 				if ( room.name ) {
-					r = await tx.Room.findFirst({where: {name: room.name}})
+					r = await tx.Room.findFirst({where: {name: room.name, isDeleted: false}})
 				} else if ( room.id ) {
-					r = await tx.Room.findUnique({where: {id: room.id}})
+					r = await tx.Room.findUnique({where: {id: room.id, isDeleted: false}})
 				}
-				if ( !r ) throw new Error(`Authorization not created`);
+				if ( !r ) throw new Error(`Authorization not created: room not found`);
 				const relation = {
 					id_lab: Number(r.id),
 					id_authorization: Number(authorization.id_authorization)

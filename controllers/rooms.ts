@@ -4,10 +4,8 @@ export async function getRoomsWithPagination(args, prisma) {
 	const queryArray = args.search.split("&");
 	const dictionary = queryArray.map(query => query.split("="));
 	const whereCondition = [];
-	if (dictionary.length == 0) {
-		whereCondition.push({ name: { contains: '' }})
-	} else {
-		dictionary.forEach(query => {
+	whereCondition.push({ isDeleted: false });
+	dictionary.forEach(query => {
 			const value = decodeURIComponent(query[1]);
 			if (query[0] == 'Room') {
 				whereCondition.push({ name: { contains: value }})
@@ -73,7 +71,6 @@ export async function getRoomsWithPagination(args, prisma) {
 				})
 			}
 		})
-	}
 
 	const roomsList = await prisma.Room.findMany({
 		where: {
@@ -147,16 +144,19 @@ export async function deleteRoom(tx, context, r:Room) {
 	await tx.tdegree.deleteMany(where);
 	await tx.unit_has_room.deleteMany(where);
 	await tx.unit_has_storage_for_room.deleteMany(where);
+	//await tx.authorization_has_room.deleteMany(where); We don't delete authorizations
 
+	// TODO change status to authorization
 	await tx.DispensationInRoomRelation.deleteMany({
 		where: {
 			id_room: r.id
 		}
 	});
 
-	await tx.Room.delete({
-		where: {
-			id: r.id,
-		},
-	});
+	await tx.Room.update(
+		{ where: { id: r.id },
+			data: {
+				isDeleted: true
+			}
+		});
 }

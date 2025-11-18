@@ -58,7 +58,8 @@ export const RoomStruct = objectType({
 			'vol',
 			'vent',
 			'site',
-			'lab_type_is_different'
+			'lab_type_is_different',
+			'isDeleted'
 		]) {
 			t.field(Room[f]);
 		}
@@ -218,7 +219,8 @@ function getRoomToString(parent) {
 		location: parent.location,
 		vol: parent.vol,
 		vent:	parent.vent,
-		name:	parent.name
+		name:	parent.name,
+		isDeleted: parent.isDeleted
 	};
 }
 
