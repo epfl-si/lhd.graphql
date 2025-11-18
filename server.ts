@@ -136,6 +136,7 @@ async function getLoggedInUserInfos(req): Promise<loginResponse> {
 		userinfo.isAdmin = userinfo.groups.indexOf(process.env.ADMIN_GROUP) > -1;
 		userinfo.isManager = userinfo.groups.indexOf(process.env.LHD_GROUP) > -1;
 		userinfo.isCosec = userinfo.groups.indexOf(process.env.COSEC_GROUP) > -1;
+
 		userinfo.canListRooms = userinfo.isAdmin || userinfo.isManager;
 		userinfo.canEditRooms = userinfo.isAdmin || userinfo.isManager;
 		userinfo.canListHazards = userinfo.isAdmin || userinfo.isManager;
