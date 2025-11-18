@@ -510,6 +510,7 @@ model Room {
   lab_has_hazards           lab_has_hazards[]
   lab_has_hazards_additional_info lab_has_hazards_additional_info[]
   authorization_has_room      authorization_has_room[]
+  isDeleted                   Boolean                      @default(false)
 
   @@unique([building, sector, floor, roomNo], name: "unique_lab", map: "unique_lab")
   @@unique([sciper_lab, building, sector, floor, roomNo], name: "unique_labo", map: "unique_labo")
