@@ -20,7 +20,7 @@ import {configFromDotEnv} from "../libs/config";
 import {errorHandler} from "./lib/errorHandler";
 import {
 	createAuthorization,
-	getAuthorization,
+	getTheAuthorization,
 	getAuthorizationsWithPagination,
 	updateAuthorization
 } from "../model/authorization";
@@ -103,29 +103,18 @@ export function makeRESTAPI() {
 						const reqParts = request.split("-");
 						const requestNumber = `${reqParts[0]}-${reqParts[1]}`;
 						const argsRenew = {
-							take: 0,
-							skip: 0,
 							search: requestNumber,
 							type: "Chemical"
 						}
 
-						const resultForAuth = await getAuthorization(argsRenew, req.prisma);
-						if ( resultForAuth.totalCount === 1 ) {
-							const encryptedID = IDObfuscator.obfuscate({
-								id: resultForAuth.authorizations[0].id_authorization,
-								obj: getAuthorizationToString(resultForAuth.authorizations[0])
-							});
-							const argsUpdate = {
-								id: JSON.stringify(encryptedID),
-								expiration_date: (new Date(expirationDate)).toLocaleDateString("en-GB"),
-								status: "Active",
-								renewals: parseInt(reqParts[2])
-							};
-							await updateAuthorization(argsUpdate, req.prisma)
-							res.json({Message: "Ok"});
-						} else {
-							return res.status(404).json({Message: "Could not find parent authorisation"});
-						}
+						const auth = await getTheAuthorization(argsRenew, req.prisma);
+						const argsUpdate = {
+							expiration_date: (new Date(expirationDate)).toLocaleDateString("en-GB"),
+							status: "Active",
+							renewals: parseInt(reqParts[2])
+						};
+						await updateAuthorization(argsUpdate, auth, req.prisma)
+						res.json({Message: "Ok"});
 					}
 					break;
 				case "auth_chem":
@@ -261,29 +250,18 @@ export function makeRESTAPI() {
 			const reqParts = req.params.req.split("-");
 			const requestNumber = `${reqParts[0]}-${reqParts[1]}`;
 			const argsRenew = {
-				take: 0,
-				skip: 0,
 				search: requestNumber,
 				type: "Chemical"
 			}
 
-			const resultForAuth = await getAuthorization(argsRenew, req.prisma);
-			if ( resultForAuth.totalCount === 1 ) {
-				const encryptedID = IDObfuscator.obfuscate({
-					id: resultForAuth.authorizations[0].id_authorization,
-					obj: getAuthorizationToString(resultForAuth.authorizations[0])
-				});
-				const argsUpdate = {
-					id: JSON.stringify(encryptedID),
-					expiration_date: (new Date(req.params.date)).toLocaleDateString("en-GB"),
-					status: "Active",
-					renewals: parseInt(reqParts[2])
-				};
-				await updateAuthorization(argsUpdate, req.prisma)
-				res.json({Message: "Ok"});
-			} else {
-				return res.status(404).json({Message: "Could not find parent authorisation"});
-			}
+			const auth = await getTheAuthorization(argsRenew, req.prisma);
+			const argsUpdate = {
+				expiration_date: (new Date(req.params.date)).toLocaleDateString("en-GB"),
+				status: "Active",
+				renewals: parseInt(reqParts[2])
+			};
+			await updateAuthorization(argsUpdate, auth, req.prisma)
+			res.json({Message: "Ok"});
 		}
 	);
 

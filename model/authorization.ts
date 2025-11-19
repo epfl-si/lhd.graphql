@@ -25,19 +25,14 @@ export async function createAuthorization(args, unitId, prisma) {
 	});
 }
 
-export async function updateAuthorization(args, prisma) {
-	return await prisma.$transaction(async (tx) => {
-		const id = IDObfuscator.getId(args.id);
-		const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
-		const auth = await tx.authorization.findUnique({where: {id_authorization: idDeobfuscated}});
-		if (! auth) {
-			throw new Error(`Authorization ${args.authorization} not found.`);
-		}
-		const authorizationObject =  getSHA256(JSON.stringify(getAuthorizationToString(auth)), id.salt);
-		if (IDObfuscator.getDataSHA256(id) !== authorizationObject) {
-			throw new Error(`Authorization ${args.authorization} has been changed from another user. Please reload the page to make modifications`);
-		}
+export async function updateAuthorization(args, auth, prisma, tx = undefined) {
+	if (tx) {
+		await doUpdateAuthorization(tx);
+	} else {
+		await prisma.$transaction(async (tx) => doUpdateAuthorization(tx));
+	}
 
+	async function doUpdateAuthorization (tx) {
 		const [day, month, year] = args.expiration_date.split("/").map(Number);
 		const newExpDate = new Date(year, month - 1, day, 12);
 		const ren = args.renewals ?? (newExpDate > auth.expiration_date ? (auth.renewals + 1) : auth.renewals);
@@ -48,13 +43,7 @@ export async function updateAuthorization(args, prisma) {
 			renewals: ren
 		}
 		if (args.id_unit) {
-			const idunit = IDObfuscator.getId(args.id_unit);
-			const idDeobfuscatedForUnit = IDObfuscator.getIdDeobfuscated(idunit);
-			const unit = await prisma.Unit.findUnique({where: {id: idDeobfuscatedForUnit}})
-			if ( !unit ) {
-				throw new Error(`Authorization not updated`);
-			}
-			data['id_unit'] = unit.id;
+			data['id_unit'] = args.id_unit;
 		}
 
 		const updatedAuthorization = await tx.authorization.update(
@@ -63,7 +52,7 @@ export async function updateAuthorization(args, prisma) {
 			});
 
 		await checkRelations(tx, args, updatedAuthorization);
-	});
+	}
 }
 
 export async function getAuthorizationsWithPagination(args, prisma) {
@@ -128,7 +117,7 @@ export async function getAuthorizationsWithPagination(args, prisma) {
 	return { authorizations, totalCount };
 }
 
-export async function getAuthorization(args, prisma) {
+export async function getTheAuthorization(args, prisma) {
 	const whereCondition = [];
 	whereCondition.push({ type: args.type})
 	whereCondition.push({ authorization: args.search })
@@ -143,11 +132,13 @@ export async function getAuthorization(args, prisma) {
 			},
 		]
 	});
-
-	const authorizations = args.take == 0 ? authorizationList : authorizationList.slice(args.skip, args.skip + args.take);
-	const totalCount = authorizationList.length;
-
-	return { authorizations, totalCount };
+	if (authorizationList.length === 0) {
+		throw new Error(`No authorization found: ${JSON.stringify(args)}`);
+	} else if (authorizationList.length > 1) {
+		throw new Error(`More than one authorization found: ${authorizationList.map(auth => auth.authorization).join(', ')} for these args: ${JSON.stringify(args)}`);
+	} else {
+		return authorizationList[0];
+	}
 }
 
 async function checkRelations(tx, args, authorization) {

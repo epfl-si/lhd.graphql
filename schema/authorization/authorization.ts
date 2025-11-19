@@ -254,8 +254,27 @@ export const AuthorizationMutations = extendType({
 			type: "AuthorizationStatus",
 			authorize: (parent, args, context) => context.user.canEditAuthorizations,
 			async resolve(root, args, context) {
-				await updateAuthorization(args, context.prisma);
-				return mutationStatusType.success();
+				return await context.prisma.$transaction(async (tx) => {
+					const id = IDObfuscator.getId(args.id);
+					const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
+
+					const auth = await tx.authorization.findUnique({where: {id_authorization: idDeobfuscated}});
+					if ( !auth ) {
+						throw new Error(`Authorization ${args.authorization} not found.`);
+					}
+					const authorizationObject = getSHA256(JSON.stringify(getAuthorizationToString(auth)), id.salt);
+					if ( IDObfuscator.getDataSHA256(id) !== authorizationObject ) {
+						throw new Error(`Authorization ${args.authorization} has been changed from another user. Please reload the page to make modifications`);
+					}
+					const idunit = IDObfuscator.getId(args.id_unit);
+					const idDeobfuscatedForUnit = IDObfuscator.getIdDeobfuscated(idunit);
+					const unit = await tx.Unit.findUnique({where: {id: idDeobfuscatedForUnit}})
+					if ( !unit ) {
+						throw new Error(`Authorization not updated`);
+					}
+					await updateAuthorization({ ...args, id_unit: idDeobfuscatedForUnit}, auth, context.prisma, tx);
+					return mutationStatusType.success();
+				});
 			}
 		});
 		t.nonNull.field('deleteAuthorization', {
