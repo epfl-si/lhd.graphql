@@ -26,8 +26,7 @@ export function restAuthenticate(req: Request, res, next) {
 }
 
 export function getTokenFromQueryString(req: Request): string {
-	if (req.query.token) return String(req.query.token);
-	else return undefined;
+	return req.query.token ? String(req.query.token) : undefined;
 }
 
 export function getToken(req: Request): string {
