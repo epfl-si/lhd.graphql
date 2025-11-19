@@ -38,10 +38,10 @@
             src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
     ></script>
     <script
-            src="https://unpkg.com/graphiql/graphiql.min.js"
+            src="https://unpkg.com/graphiql@1.8.5/graphiql.min.js"
             type="application/javascript"
     ></script>
-    <link rel="stylesheet" href="https://unpkg.com/graphiql/graphiql.min.css" />
+    <link rel="stylesheet" href="https://unpkg.com/graphiql@1.8.5/graphiql.min.css" />
     <!--
       These are imports for the GraphIQL Explorer plugin.
      -->
@@ -103,12 +103,12 @@
     const headers = {
         accept: 'application/json'
     };
-    const fetcher = GraphiQL.createFetcher({
-        url: '/',
+    const fetcher = window.GraphiQL.createFetcher({
+        url: '/graphql',
         headers: headers,
     });
     root.render(
-        React.createElement(GraphiQL, {
+        React.createElement(window.GraphiQL, {
             fetcher,
             defaultEditorToolsVisibility: true,
         }),
@@ -121,7 +121,7 @@
         button.id = 'auth-button';
         button.setAttribute("class", 'btn btn-primary login');
         aDivForReact.appendChild(button);
-        toolbar.insertAdjacentElement('beforeend', aDivForReact);
+        document.body.insertAdjacentElement('beforeend', aDivForReact);
 
         button.addEventListener("click", function() {
             if (isLoggedIn) {
