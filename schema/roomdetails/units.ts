@@ -9,8 +9,8 @@ import {getSHA256} from "../../utils/HashingTools";
 import {getUnitsFromApi} from "../../utils/CallAPI";
 import * as path from "node:path";
 import * as fs from "fs";
-import {findOrCreatePerson} from "../../controllers/persons";
-import {deleteUnit, getUnitByName} from "../../controllers/units";
+import {findOrCreatePerson} from "../../model/persons";
+import {deleteUnit, getUnitByName} from "../../model/units";
 
 export const UnitStruct = objectType({
 	name: Unit.$name,

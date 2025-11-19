@@ -12,7 +12,7 @@ import {
 	createAuthorization,
 	getAuthorizationsWithPagination,
 	updateAuthorization
-} from "../../controllers/authorization";
+} from "../../model/authorization";
 
 export const AuthorizationStruct = objectType({
 	name: authorization.$name,

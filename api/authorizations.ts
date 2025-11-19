@@ -23,10 +23,10 @@ import {
 	getAuthorization,
 	getAuthorizationsWithPagination,
 	updateAuthorization
-} from "../controllers/authorization";
-import {createChemical, getChemicalWithPagination} from "../controllers/chemicals";
-import {getRoomsWithPagination} from "../controllers/rooms";
-import {getParentUnit, getUnitByName} from "../controllers/units";
+} from "../model/authorization";
+import {createChemical, getChemicalWithPagination} from "../model/chemicals";
+import {getRoomsWithPagination} from "../model/rooms";
+import {getParentUnit, getUnitByName} from "../model/units";
 
 export function makeRESTAPI() {
 	const app = express();

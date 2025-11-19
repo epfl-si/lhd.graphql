@@ -4,7 +4,7 @@ import {auth_chem} from "nexus-prisma";
 import {mutationStatusType} from "../statuses";
 import {getSHA256} from "../../utils/HashingTools";
 import {sendEmailsForChemical} from "../../utils/Email/Mailer";
-import {createChemical, getChemicalWithPagination} from "../../controllers/chemicals";
+import {createChemical, getChemicalWithPagination} from "../../model/chemicals";
 
 export const ChemicalStruct = objectType({
 	name: auth_chem.$name,

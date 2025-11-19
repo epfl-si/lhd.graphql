@@ -16,7 +16,7 @@ import {getSHA256} from "../../utils/HashingTools";
 import {getDoorPlugFromApi, getRoomsFromApi} from "../../utils/CallAPI";
 import {HazardsAdditionalInfoStruct} from "../hazards/hazardsAdditionalInfo";
 import {LabHazardChildStruct} from "../hazards/labHazardChild";
-import {deleteRoom, getRoomsWithPagination} from "../../controllers/rooms";
+import {deleteRoom, getRoomsWithPagination} from "../../model/rooms";
 
 const debug = debug_('lhd:rooms');
 
