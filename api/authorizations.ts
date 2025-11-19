@@ -41,7 +41,7 @@ export function makeRESTAPI() {
 	app.use('/api', (req, res, next) => {
 		console.log(`API CALL - [${getNow()}] - ${req.method} - ${req.protocol}://${req.hostname}${req.originalUrl}`);
 
-		//TODO delete when Catalyse can change the call
+		//TODO delete when Catalyse and SNOW have migrated to the new URLs
 		if (req.url.indexOf(".php") > -1) {
 			const method = req.query.m as string;
 			if (!method) return res.status(404).json({ Message: "missing <m> command (e.g. m=auth_req)." });
@@ -51,7 +51,7 @@ export function makeRESTAPI() {
 	});
 
 
-	//TODO delete when Catalyse and SNOW can change their calls
+	//TODO delete when Catalyse and SNOW have migrated to the new URLs
 	app.post("/api/snow.php", async (req: any, res) => {
 		try {
 			const method = req.query.m as string;
