@@ -38,7 +38,7 @@ export function makeRESTAPI() {
 		next();
 	});
 
-	app.use('/api', (req, res, next) => {
+	app.use('/api', function auditAPI (req, res, next) {
 		console.log(`API CALL - [${getNow()}] - ${req.method} - ${req.protocol}://${req.hostname}${req.originalUrl}`);
 
 		//TODO delete when Catalyse and SNOW have migrated to the new URLs
