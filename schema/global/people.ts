@@ -148,7 +148,6 @@ export const ConnectedUserInfoQuery = extendType({
 					userName: context.user.username,
 					given_name: context.user.given_name,
 					family_name: context.user.family_name,
-					//...cans(['EditHazardForms', 'EdtHazards', ...])
 					canEditHazardForms: context.user.canEditHazardForms,
 					canEditHazards: context.user.canEditHazards,
 					canEditRooms: context.user.canEditRooms,

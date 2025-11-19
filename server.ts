@@ -133,6 +133,9 @@ async function getLoggedInUserInfos(req): Promise<loginResponse> {
 			throw new Error('Wrong access rights');
 		}
 
+		if (!userinfo.username)
+			userinfo.username = userinfo.preferred_username;
+
 		const hasRoleAdmin = userinfo.groups.indexOf(process.env.ADMIN_GROUP) > -1;
 		const hasRoleManager = userinfo.groups.indexOf(process.env.LHD_GROUP) > -1;
 		const hasRoleManagerOrAdmin = hasRoleAdmin || hasRoleManager;

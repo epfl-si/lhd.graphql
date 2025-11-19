@@ -31,7 +31,7 @@ export function getPrismaForUser(config: BackendConfig, user, inject?: TestInjec
 						const id = key ? source[key] : 0;
 						await basePrisma['mutation_logs'].create({
 							data: {
-								modified_by: user.username ?? user.preferred_username,
+								modified_by: user.username,
 								modified_on: new Date(),
 								table_name: model,
 								table_id: id,

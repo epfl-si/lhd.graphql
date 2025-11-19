@@ -6,6 +6,7 @@ export type UserInfo = {
 	family_name?: string;
 	groups: string[];
 	username: string;
+	preferred_username?: string;
 	canEditHazards?: boolean;
 	canEditRooms?: boolean;
 	canListUnits?: boolean;
