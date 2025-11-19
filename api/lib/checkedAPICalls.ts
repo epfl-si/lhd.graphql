@@ -18,9 +18,7 @@ export function checkAPICall({authorize, required, optional, validate} : {
 	validate: { [paramName : string] : ValidatorType },
 }) {
 	return async function(req, res, next) { // Express middleware
-		try {
-			if (!authorize(req)) throw new Error;
-		} catch (e) {
+		if (! await authorize(req)) {
 			res.status(403).json({Message: "Unauthorized"});
 			return;
 		}
