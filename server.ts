@@ -133,23 +133,28 @@ async function getLoggedInUserInfos(req): Promise<loginResponse> {
 			throw new Error('Wrong access rights');
 		}
 
-		userinfo.isAdmin = userinfo.groups.indexOf(process.env.ADMIN_GROUP) > -1;
-		userinfo.isManager = userinfo.groups.indexOf(process.env.LHD_GROUP) > -1;
-		userinfo.isCosec = userinfo.groups.indexOf(process.env.COSEC_GROUP) > -1;
+		const hasRoleAdmin = userinfo.groups.indexOf(process.env.ADMIN_GROUP) > -1;
+		const hasRoleManager = userinfo.groups.indexOf(process.env.LHD_GROUP) > -1;
+		const hasRoleManagerOrAdmin = hasRoleAdmin || hasRoleManager;
+		const hasRoleCosec = userinfo.groups.indexOf(process.env.COSEC_GROUP) > -1;
 
-		userinfo.canListRooms = userinfo.isAdmin || userinfo.isManager;
-		userinfo.canEditRooms = userinfo.isAdmin || userinfo.isManager;
-		userinfo.canListHazards = userinfo.isAdmin || userinfo.isManager;
-		userinfo.canEditHazards = userinfo.isAdmin || userinfo.isManager;
-		userinfo.canListUnits = userinfo.isAdmin || userinfo.isManager;
-		userinfo.canEditUnits = userinfo.isAdmin || userinfo.isManager;
-		userinfo.canListOrganisms = userinfo.isAdmin || userinfo.isManager || userinfo.isCosec;
-		userinfo.canEditOrganisms = userinfo.isAdmin || userinfo.isManager;
-		userinfo.canListChemicals = userinfo.isAdmin || userinfo.isManager;
-		userinfo.canEditChemicals = userinfo.isAdmin || userinfo.isManager;
-		userinfo.canListAuthorizations = userinfo.isAdmin || userinfo.isManager;
-		userinfo.canEditAuthorizations = userinfo.isAdmin || userinfo.isManager;
-		userinfo.canListPersons = userinfo.isAdmin || userinfo.isManager;
+		userinfo.isAdmin = hasRoleAdmin;
+		userinfo.isManager = hasRoleManager;
+		userinfo.isCosec = hasRoleCosec;
+
+		userinfo.canListRooms =
+			userinfo.canEditRooms =
+			userinfo.canListHazards =
+			userinfo.canEditHazards =
+			userinfo.canListUnits =
+			userinfo.canEditUnits =
+			userinfo.canListChemicals =
+			userinfo.canEditChemicals =
+			userinfo.canListAuthorizations =
+			userinfo.canEditAuthorizations =
+			userinfo.canListPersons =
+			userinfo.canEditOrganisms = hasRoleManagerOrAdmin;
+		userinfo.canListOrganisms = hasRoleManagerOrAdmin || hasRoleCosec;
 
 		return {
 			user: userinfo,
