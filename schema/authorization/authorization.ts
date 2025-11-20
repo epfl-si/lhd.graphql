@@ -251,11 +251,11 @@ export const AuthorizationMutations = extendType({
 				return await context.prisma.$transaction(async (tx) => {
 					const auth = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
 						'authorization', 'id_authorization',
-						tx, args.authorization, getAuthorizationToString);
+						tx, 'Authorization', getAuthorizationToString);
 
 					const unit = await IDObfuscator.ensureDBObjectIsTheSame(args.id_unit,
 						'Unit', 'id',
-						tx, args.authorization, getUnitToString);
+						tx, 'Authorization', getUnitToString);
 					await updateAuthorization({ ...args, id_unit: unit.id}, auth, context.prisma, tx);
 					return mutationStatusType.success();
 				});
@@ -270,7 +270,7 @@ export const AuthorizationMutations = extendType({
 				return await context.prisma.$transaction(async (tx) => {
 					const auth = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
 						'authorization', 'id_authorization',
-						tx, args.authorization, getAuthorizationToString);
+						tx, 'Authorization', getAuthorizationToString);
 
 					await tx.authorization_has_room.deleteMany({ where: { id_authorization: auth.id_authorization }});
 					await tx.authorization_has_chemical.deleteMany({ where: { id_authorization: auth.id_authorization }});
