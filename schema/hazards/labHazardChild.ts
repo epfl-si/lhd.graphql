@@ -49,9 +49,7 @@ export function getLabHasHazardChildToString(parent) {
 }
 
 export async function updateHazardFormChild(child: submission, tx: any, context: any, room: string, parentHazard: number) {
-	if ( child.id == undefined || child.id.eph_id == undefined || child.id.eph_id == '' || child.id.salt == undefined || child.id.salt == '' ) {
-		throw new Error(`Not allowed to update hazards child`);
-	}
+	IDObfuscator.checkId(child.id);
 
 	const formChild = await tx.hazard_form_child.findFirst({where: {hazard_form_child_name: child.formName}});
 	const historyChildLastVersion = await tx.hazard_form_child_history.findFirst({
@@ -70,23 +68,14 @@ export async function updateHazardFormChild(child: submission, tx: any, context:
 			}
 		})
 	} else if ( !child.id.eph_id.startsWith('newHazardChild') ) {
-		if ( !IDObfuscator.checkSalt(child.id) ) {
-			throw new Error(`Bad descrypted request`);
-		}
-		const id = IDObfuscator.deobfuscateId(child.id);
-		const hazardsChildInRoom = await tx.lab_has_hazards_child.findUnique({where: {id_lab_has_hazards_child: id}});
-		if ( !hazardsChildInRoom ) {
-			throw new Error(`Hazard child not found.`);
-		}
-		const labHasHazardChildObject = getSHA256(JSON.stringify(getLabHasHazardChildToString(hazardsChildInRoom)), child.id.salt);
-		if ( IDObfuscator.getDataSHA256(child.id) !== labHasHazardChildObject ) {
-			throw new Error(`Hazard child has been changed from another user. Please reload the page to make modifications`);
-		}
+		const haz = await IDObfuscator.getObjectByObfuscatedId(child.id,
+			'lab_has_hazards_child', 'id_lab_has_hazards_child',
+			tx, 'Hazard', getLabHasHazardChildToString);
 
 		if ( child.submission.data['status'] == 'Default' ) {
 			await tx.lab_has_hazards_child.update(
 				{
-					where: {id_lab_has_hazards_child: id},
+					where: {id_lab_has_hazards_child: haz.id_lab_has_hazards_child},
 					data: {
 						id_hazard_form_child_history: historyChildLastVersion.id_hazard_form_child_history,
 						submission: JSON.stringify(child.submission)
@@ -95,7 +84,7 @@ export async function updateHazardFormChild(child: submission, tx: any, context:
 		} else if ( child.submission.data['status'] == 'Deleted' ) {
 			await tx.lab_has_hazards_child.delete({
 				where: {
-					id_lab_has_hazards_child: id
+					id_lab_has_hazards_child: haz.id_lab_has_hazards_child
 				}
 			});
 			const lab_has_hazardsList = await tx.lab_has_hazards_child.findMany({where: {id_lab_has_hazards: parentHazard}});
@@ -398,30 +387,13 @@ export const HazardChildMutations = extendType({
 			authorize: (parent, args, context) => context.user.canEditHazards,
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
-					if (!args.id) {
-						throw new Error(`Not allowed to delete hazard child`);
-					}
-					const id: id = JSON.parse(args.id);
-					if (id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
-						throw new Error(`Not allowed to delete hazard child`);
-					}
-
-					if (!IDObfuscator.checkSalt(id)) {
-						throw new Error(`Bad descrypted request`);
-					}
-					const idDeobfuscated = IDObfuscator.deobfuscateId(id);
-					const child = await tx.lab_has_hazards_child.findUnique({where: {id_lab_has_hazards_child: idDeobfuscated}});
-					if (! child) {
-						throw new Error(`Hazard child not found.`);
-					}
-					const childObject =  getSHA256(JSON.stringify(getLabHasHazardChildToString(child)), id.salt);
-					if (IDObfuscator.getDataSHA256(id) !== childObject) {
-						throw new Error(`Hazard child has been changed from another user. Please reload the page to make modifications`);
-					}
+					const child = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
+						'lab_has_hazards_child', 'id_lab_has_hazards_child',
+						tx, 'Hazard', getLabHasHazardChildToString);
 
 					await tx.lab_has_hazards_child.delete({
 						where: {
-								id_lab_has_hazards_child: idDeobfuscated
+								id_lab_has_hazards_child: child.id_lab_has_hazards_child
 						}
 					});
 					const lab_has_hazardsList = await tx.lab_has_hazards_child.findMany({where: {id_lab_has_hazards: child.id_lab_has_hazards}});

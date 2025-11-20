@@ -92,7 +92,7 @@ is each lowest-level administrative division within central services.`,
 	},
 });
 
-function getUnitToString(parent) {
+export function getUnitToString(parent) {
 	return {
 		id: parent.id,
 		unitId: parent.unitId,
@@ -248,16 +248,9 @@ export const UnitMutations = extendType({
 			authorize: (parent, args, context) => context.user.canEditUnits,
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
-					const id = IDObfuscator.getId(args.id);
-					const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
-					const unit = await tx.Unit.findUnique({where: {id: idDeobfuscated}});
-					if (! unit) {
-						throw new Error(`Unit ${args.unit} not found.`);
-					}
-					const unitObject =  getSHA256(JSON.stringify(getUnitToString(unit)), id.salt);
-					if (IDObfuscator.getDataSHA256(id) !== unitObject) {
-						throw new Error(`Unit ${args.unit} has been changed from another user. Please reload the page to make modifications`);
-					}
+					const unit = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
+						'Unit', 'id',
+						tx, args.unit, getUnitToString);
 
 					if (!unit.unitId) {
 						await tx.Unit.update(
@@ -342,16 +335,9 @@ export const UnitMutations = extendType({
 			authorize: (parent, args, context) => context.user.canEditUnits,
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
-					const id = IDObfuscator.getId(args.id);
-					const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
-					const unit = await tx.Unit.findUnique({where: {id: idDeobfuscated}});
-					if (! unit) {
-						throw new Error(`Unit not found.`);
-					}
-					const unitObject =  getSHA256(JSON.stringify(getUnitToString(unit)), id.salt);
-					if (IDObfuscator.getDataSHA256(id) !== unitObject) {
-						throw new Error(`Unit has been changed from another user. Please reload the page to make modifications`);
-					}
+					const unit = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
+						'Unit', 'id',
+						tx, 'Unit', getUnitToString);
 
 					await deleteUnit(tx, context, unit)
 					return mutationStatusType.success();

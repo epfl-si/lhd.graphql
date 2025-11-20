@@ -116,9 +116,7 @@ export const RoomHazardMutations = extendType({
 					const category = await tx.hazard_category.findFirst({ where: { hazard_category_name: args.category }});
 
 					for ( const h of submissionsHazards ) {
-						if (h.id == undefined || h.id.eph_id == undefined || h.id.eph_id == '' || h.id.salt == undefined || h.id.salt == '') {
-							throw new Error(`Not allowed to update hazards`);
-						}
+						IDObfuscator.checkId(h.id);
 
 						const form = await tx.hazard_form.findFirst({ where: { id_hazard_category: category.id_hazard_category}});
 
@@ -143,22 +141,13 @@ export const RoomHazardMutations = extendType({
 							}
 						}
 						else if (!h.id.eph_id.startsWith('newHazard')) {
-							if (!IDObfuscator.checkSalt(h.id)) {
-								throw new Error(`Bad descrypted request`);
-							}
-							const id = IDObfuscator.deobfuscateId(h.id);
-							const hazardsInRoom = await tx.lab_has_hazards.findUnique({where: {id_lab_has_hazards: id}});
-							if (! hazardsInRoom) {
-								throw new Error(`Hazard not found.`);
-							}
-							const labHasHazardObject =  getSHA256(JSON.stringify(getLabHasHazardToString(hazardsInRoom)), h.id.salt);
-							if (IDObfuscator.getDataSHA256(h.id) !== labHasHazardObject) {
-								throw new Error(`Hazard has been changed from another user. Please reload the page to make modifications`);
-							}
+							const haz = await IDObfuscator.getObjectByObfuscatedId(h.id,
+								'lab_has_hazards', 'id_lab_has_hazards',
+								tx, 'Hazard', getLabHasHazardToString);
 
 							if (h.submission.data['status'] == 'Default'){
 								const hazard = await tx.lab_has_hazards.update(
-									{ where: { id_lab_has_hazards: id },
+									{ where: { id_lab_has_hazards: haz.id_lab_has_hazards },
 										data: {
 											id_hazard_form_history: historyLastVersion.id_hazard_form_history,
 											submission: JSON.stringify(h.submission)
@@ -172,13 +161,13 @@ export const RoomHazardMutations = extendType({
 							else if (h.submission.data['status'] == 'Deleted') {
 								await tx.lab_has_hazards_child.deleteMany({
 									where: {
-										id_lab_has_hazards: id
+										id_lab_has_hazards: haz.id_lab_has_hazards
 									}
 								});
 
 								await tx.lab_has_hazards.delete({
 										where: {
-											id_lab_has_hazards: id
+											id_lab_has_hazards: haz.id_lab_has_hazards
 										}
 									});
 							}

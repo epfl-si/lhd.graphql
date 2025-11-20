@@ -80,10 +80,7 @@ export const HazardFormChildMutations = extendType({
 						throw new Error(`Not allowed to create a new hazard form child`);
 					}
 					const id: id = JSON.parse(args.id);
-					if (id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
-						throw new Error(`Not allowed to create a new hazard form child`);
-					}
-
+					IDObfuscator.checkId(id);
 					let form = undefined;
 					if (id.eph_id == 'NewHazardFormChild') {
 						const category = await tx.hazard_category.findFirst({where: {hazard_category_name: args.category}});
@@ -128,16 +125,9 @@ export const HazardFormChildMutations = extendType({
 			authorize: (parent, args, context) => context.user.isAdmin,
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
-					const id = IDObfuscator.getId(args.id);
-					const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
-					const form = await tx.hazard_form_child.findUnique({where: {id_hazard_form_child: idDeobfuscated}});
-					if (! form) {
-						throw new Error(`Hazard form not found.`);
-					}
-					const hazardFormObject =  getSHA256(JSON.stringify(getHazardFormChildToString(form)), id.salt);
-					if (IDObfuscator.getDataSHA256(id) !== hazardFormObject) {
-						throw new Error(`Hazard form has been changed from another user. Please reload the page to make modifications`);
-					}
+					const form = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
+						'hazard_form_child', 'id_hazard_form_child',
+						tx, 'Hazard', getHazardFormChildToString);
 
 					await tx.hazard_form_child.update(
 						{ where: { id_hazard_form_child: form.id_hazard_form_child },

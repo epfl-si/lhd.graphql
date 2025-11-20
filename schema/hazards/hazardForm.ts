@@ -83,9 +83,7 @@ export const HazardFormMutations = extendType({
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					const id = IDObfuscator.getId(args.id);
-					if (id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
-						throw new Error(`Not allowed to update hazard form`);
-					}
+					IDObfuscator.checkId(id);
 
 					let form = undefined;
 					if (id.eph_id == 'newHazard') {
@@ -102,18 +100,9 @@ export const HazardFormMutations = extendType({
 								}
 							});
 					} else {
-						if (!IDObfuscator.checkSalt(id)) {
-							throw new Error(`Bad descrypted request`);
-						}
-						const idDeobfuscated = IDObfuscator.deobfuscateId(id);
-						form = await tx.hazard_form.findUnique({where: {id_hazard_form: idDeobfuscated}});
-						if (! form) {
-							throw new Error(`Hazard form not found.`);
-						}
-						const hazardFormObject =  getSHA256(JSON.stringify(getHazardFormToString(form)), id.salt);
-						if (IDObfuscator.getDataSHA256(id) !== hazardFormObject) {
-							throw new Error(`Hazard form has been changed from another user. Please reload the page to make modifications`);
-						}
+						form = await IDObfuscator.getObjectByObfuscatedId(id,
+							'hazard_form', 'id_hazard_form',
+							tx, 'Hazard', getHazardFormToString);
 						await tx.hazard_form.update(
 							{ where: { id_hazard_form: form.id_hazard_form },
 								data: {
@@ -143,16 +132,9 @@ export const HazardFormMutations = extendType({
 			authorize: (parent, args, context) => context.user.isAdmin,
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
-					const id = IDObfuscator.getId(args.id);
-					const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
-					const form = await tx.hazard_form.findUnique({where: {id_hazard_form: idDeobfuscated}});
-					if (! form) {
-						throw new Error(`Hazard form not found.`);
-					}
-					const hazardFormObject =  getSHA256(JSON.stringify(getHazardFormToString(form)), id.salt);
-					if (IDObfuscator.getDataSHA256(id) !== hazardFormObject) {
-						throw new Error(`Hazard form has been changed from another user. Please reload the page to make modifications`);
-					}
+					const form = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
+						'hazard_form', 'id_hazard_form',
+						tx, 'Hazard', getHazardFormToString);
 
 					await tx.hazard_form.update(
 						{ where: { id_hazard_form: form.id_hazard_form },

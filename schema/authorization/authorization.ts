@@ -2,17 +2,12 @@ import {extendType, inputObjectType, intArg, list, objectType, stringArg} from "
 import {id, IDObfuscator} from "../../utils/IDObfuscator";
 import {authorization} from "nexus-prisma";
 import {mutationStatusType} from "../statuses";
-import {getSHA256} from "../../utils/HashingTools";
 import {RoomStruct} from "../global/rooms";
 import {PersonStruct} from "../global/people";
 import {ChemicalStruct} from "./chemicals";
-import {UnitStruct} from "../roomdetails/units";
+import {getUnitToString, UnitStruct} from "../roomdetails/units";
 import {RadiationStruct} from "./radiation";
-import {
-	createAuthorization,
-	getAuthorizationsWithPagination,
-	updateAuthorization
-} from "../../model/authorization";
+import {createAuthorization, getAuthorizationsWithPagination, updateAuthorization} from "../../model/authorization";
 
 export const AuthorizationStruct = objectType({
 	name: authorization.$name,
@@ -155,9 +150,10 @@ export const AuthorizationsByRoom = extendType({
 			async resolve(parent, args, context) {
 				if (args.roomId) {
 					const id: id = JSON.parse(args.roomId);
-					if (id && id.eph_id && id.eph_id != '' && id.salt && id.salt != '' && IDObfuscator.checkSalt(id)) {
-						const idDeobfuscated = IDObfuscator.deobfuscateId(id);
-						const auths = await context.prisma.authorization.findMany({
+					IDObfuscator.checkId(id);
+					IDObfuscator.checkSalt(id)
+					const idDeobfuscated = IDObfuscator.deobfuscateId(id);
+					return await context.prisma.authorization.findMany({
 							where: {
 								AND: [
 									{type: args.type},
@@ -180,8 +176,6 @@ export const AuthorizationsByRoom = extendType({
 								},
 							]
 						});
-						return auths
-					}
 				}
 				return [];
 			}
@@ -255,24 +249,14 @@ export const AuthorizationMutations = extendType({
 			authorize: (parent, args, context) => context.user.canEditAuthorizations,
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
-					const id = IDObfuscator.getId(args.id);
-					const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
+					const auth = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
+						'authorization', 'id_authorization',
+						tx, args.authorization, getAuthorizationToString);
 
-					const auth = await tx.authorization.findUnique({where: {id_authorization: idDeobfuscated}});
-					if ( !auth ) {
-						throw new Error(`Authorization ${args.authorization} not found.`);
-					}
-					const authorizationObject = getSHA256(JSON.stringify(getAuthorizationToString(auth)), id.salt);
-					if ( IDObfuscator.getDataSHA256(id) !== authorizationObject ) {
-						throw new Error(`Authorization ${args.authorization} has been changed from another user. Please reload the page to make modifications`);
-					}
-					const idunit = IDObfuscator.getId(args.id_unit);
-					const idDeobfuscatedForUnit = IDObfuscator.getIdDeobfuscated(idunit);
-					const unit = await tx.Unit.findUnique({where: {id: idDeobfuscatedForUnit}})
-					if ( !unit ) {
-						throw new Error(`Authorization not updated`);
-					}
-					await updateAuthorization({ ...args, id_unit: idDeobfuscatedForUnit}, auth, context.prisma, tx);
+					const unit = await IDObfuscator.ensureDBObjectIsTheSame(args.id_unit,
+						'Unit', 'id',
+						tx, args.authorization, getUnitToString);
+					await updateAuthorization({ ...args, id_unit: unit.id}, auth, context.prisma, tx);
 					return mutationStatusType.success();
 				});
 			}
@@ -284,16 +268,9 @@ export const AuthorizationMutations = extendType({
 			authorize: (parent, args, context) => context.user.canEditAuthorizations,
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
-					const id = IDObfuscator.getId(args.id);
-					const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
-					const auth = await tx.authorization.findUnique({where: {id_authorization: idDeobfuscated}});
-					if (! auth) {
-						throw new Error(`Authorization ${args.authorization} not found.`);
-					}
-					const authorizationObject =  getSHA256(JSON.stringify(getAuthorizationToString(auth)), id.salt);
-					if (IDObfuscator.getDataSHA256(id) !== authorizationObject) {
-						throw new Error(`Authorization ${args.authorization} has been changed from another user. Please reload the page to make modifications`);
-					}
+					const auth = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
+						'authorization', 'id_authorization',
+						tx, args.authorization, getAuthorizationToString);
 
 					await tx.authorization_has_room.deleteMany({ where: { id_authorization: auth.id_authorization }});
 					await tx.authorization_has_chemical.deleteMany({ where: { id_authorization: auth.id_authorization }});

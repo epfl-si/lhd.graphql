@@ -368,16 +368,9 @@ export const RoomMutations = extendType({
 			authorize: (parent, args, context) => context.user.canEditRooms,
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
-					const id = IDObfuscator.getId(args.id);
-					const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
-					const room = await tx.Room.findUnique({where: {id: idDeobfuscated}});
-					if (! room) {
-						throw new Error(`Room ${args.name} not found.`);
-					}
-					const roomObject =  getSHA256(JSON.stringify(getRoomToString(room)), id.salt);
-					if (IDObfuscator.getDataSHA256(id) !== roomObject) {
-						throw new Error(`Room ${args.name} has been changed from another user. Please reload the page to make modifications`);
-					}
+					const room = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
+						'Room', 'id',
+						tx, args.name, getRoomToString);
 
 					const roomKind = await tx.RoomKind.findFirst({where: {name: args.kind}})
 					await tx.Room.update(
@@ -421,16 +414,9 @@ export const RoomMutations = extendType({
 			authorize: (parent, args, context) => context.user.canEditRooms,
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
-					const id = IDObfuscator.getId(args.id);
-					const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
-					const room = await tx.Room.findUnique({where: {id: idDeobfuscated}});
-					if (! room) {
-						throw new Error(`Room not found.`);
-					}
-					const roomObject =  getSHA256(JSON.stringify(getRoomToString(room)), id.salt);
-					if (IDObfuscator.getDataSHA256(id) !== roomObject) {
-						throw new Error(`Room has been changed from another user. Please reload the page to make modifications`);
-					}
+					const room = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
+						'Room', 'id',
+						tx, 'Room', getRoomToString);
 					await deleteRoom(tx, context, room);
 					return mutationStatusType.success();
 				});

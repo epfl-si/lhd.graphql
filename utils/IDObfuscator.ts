@@ -10,13 +10,9 @@ export type id = {
 	eph_id: string
 }
 
-export type data = {
-	data: object
-}
-
 export type submission = {
 	id: id,
-	submission: data,
+	submission: { data: object },
 	formName?: string,
 	children?: submission[]
 }
@@ -33,15 +29,20 @@ export class IDObfuscator {
 		return encrypt(salt + ':' + id) + '-' + getSHA256(parentString, salt);
 	}
 
+	static checkId(id) {
+		if (id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
+			throw new Error(`Not allowed to update`);
+		}
+	}
+
 	static checkSalt(s: id) {
 		const salt = s.salt;
 		const firstPart = s.eph_id.substring(0,s.eph_id.indexOf('-'));
 		const decrypted = decrypt(firstPart);
 		const decryptedSalt = decrypted.substring(0,decrypted.indexOf(':'));
-		if(salt != decryptedSalt) {
-			return false;
+		if (salt != decryptedSalt) {
+			throw new Error(`Bad descrypted request`);
 		}
-		return true;
 	}
 
 	static deobfuscateId(s: id) {
@@ -62,13 +63,39 @@ export class IDObfuscator {
 	}
 
 	static getIdDeobfuscated (id: id) {
-		if(id == undefined || id.eph_id == undefined || id.eph_id == '' || id.salt == undefined || id.salt == '') {
-			throw new Error(`Not allowed to update`);
-		}
-
-		if(!IDObfuscator.checkSalt(id)) {
-			throw new Error(`Bad descrypted request`);
-		}
+		IDObfuscator.checkId(id);
+		IDObfuscator.checkSalt(id);
 		return IDObfuscator.deobfuscateId(id);
+	}
+
+	static async ensureDBObjectIsTheSame (argId: string | undefined,
+																				modelName: string,
+																				idName: string,
+																				tx,
+																				objectName: string,
+																				convertObjectToString: (obj: any) => any
+	) {
+		const id = this.getId(argId);
+		IDObfuscator.checkId(id);
+		return await this.getObjectByObfuscatedId(id, modelName, idName, tx, objectName, convertObjectToString);
+	}
+
+	static async getObjectByObfuscatedId(id,
+																			 modelName: string,
+																			 idName: string,
+																			 tx,
+																			 objectName: string,
+																			 convertObjectToString: (obj: any) => any) {
+		IDObfuscator.checkSalt(id);
+		const idDeobfuscated = IDObfuscator.deobfuscateId(id);
+		const obj = await tx[modelName].findUnique({where: {[idName]: idDeobfuscated}});
+		if (! obj) {
+			throw new Error(`${objectName} not found.`);
+		}
+		const object =  getSHA256(JSON.stringify(convertObjectToString(obj)), id.salt);
+		if (IDObfuscator.getDataSHA256(id) !== object) {
+			throw new Error(`${objectName} has been changed from another user. Please reload the page to make modifications`);
+		}
+		return obj;
 	}
 }
