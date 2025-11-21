@@ -15,16 +15,35 @@ const parseStackTrace = [
 		message: 'Is not possible to perform this action because of some relationship'
 	},
 ]
+function findGeneralErrorInMessage (err) {
+	let errorMessage = '';
+	const stackTraceParserItem = parseStackTrace.find(ep => err.indexOf(ep.key) > -1);
+	if (stackTraceParserItem) {
+		errorMessage = stackTraceParserItem.message;
+	}
+	return errorMessage;
+}
+
+function checkStacktrace (error) {
+	let errorMessage = '';
+	error.extensions.stacktrace.forEach(err => {
+		if (errorMessage === '') {
+			errorMessage = findGeneralErrorInMessage(err);
+		}
+	});
+	if (errorMessage === '') {
+		errorMessage = findGeneralErrorInMessage(error.message);
+	}
+	return errorMessage;
+}
 
 export function getErrorMessage(error) {
+	const parsedError = checkStacktrace(error);
+	if (parsedError !== '') {
+		return parsedError;
+	}
 	const errorCode = error.extensions.code as string;
 	let errorMessage = errorCode in apolloBuiltInErrors ? apolloBuiltInErrors[errorCode] : 'Internal Server Error';
 	errorMessage = errorMessage.concat(`: ${error.message}`);
-	error.extensions.stacktrace.forEach(err => {
-		const stackTraceParserItem = parseStackTrace.find(ep => err.indexOf(ep.key) > -1);
-		if (stackTraceParserItem) {
-			errorMessage = stackTraceParserItem.message;
-		}
-	})
 	return errorMessage;
 }
