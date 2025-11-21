@@ -7,8 +7,8 @@ const wellKnowsErrors = {
 	P2002:                        'An element with this name appears to already exist'
 }
 
-export function getFormattedError(formattedError, error) {
-	const errorCode = (error?.originalError?.code || formattedError.extensions.code) as string;
+export function getFormattedError(formattedError, error = undefined) {
+	const errorCode = (error?.originalError?.code || formattedError.extensions?.code || formattedError.code) as string;
 	const errorMessage = errorCode in wellKnowsErrors ? wellKnowsErrors[errorCode] : 'Internal Server Error';
 	return {errorCode, errorMessage};
 }

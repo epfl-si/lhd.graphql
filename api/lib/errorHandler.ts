@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import {getFormattedError} from "../../utils/GraphQLErrors";
 
 /**
  * Global error-handling middleware.
@@ -10,6 +11,5 @@ export function errorHandler(
 	next: NextFunction
 ): void {
 	console.error("API error: ", err);
-	const message = err instanceof Error ? err.message : 'Internal Server Error';
-	res.status(500).json({error: message});
+	res.status(500).json({error: getFormattedError(err)});
 }
