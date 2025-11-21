@@ -120,7 +120,18 @@ export async function deleteRoom(tx, context, r:Room) {
 		});
 	}
 
-	const auth = await context.prisma.authorization_has_room.findMany(where);
+	const auth = await context.prisma.authorization_has_room.findMany({
+		where: {
+			AND: [
+				{ id_lab: r.id },
+				{
+					authorization: {
+						type: 'Chemical',
+					},
+				}
+			]
+		}
+	});
 	for ( const a of auth ) {
 		const date = (new Date()).toLocaleDateString("en-GB");
 		const [dayCrea, monthCrea, yearCrea] = date.split("/").map(Number);
