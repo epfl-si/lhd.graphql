@@ -12,7 +12,7 @@ const parseStackTrace = [
 	},
 	{
 		key: "Foreign key constraint failed",
-		message: 'Relationship not updated'
+		message: 'Is not possible to perform this action because of some relationship'
 	},
 ]
 
