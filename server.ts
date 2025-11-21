@@ -13,7 +13,7 @@ import {ApolloServer} from "@apollo/server";
 import {expressMiddleware} from "@as-integrations/express5";
 import {getBearerToken} from "./libs/authentication";
 import {makeRESTAPI} from "./api/authorizations";
-import {getErrorMessage} from "./utils/GraphQLErrors";
+import {getFormattedError} from "./utils/GraphQLErrors";
 import {getPrismaForUser} from "./libs/auditablePrisma";
 import {BackendConfig} from "./libs/config";
 
@@ -36,11 +36,11 @@ export async function makeServer(
 
 	const server = new ApolloServer<Context>({
 		schema,
-		formatError(err) {
-			console.error('Server error:', err);
-			return getErrorMessage(err);
+		formatError(formattedError, error: any) {
+			console.error('Server error:', error, error.originalError);
+			const {errorCode, errorMessage} = getFormattedError(formattedError, error);
+			return {extensions: {code: errorCode}, message: errorMessage};
 		},
-		includeStacktraceInErrorResponses: true,
 		plugins: [ApolloServerPluginDrainHttpServer({ httpServer })]
 	});
 
