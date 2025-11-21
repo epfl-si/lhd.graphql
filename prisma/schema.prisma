@@ -922,6 +922,7 @@ model lab_has_hazards_additional_info {
   modified_on                               DateTime             @default(now())
   hazard_category                           hazard_category      @relation(fields: [id_hazard_category], references: [id_hazard_category])
   Room                                      Room                 @relation(fields: [id_lab], references: [id])
+  hazards_additional_info_has_tag           hazards_additional_info_has_tag[]
 
   @@index([id_lab], name: "id_lab")
   @@index([id_hazard_category], name: "id_hazard_category")
@@ -987,4 +988,24 @@ model authorization_has_radiation {
   @@unique([id_authorization, source], name: "unique_authorization_has_radiation", map: "unique_authorization_has_radiation")
 
   @@map("authorization_has_radiation")
+}
+
+model tag {
+  id_tag     Int                    @id @default(autoincrement())
+  tag_name   String                 @db.VarChar(100)
+  hazards_additional_info_has_tag   hazards_additional_info_has_tag[]
+
+  @@unique([tag_name], map: "unique_tag_name")
+}
+
+model hazards_additional_info_has_tag {
+  id_hazards_additional_info_has_tag        Int                                     @id @default(autoincrement())
+  id_tag                                    Int
+  id_lab_has_hazards_additional_info        Int
+  comment                                   String?                                 @db.LongText
+  tag                                       tag                                     @relation(fields: [id_tag], references: [id_tag])
+  lab_has_hazards_additional_info           lab_has_hazards_additional_info         @relation(fields: [id_lab_has_hazards_additional_info], references: [id_lab_has_hazards_additional_info])
+
+  @@index([id_tag], name: "id_tag")
+  @@index([id_lab_has_hazards_additional_info], name: "id_lab_has_hazards_additional_info")
 }
