@@ -40,6 +40,7 @@ export async function makeServer(
 			console.error('Server error:', err);
 			return getErrorMessage(err);
 		},
+		includeStacktraceInErrorResponses: true,
 		plugins: [ApolloServerPluginDrainHttpServer({ httpServer })]
 	});
 
