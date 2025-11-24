@@ -82,6 +82,7 @@ import * as radiationTypes from '../schema/authorization/radiation'
 import * as mutationLogs from '../schema/global/mutationLogs'
 import * as hazardsAdditionalInfo from '../schema/hazards/hazardsAdditionalInfo'
 import * as authorizationType from '../schema/authorization/authorization'
+import * as tagType from '../schema/hazards/tag'
 
 const types = [
 	schoolTypes,
@@ -102,7 +103,8 @@ const types = [
 	hazardsAdditionalInfo,
 	chemicalTypes,
 	radiationTypes,
-	authorizationType
+	authorizationType,
+	tagType,
 ];
 
 // No user-serviceable parts below /////////////////////////////////////////////////
