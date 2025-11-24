@@ -13,7 +13,7 @@ export const TagStruct = objectType({
 export const TagQuery = extendType({
 	type: 'Query',
 	definition(t) {
-		t.crud.hazardCategories({	filtering: true, ordering: true,
+		t.crud.tags({ filtering: true, ordering: true,
 			authorize: (parent, args, context) => context.user.isAdmin || context.user.canListHazards,
 			resolve: async (root, args, context, info, originalResolve) => {
 				// Call the original resolver if user is authorized

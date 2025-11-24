@@ -2,7 +2,7 @@ import {objectType} from 'nexus';
 import {lab_has_hazards_additional_info} from 'nexus-prisma';
 import {HazardCategoryStruct} from "./hazardCategory";
 import {IDObfuscator} from "../../utils/IDObfuscator";
-import {TagStruct} from "./tag";
+import {HazardsAdditionalInfoHasTagStruct} from "./hazardAdditionalInfoHasTag";
 
 export const HazardsAdditionalInfoStruct = objectType({
 	name: lab_has_hazards_additional_info.$name,
@@ -28,14 +28,12 @@ export const HazardsAdditionalInfoStruct = objectType({
 			},
 		});
 
-		t.nonNull.list.nonNull.field('tags', {
-			type: TagStruct,
+		t.nonNull.list.nonNull.field('hazardsAdditionalInfoHasTag', {
+			type: HazardsAdditionalInfoHasTagStruct,
 			resolve: async (parent, _, context) => {
-				const hazards_additional_info_has_tag = await context.prisma.hazards_additional_info_has_tag.findMany({
-					where: { id_lab_has_hazards_additional_info: parent.id_lab_has_hazards_additional_info },
-					include: { tag: true }
+				return await context.prisma.hazards_additional_info_has_tag.findMany({
+					where: { id_lab_has_hazards_additional_info: parent.id_lab_has_hazards_additional_info }
 				});
-				return hazards_additional_info_has_tag.map(haiht => haiht.tag);
 			},
 		});
 	},
