@@ -1,5 +1,5 @@
 import {extendType, objectType} from 'nexus';
-import { tag } from 'nexus-prisma';
+import {tag} from 'nexus-prisma';
 
 export const TagStruct = objectType({
 	name: tag.$name,

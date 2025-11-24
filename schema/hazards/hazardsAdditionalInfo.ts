@@ -3,6 +3,7 @@ import {lab_has_hazards_additional_info} from 'nexus-prisma';
 import {HazardCategoryStruct} from "./hazardCategory";
 import {IDObfuscator} from "../../utils/IDObfuscator";
 import {HazardsAdditionalInfoHasTagStruct} from "./hazardAdditionalInfoHasTag";
+import {IDObfuscator} from "../../utils/IDObfuscator";
 
 export const HazardsAdditionalInfoStruct = objectType({
 	name: lab_has_hazards_additional_info.$name,
@@ -21,12 +22,6 @@ export const HazardsAdditionalInfoStruct = objectType({
 				});
 			},
 		});
-		t.string('id', {
-			resolve: async (parent, _, context) => {
-				const encryptedID = IDObfuscator.obfuscate({id: parent.id_lab_has_hazards_additional_info, obj: getLabHasHazardsAdditionalInfoToString(parent)});
-				return JSON.stringify(encryptedID);
-			},
-		});
 
 		t.nonNull.list.nonNull.field('hazardsAdditionalInfoHasTag', {
 			type: HazardsAdditionalInfoHasTagStruct,
@@ -36,10 +31,16 @@ export const HazardsAdditionalInfoStruct = objectType({
 				});
 			},
 		});
+		t.string('id', {
+			resolve: async (parent, _, context) => {
+				const encryptedID = IDObfuscator.obfuscate({id: parent.id_lab_has_hazards_additional_info, obj: getHazardsAdditionalInfoToString(parent)});
+				return JSON.stringify(encryptedID);
+			},
+		});
 	},
 });
 
-export function getLabHasHazardsAdditionalInfoToString(parent) {
+export function getHazardsAdditionalInfoToString(parent) {
 	return {
 		id_lab_has_hazards_additional_info: parent.id_lab_has_hazards_additional_info,
 		id_lab: parent.id_lab,
@@ -47,6 +48,6 @@ export function getLabHasHazardsAdditionalInfoToString(parent) {
 		comment: parent.comment,
 		filePath: parent.filePath,
 		modified_by: parent.modified_by,
-		modified_on: parent.modified_on
+		modified_on: parent.modified_on,
 	};
 }
