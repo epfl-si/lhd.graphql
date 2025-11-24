@@ -1,7 +1,8 @@
 import {objectType} from 'nexus';
-import {lab_has_hazards, lab_has_hazards_additional_info, mutation_logs} from 'nexus-prisma';
+import {lab_has_hazards_additional_info} from 'nexus-prisma';
 import {HazardCategoryStruct} from "./hazardCategory";
 import {IDObfuscator} from "../../utils/IDObfuscator";
+import {TagStruct} from "./tag";
 
 export const HazardsAdditionalInfoStruct = objectType({
 	name: lab_has_hazards_additional_info.$name,
@@ -24,6 +25,17 @@ export const HazardsAdditionalInfoStruct = objectType({
 			resolve: async (parent, _, context) => {
 				const encryptedID = IDObfuscator.obfuscate({id: parent.id_lab_has_hazards_additional_info, obj: getLabHasHazardsAdditionalInfoToString(parent)});
 				return JSON.stringify(encryptedID);
+			},
+		});
+
+		t.nonNull.list.nonNull.field('tags', {
+			type: TagStruct,
+			resolve: async (parent, _, context) => {
+				const hazards_additional_info_has_tag = await context.prisma.hazards_additional_info_has_tag.findMany({
+					where: { id_lab_has_hazards_additional_info: parent.id_lab_has_hazards_additional_info },
+					include: { tag: true }
+				});
+				return hazards_additional_info_has_tag.map(haiht => haiht.tag);
 			},
 		});
 	},

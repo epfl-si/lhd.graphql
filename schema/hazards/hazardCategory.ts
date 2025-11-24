@@ -1,5 +1,5 @@
-import {booleanArg, extendType, list, objectType, stringArg} from 'nexus';
-import { hazard_category } from 'nexus-prisma';
+import {extendType, objectType} from 'nexus';
+import {hazard_category} from 'nexus-prisma';
 
 export const HazardCategoryStruct = objectType({
 	name: hazard_category.$name,
