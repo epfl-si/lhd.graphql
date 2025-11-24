@@ -24,3 +24,5 @@ ALTER TABLE `hazards_additional_info_has_tag` ADD CONSTRAINT `hazards_additional
 
 -- AddForeignKey
 ALTER TABLE `hazards_additional_info_has_tag` ADD CONSTRAINT `hazards_additional_info_has_tag_id_lab_has_hazards_addition_fkey` FOREIGN KEY (`id_lab_has_hazards_additional_info`) REFERENCES `lab_has_hazards_additional_info`(`id_lab_has_hazards_additional_info`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+INSERT INTO tag (tag_name) VALUES ('Exception AxS');
