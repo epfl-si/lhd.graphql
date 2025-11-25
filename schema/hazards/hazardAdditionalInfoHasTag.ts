@@ -42,7 +42,7 @@ export const HazardsAdditionalInfoHasTagQuery = extendType({
 	type: 'Query',
 	definition(t) {
 		t.crud.hazardsAdditionalInfoHasTags({ filtering: true, ordering: true,
-			authorize: (parent, args, context) => context.user.isAdmin || context.user.canListHazards,
+			authorize: (parent, args, context) => context.user.canListHazards,
 			resolve: async (root, args, context, info, originalResolve) => {
 				// Call the original resolver if user is authorized
 				return originalResolve(root, args, context, info);
@@ -121,7 +121,7 @@ export const HazardsAdditionalInfoHasTagMutations = extendType({
 			description: `Delete hazard tag.`,
 			args: hazardTagType,
 			type: "HazardFormStatus",
-			authorize: (parent, args, context) => context.user.isAdmin || context.user.canEditHazards,
+			authorize: (parent, args, context) => context.user.canEditHazards,
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					const tag = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
