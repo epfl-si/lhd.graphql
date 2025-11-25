@@ -131,6 +131,7 @@ export const HazardFlat = objectType({
 		t.string("global_comment");
 		t.string("modified_by");
 		t.field("modified_on", { type: "DateTime" });
+		t.string("tags");
 	}
 });
 
@@ -203,7 +204,11 @@ lhh.id_lab_has_hazards,
 lhhc.id_hazard_form_child_history,
 lhhai.comment as global_comment,
 lhhai.modified_by,
-lhhai.modified_on
+lhhai.modified_on,
+(select GROUP_CONCAT(CONCAT(tag_name, '=', comment) SEPARATOR '&&') AS tags 
+ from tag
+     inner join hazards_additional_info_has_tag on hazards_additional_info_has_tag.id_tag = tag.id_tag
+ where hazards_additional_info_has_tag.id_lab_has_hazards_additional_info = lhhai.id_lab_has_hazards_additional_info) as tags
 from lab_has_hazards_child lhhc 
 right join lab_has_hazards lhh on lhh.id_lab_has_hazards = lhhc.id_lab_has_hazards
 inner join hazard_form_history hfh on hfh.id_hazard_form_history =lhh.id_hazard_form_history
