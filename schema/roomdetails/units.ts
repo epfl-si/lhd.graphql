@@ -339,7 +339,7 @@ export const UnitMutations = extendType({
 						'Unit', 'id',
 						tx, 'Unit', getUnitToString);
 
-					await deleteUnit(tx, context, unit)
+					await deleteUnit(tx, context, unit);
 					return mutationStatusType.success();
 				});
 			}
