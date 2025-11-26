@@ -16,6 +16,7 @@ import {makeRESTAPI} from "./api/authorizations";
 import {getFormattedError} from "./utils/GraphQLErrors";
 import {getPrismaForUser} from "./libs/auditablePrisma";
 import {BackendConfig} from "./libs/config";
+import {checkFileAttributeByRegexp, pathRegexp} from "./utils/File";
 
 type TestInjections = {
 	insecure?: boolean;
@@ -67,6 +68,7 @@ export async function makeServer(
 	app.post('/files/', async (req, res) => {
 		console.log('Getting file');
 		const filePath = path.join(req.body.filePath as string);
+		checkFileAttributeByRegexp(filePath, pathRegexp);
 		const fileName = path.basename(filePath);
 		const fullFilePath = path.join(process.env.DOCUMENTS_PATH, filePath);
 		console.log('Getting file', fullFilePath);

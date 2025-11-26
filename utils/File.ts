@@ -3,13 +3,18 @@ import * as dotenv from "dotenv";
 
 dotenv.config();
 const DOCUMENTS_PATH = process.env.DOCUMENTS_PATH;
+export const fileNameRegexp = /^[\p{L}\p{N} _\-\(\)\.]+\.[A-Za-z0-9]+$/u;
+export const pathRegexp = /^[\p{L}\p{N} _\-\(\)\./]+\.[A-Za-z0-9]+$/u;
+
+export function checkFileAttributeByRegexp(fileAttribute, regexp) {
+	const validAttribute = new RegExp(regexp);
+	if (!validAttribute.test(fileAttribute)) {
+		throw new Error("File not permitted");
+	}
+}
 
 export function saveBase64File(base64Data: string, filePath: string, fileName: string): string {
-	const regex = /^[\p{L}\p{N} _\-\(\)\.]+\.[A-Za-z0-9]+$/u;
-	const validFileName = new RegExp(regex);
-	if (!validFileName.test(fileName)) {
-		throw new Error("File name not permitted");
-	}
+	checkFileAttributeByRegexp(fileName, fileNameRegexp);
 	// Remove the data URL part if present
 	const base64Content = base64Data.split(';base64,').pop() || base64Data;
 	// Decode base64 string to buffer
