@@ -32,7 +32,7 @@ export function makeRESTAPI() {
 	const app = express();
 
 	app.use(restAuthenticate);
-	app.use((req: Request, _res, next) => {
+	app.use(function setReqPrismaMiddleware (req: Request, _res, next) {
 		req.prisma = getPrismaForUser(configFromDotEnv(), req.user);
 
 		next();
