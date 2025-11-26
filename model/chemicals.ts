@@ -21,12 +21,12 @@ export async function getChemicalWithPagination(whereConditionsDict, take, skip,
 	} else {
 		whereConditionsDict.forEach(query => {
 			const value = decodeURIComponent(query[1]);
-			if (query[0] == 'CAS') {
+			if (query[0] === 'CAS') {
 				whereCondition.push({ cas_auth_chem: { contains: value }})
-			} else if (query[0] == 'Name') {
+			} else if (query[0] === 'Name') {
 				whereCondition.push({ auth_chem_en : { contains: value }})
-			} else if (query[0] == 'Status') {
-				whereCondition.push({ flag_auth_chem : value == 'Active' })
+			} else if (query[0] === 'Status') {
+				whereCondition.push({ flag_auth_chem : value === 'Active' })
 			}
 		})
 	}

@@ -63,15 +63,15 @@ export async function getAuthorizationsWithPagination(args, prisma) {
 	if (dictionary.length > 0) {
 		dictionary.forEach(query => {
 			const value = decodeURIComponent(query[1]);
-			if (query[0] == 'Unit') {
+			if (query[0] === 'Unit') {
 				whereCondition.push({ unit: { is: {name: {contains: value}} }})
-			} else if (query[0] == 'Authorization') {
+			} else if (query[0] === 'Authorization') {
 				whereCondition.push({ authorization: { contains: value }})
-			} else if (query[0] == 'Status') {
+			} else if (query[0] === 'Status') {
 				whereCondition.push({ status: { contains: value }})
-			} else if (query[0] == 'Room') {
+			} else if (query[0] === 'Room') {
 				whereCondition.push({ authorization_has_room: { some: {room: {is: {name: {contains: value}}}} }})
-			} else if (query[0] == 'Holder') {
+			} else if (query[0] === 'Holder') {
 				whereCondition.push({
 					authorization_has_holder: {
 						some: {
@@ -86,14 +86,14 @@ export async function getAuthorizationsWithPagination(args, prisma) {
 						},
 					}
 				})
-			} else if (query[0] == 'CAS') {
+			} else if (query[0] === 'CAS') {
 				whereCondition.push({ authorization_has_chemical: { some: {chemical: {
 								OR: [
 									{ cas_auth_chem: { contains: value } },
 									{ auth_chem_en: { contains: value } }
 								],
 							}} }})
-			} else if (query[0] == 'Source') {
+			} else if (query[0] === 'Source') {
 				whereCondition.push({ authorization_has_radiation: { some: {source: {contains: value}} }})
 			}
 		})
@@ -143,7 +143,7 @@ export async function getTheAuthorization(args, prisma) {
 
 async function checkRelations(tx, args, authorization) {
 	for ( const holder of args.holders || []) {
-		if ( holder.status == 'New' ) {
+		if ( holder.status === 'New' ) {
 			let p = await tx.Person.findUnique({where: {sciper: holder.sciper}});
 
 			if ( !p ) {
@@ -167,7 +167,7 @@ async function checkRelations(tx, args, authorization) {
 			await tx.authorization_has_holder.create({
 				data: relation
 			});
-		} else if ( holder.status == 'Deleted' ) {
+		} else if ( holder.status === 'Deleted' ) {
 			let p = await tx.Person.findUnique({where: {sciper: holder.sciper}});
 			if ( p ) {
 				const whereCondition = {
@@ -182,7 +182,7 @@ async function checkRelations(tx, args, authorization) {
 	}
 
 	for ( const room of args.rooms || []) {
-		if ( room.status == 'New' ) {
+		if ( room.status === 'New' ) {
 			let r = undefined;
 			if ( room.name ) {
 				r = await tx.Room.findFirst({where: {name: room.name, isDeleted: false}})
@@ -197,7 +197,7 @@ async function checkRelations(tx, args, authorization) {
 			await tx.authorization_has_room.create({
 				data: relation
 			});
-		} else if ( room.status == 'Deleted' ) {
+		} else if ( room.status === 'Deleted' ) {
 			let p = await tx.Room.findFirst({where: {name: room.name}});
 			if ( p ) {
 				const whereCondition = {
@@ -212,7 +212,7 @@ async function checkRelations(tx, args, authorization) {
 	}
 
 	for ( const source of args.radiations || []) {
-		if ( source.status == 'New' ) {
+		if ( source.status === 'New' ) {
 			const relation = {
 				id_authorization: Number(authorization.id_authorization),
 				source: source.name
@@ -220,7 +220,7 @@ async function checkRelations(tx, args, authorization) {
 			await tx.authorization_has_radiation.create({
 				data: relation
 			});
-		} else if ( source.status == 'Deleted' ) {
+		} else if ( source.status === 'Deleted' ) {
 			const whereCondition = {
 				id_authorization: authorization.id_authorization,
 				source: source.name
@@ -232,7 +232,7 @@ async function checkRelations(tx, args, authorization) {
 	}
 
 	for ( const cas of args.cas || []) {
-		if ( cas.status == 'New' ) {
+		if ( cas.status === 'New' ) {
 			let p = await tx.auth_chem.findUnique({where: {cas_auth_chem: cas.name}});
 
 			if ( !p ) {
@@ -246,7 +246,7 @@ async function checkRelations(tx, args, authorization) {
 			await tx.authorization_has_chemical.create({
 				data: relation
 			});
-		} else if ( cas.status == 'Deleted' ) {
+		} else if ( cas.status === 'Deleted' ) {
 			let p = await tx.auth_chem.findUnique({where: {cas_auth_chem: cas.name}});
 			if (p) {
 				const whereCondition = {

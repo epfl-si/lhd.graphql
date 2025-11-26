@@ -127,7 +127,7 @@ export const RoomHazardMutations = extendType({
 							}
 						});
 
-						if (h.id.eph_id.startsWith('newHazard') && h.submission.data['status'] == 'Default') {
+						if (h.id.eph_id.startsWith('newHazard') && h.submission.data['status'] === 'Default') {
 							const hazard = await tx.lab_has_hazards.create({
 								data: {
 									id_lab: room.id,
@@ -145,7 +145,7 @@ export const RoomHazardMutations = extendType({
 								'lab_has_hazards', 'id_lab_has_hazards',
 								tx, 'Hazard', getLabHasHazardToString);
 
-							if (h.submission.data['status'] == 'Default'){
+							if (h.submission.data['status'] === 'Default'){
 								const hazard = await tx.lab_has_hazards.update(
 									{ where: { id_lab_has_hazards: haz.id_lab_has_hazards },
 										data: {
@@ -158,7 +158,7 @@ export const RoomHazardMutations = extendType({
 									await updateHazardFormChild(child, tx, context, args.room, hazard.id_lab_has_hazards)
 								}
 							}
-							else if (h.submission.data['status'] == 'Deleted') {
+							else if (h.submission.data['status'] === 'Deleted') {
 								await tx.lab_has_hazards_child.deleteMany({
 									where: {
 										id_lab_has_hazards: haz.id_lab_has_hazards

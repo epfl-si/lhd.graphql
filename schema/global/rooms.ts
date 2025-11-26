@@ -333,7 +333,7 @@ export const RoomMutations = extendType({
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					for (const room of args.rooms) {
-						if (room.status == 'New') {
+						if (room.status === 'New') {
 							const newRoom = await tx.Room.findUnique({ where: { sciper_lab: room.id }});
 
 							if (!newRoom) {
@@ -384,7 +384,7 @@ export const RoomMutations = extendType({
 
 					for (const unitToChange of args.units) {
 						const unit = await tx.Unit.findFirst({ where: { name: unitToChange.name }});
-						if (unitToChange.status == 'New') {
+						if (unitToChange.status === 'New') {
 							await tx.unit_has_room.create({
 								data: {
 									id_lab: room.id,
@@ -392,7 +392,7 @@ export const RoomMutations = extendType({
 								}
 							})
 						}
-						else if (unitToChange.status == 'Deleted') {
+						else if (unitToChange.status === 'Deleted') {
 							const whereConditionForDelete = {
 								id_lab: room.id,
 								id_unit: unit.id

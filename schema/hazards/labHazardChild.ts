@@ -59,7 +59,7 @@ export async function updateHazardFormChild(child: submission, tx: any, context:
 		}
 	});
 
-	if ( child.id.eph_id.startsWith('newHazardChild') && child.submission.data['status'] == 'Default' ) {
+	if ( child.id.eph_id.startsWith('newHazardChild') && child.submission.data['status'] === 'Default' ) {
 		await tx.lab_has_hazards_child.create({
 			data: {
 				id_lab_has_hazards: parentHazard,
@@ -72,7 +72,7 @@ export async function updateHazardFormChild(child: submission, tx: any, context:
 			'lab_has_hazards_child', 'id_lab_has_hazards_child',
 			tx, 'Hazard', getLabHasHazardChildToString);
 
-		if ( child.submission.data['status'] == 'Default' ) {
+		if ( child.submission.data['status'] === 'Default' ) {
 			await tx.lab_has_hazards_child.update(
 				{
 					where: {id_lab_has_hazards_child: haz.id_lab_has_hazards_child},
@@ -81,7 +81,7 @@ export async function updateHazardFormChild(child: submission, tx: any, context:
 						submission: JSON.stringify(child.submission)
 					}
 				});
-		} else if ( child.submission.data['status'] == 'Deleted' ) {
+		} else if ( child.submission.data['status'] === 'Deleted' ) {
 			await tx.lab_has_hazards_child.delete({
 				where: {
 					id_lab_has_hazards_child: haz.id_lab_has_hazards_child
@@ -160,24 +160,24 @@ export const HazardsWithPaginationQuery = extendType({
 					const sql = queryStringArgs.map(qs => {
 						const queryStringMap = qs.split('=');
 
-						if (queryStringMap[0] == 'chemical')
+						if (queryStringMap[0] === 'chemical')
 							queryStringMap[0] = 'chemical.haz_en';
-						else if (queryStringMap[0] == 'organism')
+						else if (queryStringMap[0] === 'organism')
 							queryStringMap[0] = 'organism.organism';
-						else if (queryStringMap[0] == 'container')
+						else if (queryStringMap[0] === 'container')
 							queryStringMap[0] = 'container.name';
 
-						if (queryStringMap[0] == 'Room') {
+						if (queryStringMap[0] === 'Room') {
 							return Prisma.sql`l.lab_display like ${Prisma.raw(`'%${queryStringMap[1]}%'`)}`;
-						} else if (queryStringMap[0] == 'Cosec') {
+						} else if (queryStringMap[0] === 'Cosec') {
 							return Prisma.sql`(cos.email_person like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} 
 							or cos.name_person like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} 
 							or cos.surname_person like ${Prisma.raw(`'%${queryStringMap[1]}%'`)})`;
-						} else if (queryStringMap[0] == 'Prof') {
+						} else if (queryStringMap[0] === 'Prof') {
 							return Prisma.sql`(prof.email_person like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} 
 							or prof.name_person like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} 
 							or prof.surname_person like ${Prisma.raw(`'%${queryStringMap[1]}%'`)})`;
-						} else if (queryStringMap[0] == 'Unit') {
+						} else if (queryStringMap[0] === 'Unit') {
 							return Prisma.sql`(u.name_unit like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} 
 							or i.name_institut like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} 
 							or f.name_faculty like ${Prisma.raw(`'%${queryStringMap[1]}%'`)})`;
@@ -292,19 +292,19 @@ export const HazardFetchForExportQuery = extendType({
 				if (dictionary.length > 0) {
 					dictionary.forEach(query => {
 						const value = decodeURIComponent(query[1]);
-						if (query[0] == 'Room') {
+						if (query[0] === 'Room') {
 							whereCondition.push(Prisma.sql`l.lab_display like ${'%' + value + '%'}`)
-						} else if (query[0] == 'Designation') {
+						} else if (query[0] === 'Designation') {
 							whereCondition.push(Prisma.sql`lt.labType like ${'%' + value + '%'}`)
-						} else if (query[0] == 'Floor') {
+						} else if (query[0] === 'Floor') {
 							whereCondition.push(Prisma.sql`l.floor like ${'%' + value + '%'}`)
-						} else if (query[0] == 'Sector') {
+						} else if (query[0] === 'Sector') {
 							whereCondition.push(Prisma.sql`l.sector like ${'%' + value + '%'}`)
-						} else if (query[0] == 'Building') {
+						} else if (query[0] === 'Building') {
 							whereCondition.push(Prisma.sql`l.building like ${'%' + value + '%'}`)
-						} else if (query[0] == 'Unit') {
+						} else if (query[0] === 'Unit') {
 							//whereCondition.push(Prisma.sql`(u.name_unit like %${'%' + value + '%'}% or i.name_institut like %${'%' + value + '%'}% or f.name_faculty like %${'%' + value + '%'}%)`)
-						} else if (query[0] == 'Volume' && !isNaN(parseFloat(value))) {
+						} else if (query[0] === 'Volume' && !isNaN(parseFloat(value))) {
 							whereCondition.push(Prisma.sql`l.vol >= (${value} - 10) AND l.vol <= (${value} + 10)`)
 						}
 					})

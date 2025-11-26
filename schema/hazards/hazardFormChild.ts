@@ -82,7 +82,7 @@ export const HazardFormChildMutations = extendType({
 					const id: id = JSON.parse(args.id);
 					IDObfuscator.checkId(id);
 					let form = undefined;
-					if (id.eph_id == 'NewHazardFormChild') {
+					if (id.eph_id === 'NewHazardFormChild') {
 						const category = await tx.hazard_category.findFirst({where: {hazard_category_name: args.category}});
 						if (!category) {
 							throw new Error(`Category ${args.category} not found`);

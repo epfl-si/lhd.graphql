@@ -7,19 +7,19 @@ export async function getRoomsWithPagination(args, prisma) {
 	whereCondition.push({ isDeleted: false });
 	dictionary.forEach(query => {
 			const value = decodeURIComponent(query[1]);
-			if (query[0] == 'Room') {
+			if (query[0] === 'Room') {
 				whereCondition.push({ name: { contains: value }})
-			} else if (query[0] == 'Hazard') {
+			} else if (query[0] === 'Hazard') {
 				whereCondition.push({ lab_has_hazards : {some: {hazard_form_history: { is: {hazard_form: { is: {hazard_category: { is: {hazard_category_name: { contains: value }}}}}}}}}})
-			} else if (query[0] == 'Designation') {
+			} else if (query[0] === 'Designation') {
 				whereCondition.push({ kind : { is: {name: { contains: value }}}})
-			} else if (query[0] == 'Floor') {
+			} else if (query[0] === 'Floor') {
 				whereCondition.push({ floor: { contains: value }})
-			} else if (query[0] == 'Sector') {
+			} else if (query[0] === 'Sector') {
 				whereCondition.push({ sector: { contains: value }})
-			} else if (query[0] == 'Building') {
+			} else if (query[0] === 'Building') {
 				whereCondition.push({ building: { contains: value }})
-			} else if (query[0] == 'Unit') {
+			} else if (query[0] === 'Unit') {
 				whereCondition.push({
 					OR: [
 						{ unit_has_room: { some: {unit: {is: {name: {contains: value}}}} }},
@@ -27,9 +27,9 @@ export async function getRoomsWithPagination(args, prisma) {
 						{ unit_has_room: { some: {unit: {is: {institute: {is: {school: {is: {name: {contains: value}}}}}}}} }}
 					]
 				})
-			} else if (query[0] == 'Volume' && !isNaN(parseFloat(value))) {
+			} else if (query[0] === 'Volume' && !isNaN(parseFloat(value))) {
 				whereCondition.push({ vol: { gt: parseFloat(value) - 10, lt: parseFloat(value) + 10 } })
-			} else if (query[0] == 'Cosec') {
+			} else if (query[0] === 'Cosec') {
 				whereCondition.push({
 					unit_has_room: {
 						some: {
@@ -49,7 +49,7 @@ export async function getRoomsWithPagination(args, prisma) {
 						},
 					},
 				})
-			} else if (query[0] == 'Prof') {
+			} else if (query[0] === 'Prof') {
 				whereCondition.push({
 					unit_has_room: {
 						some: {

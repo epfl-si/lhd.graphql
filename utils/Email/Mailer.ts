@@ -30,10 +30,10 @@ async function sendEmailCAE(modifiedByName: string,
 
 	await mailer.sendMail({
 		from: `"No Reply" <${process.env.SMTP_USER}>`,
-		to: process.env.ENVIRONMENT == 'prod' ? process.env.CAE_TO : modifiedByEmail,
-		cc: process.env.ENVIRONMENT == 'prod' ? [modifiedByEmail, process.env.CAE_CC] : modifiedByEmail,
+		to: process.env.ENVIRONMENT === 'prod' ? process.env.CAE_TO : modifiedByEmail,
+		cc: process.env.ENVIRONMENT === 'prod' ? [modifiedByEmail, process.env.CAE_CC] : modifiedByEmail,
 		subject: template.subject,
-		html: process.env.ENVIRONMENT == 'prod' ? body : `${logRecipients([process.env.CAE_TO], [modifiedByEmail, process.env.CAE_CC], [])}\n${body}`
+		html: process.env.ENVIRONMENT === 'prod' ? body : `${logRecipients([process.env.CAE_TO], [modifiedByEmail, process.env.CAE_CC], [])}\n${body}`
 	});
 }
 
@@ -54,10 +54,10 @@ async function sendEmailCosec(modifiedByName: string,
 
 	await mailer.sendMail({
 		from: `"No Reply" <${process.env.SMTP_USER}>`,
-		to: process.env.ENVIRONMENT == 'prod' ? cosecs : modifiedByEmail,
-		bcc: process.env.ENVIRONMENT == 'prod' ? [modifiedByEmail, process.env.COSEC_BCC] : modifiedByEmail,
+		to: process.env.ENVIRONMENT === 'prod' ? cosecs : modifiedByEmail,
+		bcc: process.env.ENVIRONMENT === 'prod' ? [modifiedByEmail, process.env.COSEC_BCC] : modifiedByEmail,
 		subject: template.subject,
-		html: process.env.ENVIRONMENT == 'prod' ? body : `${logRecipients(cosecs, [], [modifiedByEmail, process.env.COSEC_BCC] )}\n${body}`
+		html: process.env.ENVIRONMENT === 'prod' ? body : `${logRecipients(cosecs, [], [modifiedByEmail, process.env.COSEC_BCC] )}\n${body}`
 	});
 }
 
@@ -94,9 +94,9 @@ function getHazardLevel (submissions: any[], category: string) {
 	const bio = [];
 	submissions.forEach(haz => {
 		const submission = JSON.parse(haz.submission);
-		if (category == 'Laser' && submission.data.laserClass && ['3B', '4'].includes(submission.data.laserClass.toString())) {
+		if (category === 'Laser' && submission.data.laserClass && ['3B', '4'].includes(submission.data.laserClass.toString())) {
 			laser.push(submission.data.laserClass);
-		} else if (category == 'Biological' && submission.data.biosafetyLevel >= 2) {
+		} else if (category === 'Biological' && submission.data.biosafetyLevel >= 2) {
 			bio.push(submission.data.biosafetyLevel);
 		}
 	});
@@ -113,9 +113,9 @@ export async function sendEmailsForChemical(user: string, tx: any) {
 	if (userInfo.userEmail !== '') {
 		await mailer.sendMail({
 			from: `"No Reply" <${process.env.SMTP_USER}>`,
-			to: process.env.ENVIRONMENT == 'prod' ? process.env.CATALYSE_EMAIL : userInfo.userEmail,
+			to: process.env.ENVIRONMENT === 'prod' ? process.env.CATALYSE_EMAIL : userInfo.userEmail,
 			subject: template.subject,
-			html: process.env.ENVIRONMENT == 'prod' ? template.body : `${logRecipients([process.env.CATALYSE_EMAIL], [], [])}\n${template.body}`,
+			html: process.env.ENVIRONMENT === 'prod' ? template.body : `${logRecipients([process.env.CATALYSE_EMAIL], [], [])}\n${template.body}`,
 			attachments: [{raw: ["Content-Type: text/csv; charset=utf-8", `Content-Disposition: attachment; filename="chemicals-${getFormattedDate()}.csv"`, "", csv].join("\r\n"),}]
 		});
 	}

@@ -86,7 +86,7 @@ export const HazardFormMutations = extendType({
 					IDObfuscator.checkId(id);
 
 					let form = undefined;
-					if (id.eph_id == 'newHazard') {
+					if (id.eph_id === 'newHazard') {
 						const category = await tx.hazard_category.create(
 							{ data: {
 									hazard_category_name: args.hazard_category_name

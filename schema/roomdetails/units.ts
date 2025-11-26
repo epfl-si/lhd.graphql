@@ -188,7 +188,7 @@ export const UnitMutations = extendType({
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					for (const unit of args.units) {
-						if (unit.status == 'New') {
+						if (unit.status === 'New') {
 							const newUnit = await tx.Unit.findUnique({ where: { unitId: unit.unitId }});
 
 							if (!newUnit) {
@@ -262,7 +262,7 @@ export const UnitMutations = extendType({
 					}
 
 					for (const person of args.profs) {
-						if (person.status == 'New') {
+						if (person.status === 'New') {
 							const p: Person = await findOrCreatePerson(tx, person.person.sciper, person.person.name, person.person.surname, person.person.email);
 							const newSubunpro = {
 								id_person: p.id_person,
@@ -272,7 +272,7 @@ export const UnitMutations = extendType({
 								data: newSubunpro
 							});
 						}
-						else if (person.status == 'Deleted') {
+						else if (person.status === 'Deleted') {
 							let p = await tx.Person.findUnique({ where: { sciper: person.person.sciper }});
 							if (!p) continue;
 							const whereCondition = {
@@ -286,7 +286,7 @@ export const UnitMutations = extendType({
 					}
 
 					for (const person of args.cosecs) {
-						if (person.status == 'New') {
+						if (person.status === 'New') {
 							const p: Person = await findOrCreatePerson(tx, person.person.sciper, person.person.name, person.person.surname, person.person.email);
 							const relationUnitCosec = {
 								id_person: p.id_person,
@@ -296,7 +296,7 @@ export const UnitMutations = extendType({
 								data: relationUnitCosec
 							});
 						}
-						else if (person.status == 'Deleted') {
+						else if (person.status === 'Deleted') {
 							let p = await tx.Person.findUnique({ where: { sciper: person.person.sciper }});
 							if (!p) continue;
 							const whereCondition = {
@@ -310,7 +310,7 @@ export const UnitMutations = extendType({
 					}
 
 					for (const subunit of args.subUnits) {
-						if (subunit.status == 'New') {
+						if (subunit.status === 'New') {
 							await tx.Unit.create({
 								data: {
 									name: subunit.name,
@@ -318,7 +318,7 @@ export const UnitMutations = extendType({
 								}
 							});
 						}
-						else if (subunit.status == 'Deleted') {
+						else if (subunit.status === 'Deleted') {
 							const u = await tx.Unit.findFirst({ where: { name: subunit.name }});
 							if (u) await deleteUnit(tx, context, u);
 						}

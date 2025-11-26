@@ -128,7 +128,7 @@ export function makeRESTAPI() {
 						const argsChem = {
 							auth_chem_en: req.query.en as string,
 							cas_auth_chem: req.query.cas as string,
-							flag_auth_chem: (req.query.auth as string).toLowerCase() == 'yes' || (req.query.auth as string) == '1'
+							flag_auth_chem: (req.query.auth as string).toLowerCase() === 'yes' || (req.query.auth as string) === '1'
 						}
 						await createChemical(argsChem, req);
 						res.json({Message: "Ok"});
