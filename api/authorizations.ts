@@ -403,14 +403,14 @@ export function makeRESTAPI() {
 					lab_display: r.name
 				}
 			});
-			const flatted = all.flatMap(item =>
+			const flattened = all.flatMap(item =>
 				item.units.map(unit => ({
 					id_lab: item.id_lab,
 					id_unit: unit,
 					lab_display: item.lab_display
 				}))
 			);
-			res.json({Message: "Ok", Data: flatted});
+			res.json({Message: "Ok", Data: flattened});
 		});
 
 	type GetProfsAndCosecsParams = {unit?: string};
