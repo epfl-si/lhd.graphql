@@ -65,18 +65,18 @@ export async function makeServer(
 	})
 
 	app.post('/files/', async (req, res) => {
-		console.error('Getting file');
+		console.log('Getting file');
 		const filePath = path.join(req.body.filePath as string);
 		const fileName = path.basename(filePath);
 		const fullFilePath = path.join(process.env.DOCUMENTS_PATH, filePath);
-		console.error('Getting file', fullFilePath);
+		console.log('Getting file', fullFilePath);
 		res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
 		res.sendFile(fullFilePath, (err) => {
 			if ( err ) {
 				console.error('Error sending file:', err);
 				res.status(500).send(err.message);
 			}
-			console.error('Getting file success', fullFilePath);
+			console.log('Getting file success', fullFilePath);
 		});
 	});
 
