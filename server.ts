@@ -124,8 +124,7 @@ async function getLoggedInUserInfos(req): Promise<loginResponse> {
 		const issuer_ = await issuer();
 		const client = new issuer_.Client({ client_id: 'LHDv3 server' });
 
-		let userinfo: UserInfo;
-		userinfo = await client.userinfo(access_token);
+		const userinfo: UserInfo = await client.userinfo(access_token);
 		const allowedGroups = process.env.ALLOWED_GROUPS.split(',');
 		console.log('Logged in', userinfo);
 		console.log('Allowed groups', allowedGroups);
