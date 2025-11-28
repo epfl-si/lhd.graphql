@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as dotenv from "dotenv";
+import {stat} from 'fs/promises';
 
 dotenv.config();
 const DOCUMENTS_PATH = process.env.DOCUMENTS_PATH;
@@ -23,4 +24,16 @@ export function saveBase64File(base64Data: string, filePath: string, fileName: s
 	// Write the buffer to a file
 	fs.writeFileSync(DOCUMENTS_PATH + "/" + filePath + fileName, fileBuffer);
 	return filePath + fileName;
+}
+
+export async function isDirectory(path: string) {
+	try {
+		return (await stat(path)).isDirectory();
+	} catch (e) {
+		if (e.code === 'ENOENT') { // No such file or directory
+			return false;
+		} else {
+			throw e;
+		}
+	}
 }

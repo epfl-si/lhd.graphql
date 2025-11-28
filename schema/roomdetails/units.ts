@@ -11,6 +11,7 @@ import * as path from "node:path";
 import * as fs from "fs";
 import {findOrCreatePerson} from "../../model/persons";
 import {deleteUnit, getUnitByName} from "../../model/units";
+import {isDirectory} from "../../utils/File";
 
 export const UnitStruct = objectType({
 	name: Unit.$name,
@@ -475,7 +476,7 @@ export const UnitReportFilesQuery = extendType({
 						const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
 						const reportFolder = "report_audits/pdf/" + idDeobfuscated + "/";
 						const folderPath = process.env.DOCUMENTS_PATH + "/" + reportFolder;
-						if (fs.existsSync(folderPath)) {
+						if (await isDirectory(folderPath)) {
 							const files = fs.readdirSync(folderPath);
 							const pdfFiles = files.filter(file => path.extname(file).toLowerCase() === '.pdf');
 							const unit = await tx.Unit.findUnique({where: {id: idDeobfuscated}});
