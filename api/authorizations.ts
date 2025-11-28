@@ -8,7 +8,7 @@ import {
 	roomNameRegexp,
 	singleCAS,
 	textRegexp,
-	unitNameRegexp,
+	unitNameRegexp, validateAuth,
 	validateCASList,
 	validateCommaSeparatedNumbers
 } from "./lib/lhdValidators";
@@ -265,7 +265,7 @@ export function makeRESTAPI() {
 		}
 	);
 
-	type AddChemParams = {cas: string, en: string, auth: 'yes' | 'no' | 1 | 0, fr?: string};
+	type AddChemParams = {cas: string, en: string, auth: boolean, fr?: string};
 	app.post("/api/add_chem",
 		checkAPICall(
 			{
@@ -279,7 +279,7 @@ export function makeRESTAPI() {
 					cas: singleCAS,
 					en: textRegexp,
 					fr: textRegexp,
-					auth: new RegExp("yes|no|1|0"),
+					auth: validateAuth,
 				},
 				optional: {
 					fr (req) { return req.query.fr; }
@@ -289,7 +289,7 @@ export function makeRESTAPI() {
 			const argsChem = {
 				auth_chem_en: req.params.en,
 				cas_auth_chem: req.params.cas,
-				flag_auth_chem: (req.params.auth as string).toLowerCase() == 'yes' || (req.params.auth as string) == '1' //TODO move into validator
+				flag_auth_chem: req.params.auth
 			}
 			await createChemical(argsChem, req);
 			res.json({Message: "Ok"});
