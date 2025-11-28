@@ -176,8 +176,8 @@ export const RoomHazardMutations = extendType({
 
 					let filePath = '';
 
-					if (args.additionalInfo.file && args.additionalInfo.file != '' && args.additionalInfo.fileName && args.additionalInfo.fileName != '') {
-						filePath = saveBase64File(args.additionalInfo.file,  HAZARD_DOCUMENT_FOLDER + args.category + '/' + room.id + '/', args.additionalInfo.fileName)
+					if (args.additionalInfo.file && args.additionalInfo.fileName) {
+						filePath = saveBase64File(args.additionalInfo.file, HAZARD_DOCUMENT_FOLDER + args.category + '/' + room.id + '/', args.additionalInfo.fileName)
 					}
 
 					const additionalInfoResult = await tx.lab_has_hazards_additional_info.findFirst({

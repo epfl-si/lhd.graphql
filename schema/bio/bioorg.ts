@@ -116,7 +116,7 @@ export const OrganismMutations = extendType({
 
 					let filePath = '';
 					if (args.fileContent != '' && args.fileName != '') {
-						filePath = saveBase64File(args.fileContent,  'd_bio/' + organism.id_bio_org + '/', args.fileName)
+						filePath = saveBase64File(args.fileContent, 'd_bio/' + organism.id_bio_org + '/', args.fileName)
 					}
 					await tx.bio_org.update({
 						data: {
@@ -144,7 +144,7 @@ export const OrganismMutations = extendType({
 
 					let filePath = org.filePath;
 					if (args.fileContent != '' && args.fileName != '') {
-						filePath = saveBase64File(args.fileContent,  'd_bio/' + org.id_bio_org + '/', args.fileName)
+						filePath = saveBase64File(args.fileContent, 'd_bio/' + org.id_bio_org + '/', args.fileName)
 					}
 
 					const userInfo = await getUserInfoFromAPI(context.user.username);
