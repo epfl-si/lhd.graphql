@@ -5,7 +5,6 @@ import {stat} from 'fs/promises';
 dotenv.config();
 const DOCUMENTS_PATH = process.env.DOCUMENTS_PATH;
 export const fileNameRegexp = /^[\p{L}\p{N} _\-\(\)\.]+\.[A-Za-z0-9]+$/u;
-export const pathRegexp = /^[\p{L}\p{N} _\-\(\)\./]+\.[A-Za-z0-9]+$/u;
 
 export function checkFileAttributeByRegexp(fileAttribute, regexp) {
 	const validAttribute = new RegExp(regexp);

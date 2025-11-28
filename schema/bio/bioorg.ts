@@ -25,7 +25,7 @@ export const BioOrgStruct = objectType({
 	},
 });
 
-function getBioOrgToString(parent) {
+export function getBioOrgToString(parent) {
 	return {
 		id: parent.id_bio_org,
 		organism: parent.organism,

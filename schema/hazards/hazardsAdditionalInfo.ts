@@ -1,6 +1,7 @@
 import {objectType} from 'nexus';
 import {lab_has_hazards, lab_has_hazards_additional_info, mutation_logs} from 'nexus-prisma';
 import {HazardCategoryStruct} from "./hazardCategory";
+import {IDObfuscator} from "../../utils/IDObfuscator";
 
 export const HazardsAdditionalInfoStruct = objectType({
 	name: lab_has_hazards_additional_info.$name,
@@ -19,5 +20,23 @@ export const HazardsAdditionalInfoStruct = objectType({
 				});
 			},
 		});
+		t.string('id', {
+			resolve: async (parent, _, context) => {
+				const encryptedID = IDObfuscator.obfuscate({id: parent.id_lab_has_hazards_additional_info, obj: getLabHasHazardsAdditionalInfoToString(parent)});
+				return JSON.stringify(encryptedID);
+			},
+		});
 	},
 });
+
+export function getLabHasHazardsAdditionalInfoToString(parent) {
+	return {
+		id_lab_has_hazards_additional_info: parent.id_lab_has_hazards_additional_info,
+		id_lab: parent.id_lab,
+		id_hazard_category: parent.id_hazard_category,
+		comment: parent.comment,
+		filePath: parent.filePath,
+		modified_by: parent.modified_by,
+		modified_on: parent.modified_on
+	};
+}

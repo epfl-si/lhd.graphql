@@ -1,6 +1,4 @@
 import {getNow} from "../libs/date";
-import {getAuthorizationToString,} from "../schema/authorization/authorization";
-import {IDObfuscator} from "../utils/IDObfuscator";
 import {checkAPICall} from "./lib/checkedAPICalls";
 import {
 	reqRegexp,
@@ -8,7 +6,8 @@ import {
 	roomNameRegexp,
 	singleCAS,
 	textRegexp,
-	unitNameRegexp, validateAuth,
+	unitNameRegexp,
+	validateAuth,
 	validateCASList,
 	validateCommaSeparatedNumbers
 } from "./lib/lhdValidators";
@@ -20,8 +19,8 @@ import {configFromDotEnv} from "../libs/config";
 import {errorHandler} from "./lib/errorHandler";
 import {
 	createAuthorization,
-	getTheAuthorization,
 	getAuthorizationsWithPagination,
+	getTheAuthorization,
 	updateAuthorization
 } from "../model/authorization";
 import {createChemical, getChemicalWithPagination} from "../model/chemicals";

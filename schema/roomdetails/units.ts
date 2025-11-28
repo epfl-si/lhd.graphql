@@ -453,6 +453,7 @@ export const UnitFromAPIQuery = extendType({
 export const UnitReportFiles = objectType({
 	name: "UnitReportFiles",
 	definition(t) {
+		t.string("id");
 		t.string("name");
 		t.string("path");
 		t.string("unitName");
@@ -483,10 +484,12 @@ export const UnitReportFilesQuery = extendType({
 							if (! unit) {
 								throw new Error(`Unit not found.`);
 							}
+							const encryptedID = IDObfuscator.obfuscate({id: idDeobfuscated, obj: getUnitToString(unit)});
 							const fileList = [];
 							pdfFiles.forEach(file =>
 							{
 								fileList.push({
+									id: JSON.stringify(encryptedID),
 									name: path.basename(file),
 									path: reportFolder + file,
 									unitName: unit.name
