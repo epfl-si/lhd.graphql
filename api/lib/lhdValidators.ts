@@ -14,8 +14,7 @@ export function validateCASList (p) { return p.split(',').map(r => this.validate
 export const singleCAS = casRegexp;
 
 export function validateAuth (p) {
-	const validAttribute = new RegExp(authRegexp);
-	if (!validAttribute.test(p))
+	if (!authRegexp.test(p))
 		throw new ValidationError(`Failed Regex match`);
 	else {
 		return ['yes', '1'].indexOf(p) > -1;
