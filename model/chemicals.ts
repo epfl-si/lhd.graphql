@@ -1,7 +1,7 @@
 import {sendEmailsForChemical} from "../utils/Email/Mailer";
 
 export async function createChemical(args, {prisma, user}) {
-	return await prisma.$transaction(async (tx) => {
+	await prisma.$transaction(async (tx) => {
 
 		await tx.auth_chem.create({
 			data: {
@@ -10,8 +10,8 @@ export async function createChemical(args, {prisma, user}) {
 				flag_auth_chem: args.flag_auth_chem
 			}
 		});
-		await sendEmailsForChemical(user.username, tx);
 	});
+	await sendEmailsForChemical(user.username, prisma);
 }
 
 export async function getChemicalWithPagination(whereConditionsDict, take, skip, prisma) {

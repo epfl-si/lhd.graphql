@@ -65,8 +65,8 @@ export async function sendEmailsForHazards(user: string,
 																					 args: any,
 																					 oldRoom: any,
 																					 cosecs: string[],
-																					 tx: any) {
-	const newRoom = await tx.Room.findFirst(
+																					 prisma: any) {
+	const newRoom = await prisma.Room.findFirst(
 		{
 			where: { name: args.room },
 			include: {
@@ -103,9 +103,9 @@ function getHazardLevel (submissions: any[], category: string) {
 	return {laser, bio};
 }
 
-export async function sendEmailsForChemical(user: string, tx: any) {
+export async function sendEmailsForChemical(user: string, prisma) {
 	const userInfo = await getUserInfoFromAPI(user);
-	const chemicals = await tx.auth_chem.findMany({where: {flag_auth_chem: true}});
+	const chemicals = await prisma.auth_chem.findMany({where: {flag_auth_chem: true}});
 	const template = EMAIL_TEMPLATES.CHEMICAL;
 
 	const csv: string = chemicals.map(chem => `${chem.cas_auth_chem},"${chem.auth_chem_en}"`).join('\n');

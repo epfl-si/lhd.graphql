@@ -28,7 +28,7 @@ async function callAPI(url: string, method: "GET" | "POST") {
 		method: method,
 		headers: headers
 	};
-	if (method == 'POST') {
+	if (method === 'POST') {
 		requestInit.body = JSON.stringify({ids: "13030,13630", endopoint: "/v1/units"});
 	}
 	const request: RequestInfo = new Request(url, requestInit)

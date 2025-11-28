@@ -104,7 +104,7 @@ export const ChemicalMutations = extendType({
 			type: "ChemicalStatus",
 			authorize: (parent, args, context) => context.user.canEditChemicals,
 			async resolve(root, args, context) {
-				return await context.prisma.$transaction(async (tx) => {
+				await context.prisma.$transaction(async (tx) => {
 					const chem = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
 						'auth_chem', 'id_auth_chem',
 						tx, args.cas_auth_chem, getChemicalToString);
@@ -117,10 +117,9 @@ export const ChemicalMutations = extendType({
 								flag_auth_chem: args.flag_auth_chem
 							}
 						});
-
-					await sendEmailsForChemical(context.user.username, tx);
-					return mutationStatusType.success();
 				});
+				await sendEmailsForChemical(context.user.username, context.prisma);
+				return mutationStatusType.success();
 			}
 		});
 		t.nonNull.field('deleteChemical', {
@@ -129,7 +128,7 @@ export const ChemicalMutations = extendType({
 			type: "ChemicalStatus",
 			authorize: (parent, args, context) => context.user.canEditChemicals,
 			async resolve(root, args, context) {
-				return await context.prisma.$transaction(async (tx) => {
+				await context.prisma.$transaction(async (tx) => {
 					const chem = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
 						'auth_chem', 'id_auth_chem',
 						tx, args.cas_auth_chem, getChemicalToString);
@@ -139,9 +138,9 @@ export const ChemicalMutations = extendType({
 					await tx.auth_chem.delete({ where: { id_auth_chem: chem.id_auth_chem }});
 
 					//TODO delete authorizations?
-					await sendEmailsForChemical(context.user.username, tx);
-					return mutationStatusType.success();
 				});
+				await sendEmailsForChemical(context.user.username, context.prisma);
+				return mutationStatusType.success();
 			}
 		});
 	}
