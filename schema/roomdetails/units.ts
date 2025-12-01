@@ -5,12 +5,11 @@ import {PersonStruct} from "../global/people";
 import {Person} from "@prisma/client";
 import {mutationStatusType} from "../statuses";
 import {IDObfuscator} from "../../utils/IDObfuscator";
-import {getSHA256} from "../../utils/HashingTools";
 import {getUnitsFromApi} from "../../utils/CallAPI";
 import * as path from "node:path";
 import * as fs from "fs";
 import {findOrCreatePerson} from "../../model/persons";
-import {deleteUnit, getUnitByName} from "../../model/units";
+import {deleteUnitCascade, getUnitByName} from "../../model/units";
 import {isDirectory} from "../../utils/File";
 
 export const UnitStruct = objectType({
@@ -321,7 +320,7 @@ export const UnitMutations = extendType({
 						}
 						else if (subunit.status === 'Deleted') {
 							const u = await tx.Unit.findFirst({ where: { name: subunit.name }});
-							if (u) await deleteUnit(tx, context, u);
+							if (u) await deleteUnitCascade(tx, context, u);
 						}
 					}
 
@@ -340,7 +339,7 @@ export const UnitMutations = extendType({
 						'Unit', 'id',
 						tx, 'Unit', getUnitToString);
 
-					await deleteUnit(tx, context, unit);
+					await deleteUnitCascade(tx, context, unit);
 					return mutationStatusType.success();
 				});
 			}
