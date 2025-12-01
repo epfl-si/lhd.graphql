@@ -378,13 +378,12 @@ export function makeRESTAPI() {
 			}),
 		async (req: Request<GetLabsAndUnitsParams>, res) => {
 			const conditions = [];
-			if (req.params.unit) conditions.push(`Unit=${req.params.unit}`);
-			if (req.params.room) conditions.push(`Room=${req.params.room}`);
+			if (req.params.unit) conditions.push(['Unit', req.params.unit]);
+			if (req.params.room) conditions.push(['Room', req.params.room]);
 			const args = {
-				search: conditions.join('&'),
 				take: 0
 			};
-			const resultNew = await getRoomsWithPagination(args, req.prisma);
+			const resultNew = await getRoomsWithPagination(args, conditions, req.prisma);
 			for ( let i = 0; i<resultNew.rooms.length; i++) {
 				for ( let j = 0; j<resultNew.rooms[i].unit_has_room.length; j++) {
 					resultNew.rooms[i].unit_has_room[j].realID = resultNew.rooms[i].unit_has_room[j].id_unit;

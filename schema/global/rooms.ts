@@ -264,7 +264,9 @@ export const RoomsWithPaginationQuery = extendType({
 			},
 			authorize: (parent, args, context) => context.user.canListRooms,
 			async resolve(parent, args, context) {
-				return await getRoomsWithPagination(args, context.prisma);
+				const queryArray = args.search.split("&");
+				const dictionary = queryArray.map(query => query.split("="));
+				return await getRoomsWithPagination(args, dictionary, context.prisma);
 			}
 		});
 	},

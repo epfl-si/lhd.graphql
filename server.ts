@@ -83,7 +83,7 @@ export async function makeServer(
 						'bio_org', 'id_bio_org',
 						prisma, 'organism', getBioOrgToString);
 					return org.filePath;
-				case 'organismByFormIO': // TODO delete
+				case 'organismByFormIO':
 					const orgByFIO = await prisma.bio_org.findUnique({where: {id_bio_org: Number(id)}});
 					if (orgByFIO) {
 						return orgByFIO.filePath;

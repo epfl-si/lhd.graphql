@@ -1,8 +1,6 @@
 import {Room} from "nexus-prisma";
 
-export async function getRoomsWithPagination(args, prisma) {
-	const queryArray = args.search.split("&");
-	const dictionary = queryArray.map(query => query.split("="));
+export async function getRoomsWithPagination(args, dictionary, prisma) {
 	const whereCondition = [];
 	whereCondition.push({ isDeleted: false });
 	dictionary.forEach(query => {
