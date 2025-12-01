@@ -62,76 +62,79 @@ export function makeRESTAPI() {
 
 			switch (method) {
 				case "auth_req":
-					if ( !req.user.canEditAuthorizations )
+					if ( !req.user.canEditAuthorizations ) {
 						res.status(403).json({Message: 'Unauthorized'});
-					else {
-						const idUnit = parseInt(req.query.id_unit as string);
-						if (!idUnit) return res.status(404).json({ Message: "missing <id_unit>" });
-
-						if (!req.query.room_ids) return res.status(404).json({ Message: "missing <room_ids> list of lab ids" });
-						const roomIds = (req.query.room_ids as string).split(',');
-
-						if (!req.query.scipers) return res.status(404).json({ Message: "missing <scipers> list of authorisation holders" });
-						const scipers = (req.query.scipers as string).split(',');
-
-						const cas = (req.query.cas as string).split(',');
-						const args = {
-							id_unit: idUnit,
-							authorization: request,
-							expiration_date: (new Date(expirationDate)).toLocaleDateString("en-GB"),
-							status: "Active",
-							type: "Chemical",
-							cas: cas.map(c => {
-									return {name: c, status: "New"};
-								}),
-							holders: scipers.map(sc => {
-									return {sciper: parseInt(sc), status: "New"};
-								}),
-							rooms: roomIds.map(r => {
-									return {id: parseInt(r), status: "New"};
-								}),
-						}
-						await createAuthorization(args, args.id_unit, req.prisma);
-						res.json({Message: "Ok"});
+						break;
 					}
+
+					const idUnit = parseInt(req.query.id_unit as string);
+					if (!idUnit) return res.status(404).json({ Message: "missing <id_unit>" });
+
+					if (!req.query.room_ids) return res.status(404).json({ Message: "missing <room_ids> list of lab ids" });
+					const roomIds = (req.query.room_ids as string).split(',');
+
+					if (!req.query.scipers) return res.status(404).json({ Message: "missing <scipers> list of authorisation holders" });
+					const scipers = (req.query.scipers as string).split(',');
+
+					const cas = (req.query.cas as string).split(',');
+					const args = {
+						id_unit: idUnit,
+						authorization: request,
+						expiration_date: (new Date(expirationDate)).toLocaleDateString("en-GB"),
+						status: "Active",
+						type: "Chemical",
+						cas: cas.map(c => {
+								return {name: c, status: "New"};
+							}),
+						holders: scipers.map(sc => {
+								return {sciper: parseInt(sc), status: "New"};
+							}),
+						rooms: roomIds.map(r => {
+								return {id: parseInt(r), status: "New"};
+							}),
+					}
+					await createAuthorization(args, args.id_unit, req.prisma);
+					res.json({Message: "Ok"});
 					break;
 				case "auth_renew":
-					if ( !req.user.canEditAuthorizations )
+					if ( !req.user.canEditAuthorizations ) {
 						res.status(403).json({Message: 'Unauthorized'});
-					else {
-						const reqParts = request.split("-");
-						const requestNumber = `${reqParts[0]}-${reqParts[1]}`;
-						const argsRenew = {
-							search: requestNumber,
-							type: "Chemical"
-						}
-
-						const auth = await getTheAuthorization(argsRenew, req.prisma);
-						const argsUpdate = {
-							expiration_date: (new Date(expirationDate)).toLocaleDateString("en-GB"),
-							status: "Active",
-							renewals: parseInt(reqParts[2])
-						};
-						await updateAuthorization(argsUpdate, auth, req.prisma)
-						res.json({Message: "Ok"});
+						break;
 					}
+
+					const reqParts = request.split("-");
+					const requestNumber = `${reqParts[0]}-${reqParts[1]}`;
+					const argsRenew = {
+						search: requestNumber,
+						type: "Chemical"
+					}
+
+					const auth = await getTheAuthorization(argsRenew, req.prisma);
+					const argsUpdate = {
+						expiration_date: (new Date(expirationDate)).toLocaleDateString("en-GB"),
+						status: "Active",
+						renewals: parseInt(reqParts[2])
+					};
+					await updateAuthorization(argsUpdate, auth, req.prisma)
+					res.json({Message: "Ok"});
 					break;
 				case "auth_chem":
-					if ( !req.user.canEditChemicals )
+					if ( !req.user.canEditChemicals ) {
 						res.status(403).json({Message: 'Unauthorized'});
-					else {
-						if ( !req.query.cas ) return res.status(404).json({Message: "missing <cas> code for chemical product"});
-						if ( !req.query.en ) return res.status(404).json({Message: "missing <en> english translation of the chemical name or description"});
-						if ( !req.query.auth ) return res.status(404).json({Message: "missing <auth> flag for setting if the new chemical requires authorisation"});
-
-						const argsChem = {
-							auth_chem_en: req.query.en as string,
-							cas_auth_chem: req.query.cas as string,
-							flag_auth_chem: (req.query.auth as string).toLowerCase() === 'yes' || (req.query.auth as string) === '1'
-						}
-						await createChemical(argsChem, req);
-						res.json({Message: "Ok"});
+						break;
 					}
+
+					if ( !req.query.cas ) return res.status(404).json({Message: "missing <cas> code for chemical product"});
+					if ( !req.query.en ) return res.status(404).json({Message: "missing <en> english translation of the chemical name or description"});
+					if ( !req.query.auth ) return res.status(404).json({Message: "missing <auth> flag for setting if the new chemical requires authorisation"});
+
+					const argsChem = {
+						auth_chem_en: req.query.en as string,
+						cas_auth_chem: req.query.cas as string,
+						flag_auth_chem: (req.query.auth as string).toLowerCase() === 'yes' || (req.query.auth as string) === '1'
+					}
+					await createChemical(argsChem, req);
+					res.json({Message: "Ok"});
 					break;
 				default:
 					res.status(404).json({Message: 'Not Found'});
