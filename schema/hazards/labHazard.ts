@@ -98,6 +98,7 @@ export const RoomHazardMutations = extendType({
 			type: "RoomHazardStatus",
 			authorize: (parent, args, context) => context.user.canEditHazards,
 			async resolve(root, args, context) {
+				const userInfo = await getUserInfoFromAPI(context.user.username);
 				const result = await context.prisma.$transaction(async (tx) => {
 					const room = await tx.Room.findFirst(
 						{
@@ -186,7 +187,6 @@ export const RoomHazardMutations = extendType({
 							id_lab: room.id
 						}});
 					if (additionalInfoResult) {
-						const userInfo = await getUserInfoFromAPI(context.user.username);
 						await tx.lab_has_hazards_additional_info.update(
 							{ where: { id_lab_has_hazards_additional_info: additionalInfoResult.id_lab_has_hazards_additional_info },
 								data: {
@@ -197,7 +197,6 @@ export const RoomHazardMutations = extendType({
 								}
 							});
 					} else {
-						const userInfo = await getUserInfoFromAPI(context.user.username);
 						await tx.lab_has_hazards_additional_info.create({
 							data: {
 								modified_by: `${userInfo.userFullName} (${userInfo.sciper})`,
@@ -220,7 +219,7 @@ export const RoomHazardMutations = extendType({
 					});
 					return {room, cosecs};
 				});
-				await sendEmailsForHazards(context.user.username, args, result.room, result.cosecs, context.prisma);
+				await sendEmailsForHazards(context.user.username, args, result.room, result.cosecs, context.prisma, userInfo);
 				return mutationStatusType.success();
 			}
 		});

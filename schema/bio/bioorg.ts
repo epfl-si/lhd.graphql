@@ -103,8 +103,8 @@ export const OrganismMutations = extendType({
 			type: "OrganismStatus",
 			authorize: (parent, args, context) => context.user.canEditOrganisms,
 			async resolve(root, args, context) {
+				const userInfo = await getUserInfoFromAPI(context.user.username);
 				return await context.prisma.$transaction(async (tx) => {
-					const userInfo = await getUserInfoFromAPI(context.user.username);
 					const organism = await tx.bio_org.create({
 						data: {
 							organism: args.organismName,
@@ -137,6 +137,7 @@ export const OrganismMutations = extendType({
 			type: "OrganismStatus",
 			authorize: (parent, args, context) => context.user.canEditOrganisms,
 			async resolve(root, args, context) {
+				const userInfo = await getUserInfoFromAPI(context.user.username);
 				return await context.prisma.$transaction(async (tx) => {
 					const org = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
 						'bio_org', 'id_bio_org',
@@ -147,7 +148,6 @@ export const OrganismMutations = extendType({
 						filePath = saveBase64File(args.fileContent, 'd_bio/' + org.id_bio_org + '/', args.fileName)
 					}
 
-					const userInfo = await getUserInfoFromAPI(context.user.username);
 					const updatedOrganism = await tx.bio_org.update(
 						{ where: { id_bio_org: org.id_bio_org },
 							data: {
