@@ -148,37 +148,38 @@ export function makeRESTAPI() {
 		try {
 			switch (req.query.m as string) {
 				case "auth_check":
-					if ( !req.user.canListAuthorizations )
+					if ( !req.user.canListAuthorizations ) {
 						res.status(403).json({Message: 'Unauthorized'});
-					else {
-						if ( !req.query.sciper ) return res.status(400).json({Message: "Missing sciper number"});
-						if ( !req.query.cas ) return res.status(400).json({Message: "Missing cas number"});
-						const sciper = (req.query.sciper as string);
-						const cas = (req.query.cas as string).split(',');
-
-						const argsCheck = {
-							take: 0,
-							skip: 0,
-							search: `Holder=${sciper}`,
-							type: "Chemical"
-						}
-						const result = await getAuthorizationsWithPagination(argsCheck, req.prisma);
-						const casResult = result.authorizations
-							.filter(auth => auth.expiration_date > new Date())
-							.flatMap(auth => auth.authorization_has_chemical)
-							.flatMap(auth => auth.chemical)
-							.filter(chem => chem.flag_auth_chem == 1)
-							.flatMap(cas => cas.cas_auth_chem);
-						const casAuth = {};
-						cas.forEach(c => {
-							if ( casResult.includes(c) ) {
-								casAuth[c] = 1;
-							} else {
-								casAuth[c] = 0;
-							}
-						})
-						res.json({Message: "Ok", Data: [casAuth]});
+						break;
 					}
+
+					if ( !req.query.sciper ) return res.status(400).json({Message: "Missing sciper number"});
+					if ( !req.query.cas ) return res.status(400).json({Message: "Missing cas number"});
+					const sciper = (req.query.sciper as string);
+					const cas = (req.query.cas as string).split(',');
+
+					const argsCheck = {
+						take: 0,
+						skip: 0,
+						search: `Holder=${sciper}`,
+						type: "Chemical"
+					}
+					const result = await getAuthorizationsWithPagination(argsCheck, req.prisma);
+					const casResult = result.authorizations
+						.filter(auth => auth.expiration_date > new Date())
+						.flatMap(auth => auth.authorization_has_chemical)
+						.flatMap(auth => auth.chemical)
+						.filter(chem => chem.flag_auth_chem == 1)
+						.flatMap(cas => cas.cas_auth_chem);
+					const casAuth = {};
+					cas.forEach(c => {
+						if ( casResult.includes(c) ) {
+							casAuth[c] = 1;
+						} else {
+							casAuth[c] = 0;
+						}
+					})
+					res.json({Message: "Ok", Data: [casAuth]});
 					break;
 				default:
 					res.status(404).json({Message: 'Not Found'});
