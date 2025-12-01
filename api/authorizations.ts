@@ -43,7 +43,7 @@ export function makeRESTAPI() {
 		//TODO delete when Catalyse and SNOW have migrated to the new URLs
 		if (req.url.indexOf(".php") > -1) {
 			const method = req.query.m as string;
-			if (!method) return res.status(404).json({ Message: "missing <m> command (e.g. m=auth_req)." });
+			if (!method) return res.status(400).json({ Message: "missing <m> command (e.g. m=auth_req)." });
 		}
 
 		next();
@@ -56,8 +56,8 @@ export function makeRESTAPI() {
 			const method = req.query.m as string;
 			const request = req.query.req as string;
 
-			if (!request && method !== 'auth_chem') return res.status(404).json({ Message: "missing <req> string for request+authorisation number of the form req=AUTH_SST-AUTH_REQ" });
-			if (!req.query.date && method !== 'auth_chem') return res.status(404).json({ Message: "missing authorisation expiration <date>" });
+			if (!request && method !== 'auth_chem') return res.status(400).json({ Message: "missing <req> string for request+authorisation number of the form req=AUTH_SST-AUTH_REQ" });
+			if (!req.query.date && method !== 'auth_chem') return res.status(400).json({ Message: "missing authorisation expiration <date>" });
 			const expirationDate = new Date(req.query.date as string);
 
 			switch (method) {
@@ -68,12 +68,12 @@ export function makeRESTAPI() {
 					}
 
 					const idUnit = parseInt(req.query.id_unit as string);
-					if (!idUnit) return res.status(404).json({ Message: "missing <id_unit>" });
+					if (!idUnit) return res.status(400).json({ Message: "missing <id_unit>" });
 
-					if (!req.query.room_ids) return res.status(404).json({ Message: "missing <room_ids> list of lab ids" });
+					if (!req.query.room_ids) return res.status(400).json({ Message: "missing <room_ids> list of lab ids" });
 					const roomIds = (req.query.room_ids as string).split(',');
 
-					if (!req.query.scipers) return res.status(404).json({ Message: "missing <scipers> list of authorisation holders" });
+					if (!req.query.scipers) return res.status(400).json({ Message: "missing <scipers> list of authorisation holders" });
 					const scipers = (req.query.scipers as string).split(',');
 
 					const cas = (req.query.cas as string).split(',');
@@ -124,9 +124,9 @@ export function makeRESTAPI() {
 						break;
 					}
 
-					if ( !req.query.cas ) return res.status(404).json({Message: "missing <cas> code for chemical product"});
-					if ( !req.query.en ) return res.status(404).json({Message: "missing <en> english translation of the chemical name or description"});
-					if ( !req.query.auth ) return res.status(404).json({Message: "missing <auth> flag for setting if the new chemical requires authorisation"});
+					if ( !req.query.cas ) return res.status(400).json({Message: "missing <cas> code for chemical product"});
+					if ( !req.query.en ) return res.status(400).json({Message: "missing <en> english translation of the chemical name or description"});
+					if ( !req.query.auth ) return res.status(400).json({Message: "missing <auth> flag for setting if the new chemical requires authorisation"});
 
 					const argsChem = {
 						auth_chem_en: req.query.en as string,
@@ -151,8 +151,8 @@ export function makeRESTAPI() {
 					if ( !req.user.canListAuthorizations )
 						res.status(403).json({Message: 'Unauthorized'});
 					else {
-						if ( !req.query.sciper ) return res.status(404).json({Message: "Missing sciper number"});
-						if ( !req.query.cas ) return res.status(404).json({Message: "Missing cas number"});
+						if ( !req.query.sciper ) return res.status(400).json({Message: "Missing sciper number"});
+						if ( !req.query.cas ) return res.status(400).json({Message: "Missing cas number"});
 						const sciper = (req.query.sciper as string);
 						const cas = (req.query.cas as string).split(',');
 
