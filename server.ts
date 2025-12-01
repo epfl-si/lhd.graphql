@@ -116,8 +116,9 @@ export async function makeServer(
 			if ( err ) {
 				console.error('Error sending file:', err);
 				res.status(500).send(err.message);
+			} else {
+				console.log('Getting file success', fullFilePath);
 			}
-			console.log('Getting file success', fullFilePath);
 		});
 	});
 
