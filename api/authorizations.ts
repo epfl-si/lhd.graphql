@@ -5,7 +5,7 @@ import {
 	reqRenewRegexp,
 	roomNameRegexp,
 	singleCAS,
-	textRegexp,
+	chemicalNameRegexp,
 	unitNameRegexp,
 	validateAuth,
 	validateCASList,
@@ -280,8 +280,8 @@ export function makeRESTAPI() {
 				},
 				validate: {
 					cas: singleCAS,
-					en: textRegexp,
-					fr: textRegexp,
+					en: chemicalNameRegexp,
+					fr: chemicalNameRegexp,
 					auth: validateAuth,
 				},
 				optional: {
