@@ -99,7 +99,7 @@ export const RoomHazardMutations = extendType({
 			authorize: (parent, args, context) => context.user.canEditHazards,
 			async resolve(root, args, context) {
 				const userInfo = await getUserInfoFromAPI(context.user.username);
-				const result = await context.prisma.$transaction(async (tx) => {
+				const roomResult = await context.prisma.$transaction(async (tx) => {
 					const room = await tx.Room.findFirst(
 						{
 							where: { name: args.room },
@@ -209,17 +209,17 @@ export const RoomHazardMutations = extendType({
 						});
 					}
 
-					const cosecs = [];
-
-					room.unit_has_room.forEach(uhr => {
-						uhr.unit.unit_has_cosec.forEach(uhc => {
-							if (!cosecs.includes(uhc.cosec.email))
-								cosecs.push(uhc.cosec.email);
-						})
-					});
-					return {room, cosecs};
+					return room;
 				});
-				await sendEmailsForHazards(context.user.username, args, result.room, result.cosecs, context.prisma, userInfo);
+				const cosecs = [];
+
+				roomResult.unit_has_room.forEach(uhr => {
+					uhr.unit.unit_has_cosec.forEach(uhc => {
+						if (!cosecs.includes(uhc.cosec.email))
+							cosecs.push(uhc.cosec.email);
+					})
+				});
+				await sendEmailsForHazards(context.user.username, args, roomResult, cosecs, context.prisma, userInfo);
 				return mutationStatusType.success();
 			}
 		});
