@@ -1,19 +1,14 @@
 export type UserInfo = {
-	isCosec?: boolean;
-	isManager?: boolean;
-	sub?: string;
-	given_name?: string;
-	family_name?: string;
 	groups: string[];
 	username: string;
-	preferred_username?: string;
+	isAdmin?: boolean;
+	isManager?: boolean;
+	isCosec?: boolean;
 	canEditHazards?: boolean;
 	canEditRooms?: boolean;
 	canListUnits?: boolean;
 	canListHazards?: boolean;
 	canListRooms?: boolean;
-	isAdmin?: boolean;
-	canEditUnits?: boolean;
 	canListReportFiles?: boolean;
 	canListOrganisms?: boolean;
 	canEditOrganisms?: boolean;

@@ -1,10 +1,16 @@
-import {Prisma} from '@prisma/client';
-import {ApolloServerPluginDrainHttpServer} from '@apollo/server/plugin/drainHttpServer';
 import * as express from 'express';
 import * as http from 'http';
 import * as cors from 'cors';
 import * as fs from 'fs/promises'
 import {schema} from './nexus/schema';
+import * as jwt from 'jsonwebtoken';
+import * as jwksClient from 'jwks-rsa';
+import * as path from "node:path";
+
+import {schema} from './nexus/schema';
+import {loginResponse, UserInfo} from './serverTypes';
+import {Prisma} from '@prisma/client';
+import {ApolloServerPluginDrainHttpServer} from '@apollo/server/plugin/drainHttpServer';
 import {ApolloServer} from "@apollo/server";
 import {expressMiddleware} from "@as-integrations/express5";
 import {getPrismaForUser} from "./libs/auditablePrisma";
@@ -83,4 +89,33 @@ function isHarmless(req: express.Request): boolean {
 	return req.method === 'POST' &&
 		req.url.startsWith("/graphql") &&
 		query.startsWith('query IntrospectionQuery');
+}
+
+function parseJwt (access_token: string) {
+    return JSON.parse(Buffer.from(access_token.split('.')[1], 'base64').toString());
+}
+
+async function checkTokenValid(access_token: string) {
+	const client = jwksClient({
+		jwksUri: process.env.OIDC_KEYS_URL,
+	});
+
+	const getKey = (header, callback) => {
+		client.getSigningKey(header.kid, (err, key) => {
+			if (err) return callback(err);
+			const signingKey = key.getPublicKey();
+			callback(null, signingKey);
+		});
+	}
+
+	return new Promise((resolve,reject) =>
+        jwt.verify(access_token, getKey, { 
+			algorithms: ['RS256'], 
+			issuer: process.env.OIDC_BASE_URL,
+			audience: process.env.OIDC_CLIENT_ID
+		},
+        function(err,decoded) {
+            return err ? reject(err) : resolve(decoded);
+        }
+    ));
 }

@@ -1,7 +1,8 @@
 import {Request} from "express-serve-static-core";
 import {ParsedQs} from "qs";
-import {Issuer} from "openid-client";
 import {UserInfo} from "../serverTypes";
+import * as jwt from 'jsonwebtoken';
+import * as jwksClient from 'jwks-rsa';
 
 export function getBearerToken(req: Request<{}, any, any, ParsedQs, Record<string, any>>): string {
 	const matched = req.headers.authorization?.match(/^Bearer\s(.*)$/);
@@ -9,34 +10,39 @@ export function getBearerToken(req: Request<{}, any, any, ParsedQs, Record<strin
 	else return matched[1];
 }
 
-let _issuer: Issuer | undefined = undefined;
-
-async function issuer() {
-	if (_issuer) return _issuer;
-
-	_issuer = await Issuer.discover(
-		process.env.OIDC_BASE_URL || 'http://localhost:8080/realms/LHD'
-	);
-
-	return _issuer;
-}
-
 export async function authenticateFromBarerToken(req): Promise<object> {
 	async function getUserAuthentication(access_token: string) {
-		const issuer_ = await issuer();
-		const client = new issuer_.Client({ client_id: 'LHDv3 server' });
+		
+		await checkTokenValid(access_token).catch((error) => {
+			return {
+				user: null,
+				httpCode: 401,
+				message: `Not authorized`,
+			};
+		});
 
-		const user: UserInfo = await client.userinfo(access_token);
+		const authenticationResult = parseJwt(access_token);
+		
+		const userGroups = authenticationResult.groups?.map(function(x){return x.replace(/_AppGrpU/g, '');});
 		const allowedGroups = process.env.ALLOWED_GROUPS.split(',');
+		if (!(userGroups && userGroups.some(e => allowedGroups.includes(e)))) {
+			return {
+				user: null,
+				httpCode: 403,
+				message: `Not authorized`,
+			};
+		}
+
+		const user: UserInfo = {
+			groups: userGroups,
+			username: authenticationResult.unique_name
+		};
 		console.log('Logged in', user);
 		console.log('Allowed groups', allowedGroups);
 
 		if (!(user.groups && user.groups.some(e => allowedGroups.includes(e)))) {
 			throw new Error('Wrong access rights');
 		}
-
-		if (!user.username)  // Keycloak only
-			user.username = user.preferred_username;
 
 		const hasRoleAdmin = user.groups.indexOf(process.env.ADMIN_GROUP) > -1;
 		const hasRoleManager = user.groups.indexOf(process.env.LHD_GROUP) > -1;
@@ -70,4 +76,33 @@ export async function authenticateFromBarerToken(req): Promise<object> {
 		throw new Error("Unauthorized");
 	}
 	return await getUserAuthentication(matched);
+}
+
+function parseJwt (access_token: string) {
+	return JSON.parse(Buffer.from(access_token.split('.')[1], 'base64').toString());
+}
+
+async function checkTokenValid(access_token: string) {
+	const client = jwksClient({
+		jwksUri: process.env.OIDC_KEYS_URL,
+	});
+
+	const getKey = (header, callback) => {
+		client.getSigningKey(header.kid, (err, key) => {
+			if (err) return callback(err);
+			const signingKey = key.getPublicKey();
+			callback(null, signingKey);
+		});
+	}
+
+	return new Promise((resolve,reject) =>
+		jwt.verify(access_token, getKey, { 
+			algorithms: ['RS256'], 
+			issuer: process.env.OIDC_BASE_URL,
+			audience: process.env.OIDC_CLIENT_ID
+		},
+		function(err,decoded) {
+			return err ? reject(err) : resolve(decoded);
+		}
+	));
 }
