@@ -193,6 +193,7 @@ async function getLoggedInUserInfos(req): Promise<loginResponse> {
 			userinfo.canEditHazards =
 			userinfo.canListUnits =
 			userinfo.canEditUnits =
+			userinfo.canListReportFiles =
 			userinfo.canListChemicals =
 			userinfo.canEditChemicals =
 			userinfo.canListAuthorizations =

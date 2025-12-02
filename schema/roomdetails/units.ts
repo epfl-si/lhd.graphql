@@ -467,7 +467,7 @@ export const UnitReportFilesQuery = extendType({
 			args: {
 				id: stringArg()
 			},
-			authorize: (parent, args, context) => context.user.canListUnits,
+			authorize: (parent, args, context) => context.user.canListReportFiles,
 			async resolve(parent, args, context): Promise<any> {
 				return await context.prisma.$transaction(async (tx) => {
 					const ids = IDObfuscator.getId(args.id);

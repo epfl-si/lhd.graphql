@@ -126,6 +126,7 @@ export const ConnectedUserInfoStruct = objectType({
 		t.boolean('canListRooms');
 		t.boolean('isAdmin');
 		t.boolean('canEditUnits');
+		t.boolean('canListReportFiles');
 		t.boolean('canListOrganisms');
 		t.boolean('canEditOrganisms');
 		t.boolean('canListChemicals');
@@ -156,6 +157,7 @@ export const ConnectedUserInfoQuery = extendType({
 					canListRooms: context.user.canListRooms,
 					isAdmin: context.user.isAdmin,
 					canEditUnits : context.user.canEditUnits,
+					canListReportFiles : context.user.canListReportFiles,
 					canListOrganisms: context.user.canListOrganisms,
 					canEditOrganisms: context.user.canEditOrganisms,
 					canListChemicals: context.user.canListChemicals,

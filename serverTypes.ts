@@ -13,7 +13,8 @@ export type UserInfo = {
 	canListHazards?: boolean;
 	canListRooms?: boolean;
 	isAdmin?: boolean;
-	canEditUnits ?: boolean;
+	canEditUnits?: boolean;
+	canListReportFiles?: boolean;
 	canListOrganisms?: boolean;
 	canEditOrganisms?: boolean;
 	canListChemicals?: boolean;
