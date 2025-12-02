@@ -6,6 +6,7 @@ import {getBioOrgToString} from "../schema/bio/bioorg";
 import {getLabHasHazardChildToString} from "../schema/hazards/labHazardChild";
 import {getLabHasHazardsAdditionalInfoToString} from "../schema/hazards/hazardsAdditionalInfo";
 import {getUnitToString} from "../schema/roomdetails/units";
+import * as path from "node:path";
 
 dotenv.config();
 const DOCUMENTS_PATH = process.env.DOCUMENTS_PATH;
@@ -44,7 +45,7 @@ export async function isDirectory(path: string) {
 	}
 }
 
-export async function getFilePathFromResource (model: string, id: string, prisma: any, fileNameFromArgs: string) {
+export async function getFilePathFromResource (model: string, id: string, prisma: any, body: any) {
 	switch (model) {
 		case 'organism':
 			const org = await IDObfuscator.ensureDBObjectIsTheSame(id,
@@ -69,6 +70,8 @@ export async function getFilePathFromResource (model: string, id: string, prisma
 				prisma, 'hazard child', getLabHasHazardsAdditionalInfoToString);
 			return info.filePath;
 		case 'reportFile':
+			const fileNameFromArgs = path.join(body.fileName as string);
+			checkFileAttributeByRegexp(fileNameFromArgs, fileNameRegexp);
 			const unit = await IDObfuscator.ensureDBObjectIsTheSame(id,
 				'Unit', 'id',
 				prisma, 'unit', getUnitToString);

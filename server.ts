@@ -70,8 +70,7 @@ export async function makeServer(
 		const prisma = getPrismaForUser(configFromDotEnv(), req.user);
 		const id = path.join(req.body.id as string);
 		const model = path.join(req.body.model as string);
-		const fileNameFromArgs = path.join(req.body.fileName as string);
-		const filePath = await getFilePathFromResource(model, id, prisma, fileNameFromArgs);
+		const filePath = await getFilePathFromResource(model, id, prisma, req.body);
 		const fileName = path.basename(filePath);
 		const fullFilePath = path.join(process.env.DOCUMENTS_PATH, filePath);
 		console.log('Getting file', fullFilePath);
