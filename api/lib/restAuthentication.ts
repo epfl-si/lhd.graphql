@@ -1,3 +1,6 @@
+/**
+ * Authentication for the third-party REST API (ServiceNow, Catalyse)
+ */
 import {Request} from "express";
 import {getBearerToken} from "../../libs/authentication";
 
