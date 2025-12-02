@@ -45,7 +45,9 @@ export async function isDirectory(path: string) {
 	}
 }
 
-export async function getFilePathFromResource (model: string, id: string, prisma: any, body: any) {
+export async function getFilePathFromResource (prisma: any, body: any) {
+	const id = body.id as string;
+	const model = body.model as string;
 	switch (model) {
 		case 'organism':
 			const org = await IDObfuscator.ensureDBObjectIsTheSame(id,
@@ -70,12 +72,35 @@ export async function getFilePathFromResource (model: string, id: string, prisma
 				prisma, 'hazard child', getLabHasHazardsAdditionalInfoToString);
 			return info.filePath;
 		case 'reportFile':
-			const fileNameFromArgs = path.join(body.fileName as string);
-			checkFileAttributeByRegexp(fileNameFromArgs, fileNameRegexp);
+			const fileNameFromArgs = body.fileName as string;
+			checkFileAttributeByRegexp(fileNameFromArgs, fileNameRegexp); // TODO check if the current user is a cosec of that unit, do the same for the `getReportfiles`
 			const unit = await IDObfuscator.ensureDBObjectIsTheSame(id,
 				'Unit', 'id',
 				prisma, 'unit', getUnitToString);
-			return `report_audits/pdf/${unit.id}/${fileNameFromArgs}`;
+			const reportFiles = await getReportFilesByUnit(unit);
+			const file = reportFiles.find(file => file.name == fileNameFromArgs);
+			return file ? file.path : '';
 	}
 	return '';
+}
+
+export async function getReportFilesByUnit (unit: any) {
+	const encryptedID = IDObfuscator.obfuscate({id: unit.id, obj: getUnitToString(unit)});
+	const reportFolder = "report_audits/pdf/" + unit.id + "/";
+	const folderPath = process.env.DOCUMENTS_PATH + "/" + reportFolder;
+	if (await isDirectory(folderPath)) {
+		const files = fs.readdirSync(folderPath);
+		const pdfFiles = files.filter(file => path.extname(file).toLowerCase() === '.pdf');
+		return pdfFiles.map(file =>
+		{
+			return {
+				id: JSON.stringify(encryptedID),
+				name: path.basename(file),
+				path: reportFolder + file,
+				unitName: unit.name
+			};
+		});
+	} else {
+		return [];
+	}
 }
