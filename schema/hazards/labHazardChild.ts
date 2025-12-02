@@ -59,15 +59,17 @@ export async function updateHazardFormChild(child: submission, tx: any, context:
 		}
 	});
 
-	if ( child.id.eph_id.startsWith('newHazardChild') && child.submission.data['status'] === 'Default' ) {
-		await tx.lab_has_hazards_child.create({
-			data: {
-				id_lab_has_hazards: parentHazard,
-				id_hazard_form_child_history: historyChildLastVersion.id_hazard_form_child_history,
-				submission: JSON.stringify(child.submission)
-			}
-		})
-	} else if ( !child.id.eph_id.startsWith('newHazardChild') ) {
+	if ( child.id.eph_id.startsWith('newHazardChild') ) {
+		if (child.submission.data['status'] === 'Default') {
+			await tx.lab_has_hazards_child.create({
+				data: {
+					id_lab_has_hazards: parentHazard,
+					id_hazard_form_child_history: historyChildLastVersion.id_hazard_form_child_history,
+					submission: JSON.stringify(child.submission)
+				}
+			})
+		}
+	} else {
 		const haz = await IDObfuscator.getObjectByObfuscatedId(child.id,
 			'lab_has_hazards_child', 'id_lab_has_hazards_child',
 			tx, 'Hazard', getLabHasHazardChildToString);
