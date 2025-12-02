@@ -127,43 +127,43 @@ async function getLoggedInUser(req): Promise<object> {
 		const issuer_ = await issuer();
 		const client = new issuer_.Client({ client_id: 'LHDv3 server' });
 
-		const userinfo: UserInfo = await client.userinfo(access_token);
+		const user: UserInfo = await client.userinfo(access_token);
 		const allowedGroups = process.env.ALLOWED_GROUPS.split(',');
-		console.log('Logged in', userinfo);
+		console.log('Logged in', user);
 		console.log('Allowed groups', allowedGroups);
 
-		if (!(userinfo.groups && userinfo.groups.some(e => allowedGroups.includes(e)))) {
+		if (!(user.groups && user.groups.some(e => allowedGroups.includes(e)))) {
 			throw new Error('Wrong access rights');
 		}
 
-		if (!userinfo.username)
-			userinfo.username = userinfo.preferred_username;
+		if (!user.username)
+			user.username = user.preferred_username;
 
-		const hasRoleAdmin = userinfo.groups.indexOf(process.env.ADMIN_GROUP) > -1;
-		const hasRoleManager = userinfo.groups.indexOf(process.env.LHD_GROUP) > -1;
+		const hasRoleAdmin = user.groups.indexOf(process.env.ADMIN_GROUP) > -1;
+		const hasRoleManager = user.groups.indexOf(process.env.LHD_GROUP) > -1;
 		const hasRoleManagerOrAdmin = hasRoleAdmin || hasRoleManager;
-		const hasRoleCosec = userinfo.groups.indexOf(process.env.COSEC_GROUP) > -1;
+		const hasRoleCosec = user.groups.indexOf(process.env.COSEC_GROUP) > -1;
 
-		userinfo.isAdmin = hasRoleAdmin;
-		userinfo.isManager = hasRoleManager;
-		userinfo.isCosec = hasRoleCosec;
+		user.isAdmin = hasRoleAdmin;
+		user.isManager = hasRoleManager;
+		user.isCosec = hasRoleCosec;
 
-		userinfo.canListRooms =
-			userinfo.canEditRooms =
-			userinfo.canListHazards =
-			userinfo.canEditHazards =
-			userinfo.canListUnits =
-			userinfo.canEditUnits =
-			userinfo.canListReportFiles =
-			userinfo.canListChemicals =
-			userinfo.canEditChemicals =
-			userinfo.canListAuthorizations =
-			userinfo.canEditAuthorizations =
-			userinfo.canListPersons =
-			userinfo.canEditOrganisms = hasRoleManagerOrAdmin;
-		userinfo.canListOrganisms = hasRoleManagerOrAdmin || hasRoleCosec;
+		user.canListRooms =
+			user.canEditRooms =
+			user.canListHazards =
+			user.canEditHazards =
+			user.canListUnits =
+			user.canEditUnits =
+			user.canListReportFiles =
+			user.canListChemicals =
+			user.canEditChemicals =
+			user.canListAuthorizations =
+			user.canEditAuthorizations =
+			user.canListPersons =
+			user.canEditOrganisms = hasRoleManagerOrAdmin;
+		user.canListOrganisms = hasRoleManagerOrAdmin || hasRoleCosec;
 
-		return userinfo;
+		return user;
 	}
 
 	const matched = getBearerToken(req);
