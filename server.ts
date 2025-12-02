@@ -7,7 +7,7 @@ import * as fs from 'fs/promises'
 import {schema} from './nexus/schema';
 
 import {Issuer} from 'openid-client';
-import {loginResponse, UserInfo} from './serverTypes';
+import {UserInfo} from './serverTypes';
 import * as path from "node:path";
 import {ApolloServer} from "@apollo/server";
 import {expressMiddleware} from "@as-integrations/express5";
@@ -51,13 +51,13 @@ export async function makeServer(
 	app.use(cors());
 
 	async function authenticate(req) {
-		var loginResponse = await getLoggedInUserInfos(req);
+		const user = await getLoggedInUser(req);
 		if (!insecure) {
-			if ( req.method === 'POST' && !isHarmless(req) && !loginResponse.user ) {
+			if ( req.method === 'POST' && !isHarmless(req) && !user ) {
 				throw new Error('Unauthorized');
 			}
 		}
-		return loginResponse.user;
+		return user;
 	}
 
 	app.get('/graphiql', async (req, res) => {
@@ -124,7 +124,7 @@ async function issuer() {
 	return _issuer;
 }
 
-async function getLoggedInUserInfos(req): Promise<loginResponse> {
+async function getLoggedInUser(req): Promise<object> {
 	async function getUserAuthentication(access_token: string) {
 		const issuer_ = await issuer();
 		const client = new issuer_.Client({ client_id: 'LHDv3 server' });
@@ -165,20 +165,12 @@ async function getLoggedInUserInfos(req): Promise<loginResponse> {
 			userinfo.canEditOrganisms = hasRoleManagerOrAdmin;
 		userinfo.canListOrganisms = hasRoleManagerOrAdmin || hasRoleCosec;
 
-		return {
-			user: userinfo,
-			httpCode: 200,
-			message: 'Correct access rights and token are working, user logged in.',
-		};
+		return userinfo;
 	}
 
 	const matched = getBearerToken(req);
 	if (!matched) {
-		return {
-			user: undefined,
-			httpCode: 401,
-			message: `Unauthorized`
-		};
+		return undefined;
 	}
 	return await getUserAuthentication(matched);
 }

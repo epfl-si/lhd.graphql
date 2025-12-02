@@ -23,9 +23,3 @@ export type UserInfo = {
 	canEditAuthorizations?: boolean;
 	canListPersons?: boolean;
 };
-
-export type loginResponse = {
-	user: object;
-	httpCode: number;
-	message: string;
-};
