@@ -6,14 +6,13 @@ import {getLabHasHazardChildToString} from "../schema/hazards/labHazardChild";
 import {getLabHasHazardsAdditionalInfoToString} from "../schema/hazards/hazardsAdditionalInfo";
 import {getUnitToString} from "../schema/roomdetails/units";
 import * as path from "node:path";
+import {fileNameRegexp} from "../api/lib/lhdValidators";
 
 dotenv.config();
 const DOCUMENTS_PATH = process.env.DOCUMENTS_PATH;
-export const fileNameRegexp = /^[\p{L}\p{N} _\-\(\)\.]+\.[A-Za-z0-9]+$/u;
 
 export function checkFileAttributeByRegexp(fileAttribute, regexp) {
-	const validAttribute = new RegExp(regexp);
-	if (!validAttribute.test(fileAttribute)) {
+	if (!regexp.test(fileAttribute)) {
 		const err = new Error("Filename not permitted");
 		(err as any).code = "FNP";
 		throw err;
@@ -65,15 +64,6 @@ export async function getFilePathFromResource (prisma: any, body: any) {
 				'lab_has_hazards_additional_info', 'id_lab_has_hazards_additional_info',
 				prisma, 'hazard child', getLabHasHazardsAdditionalInfoToString);
 			return info.filePath;
-		case 'reportFile':
-			const fileNameFromArgs = body.fileName as string;
-			checkFileAttributeByRegexp(fileNameFromArgs, fileNameRegexp); // TODO check if the current user is a cosec of that unit, do the same for the `getReportfiles`
-			const unit = await IDObfuscator.ensureDBObjectIsTheSame(id,
-				'Unit', 'id',
-				prisma, 'unit', getUnitToString);
-			const reportFiles = await getReportFilesByUnit(unit);
-			const file = reportFiles.find(file => file.name == fileNameFromArgs);
-			return file ? file.path : '';
 	}
 	return '';
 }

@@ -5,10 +5,11 @@ import {configFromDotEnv} from "../libs/config";
 import {errorHandler} from "./lib/errorHandler";
 import {authenticateFromBarerToken} from "../libs/authentication";
 import {checkAPICall} from "./lib/checkedAPICalls";
-import {obfuscatedIdValidators} from "./lib/lhdValidators";
+import {fileNameRegexp, obfuscatedIdValidators} from "./lib/lhdValidators";
 import {ID, IDObfuscator} from "../utils/IDObfuscator";
 import {getBioOrgToString} from "../schema/bio/bioorg";
-import {sendFileResponse} from "../utils/File";
+import {getReportFilesByUnit, sendFileResponse} from "../utils/File";
+import {getUnitToString} from "../schema/roomdetails/units";
 
 const obfuscatedIdParams = {
 	eph_id (req) { return req.params.eph_id },
@@ -43,6 +44,31 @@ export function makeRESTFilesAPI() {
 			const org = await IDObfuscator.getObjectByObfuscatedId(id, 'bio_org', 'id_bio_org',
 				req.prisma, 'organism', getBioOrgToString);
 			sendFileResponse(org.filePath, res);
+		});
+
+	type GetReportFile = {salt: string, eph_id: string, fileName: string};
+	app.get("/reportFile/:eph_id",
+		checkAPICall(
+			{
+				authorize: (req) => req.user.canListOrganisms,
+				required: {
+					...obfuscatedIdParams,
+					fileName (req) { return req.query.fileName }
+				},
+				validate: {
+					...obfuscatedIdValidators,
+					fileName: fileNameRegexp
+				}
+			}),
+		async (req: Request<GetReportFile>, res) => {
+			const id: ID = {salt: req.params.salt, eph_id: req.params.eph_id};
+			IDObfuscator.checkId(id);
+			// TODO check if the current user is a cosec of that unit, do the same for the `getReportfiles`
+			const unit = await IDObfuscator.getObjectByObfuscatedId(id, 'Unit', 'id',
+				req.prisma, 'unit', getUnitToString);
+			const reportFiles = await getReportFilesByUnit(unit);
+			const file = reportFiles.find(file => file.name == req.params.fileName);
+			sendFileResponse(file ? file.path : '', res);
 		});
 
 	app.use(errorHandler);
