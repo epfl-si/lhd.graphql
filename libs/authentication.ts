@@ -35,7 +35,7 @@ export async function authenticateFromBarerToken(req): Promise<object> {
 			throw new Error('Wrong access rights');
 		}
 
-		if (!user.username)
+		if (!user.username)  // Keycloak only
 			user.username = user.preferred_username;
 
 		const hasRoleAdmin = user.groups.indexOf(process.env.ADMIN_GROUP) > -1;
