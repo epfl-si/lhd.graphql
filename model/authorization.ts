@@ -1,7 +1,5 @@
-import {IDObfuscator} from "../utils/IDObfuscator";
-import {getSHA256} from "../utils/HashingTools";
-import {getAuthorizationToString} from "../schema/authorization/authorization";
 import {getUsersFromApi} from "../utils/CallAPI";
+import {NotFoundError} from "../utils/GraphQLErrors";
 
 export async function createAuthorization(args, unitId, prisma) {
 	return await prisma.$transaction(async (tx) => {
@@ -236,7 +234,7 @@ async function checkRelations(tx, args, authorization) {
 			let p = await tx.auth_chem.findUnique({where: {cas_auth_chem: cas.name}});
 
 			if ( !p ) {
-				throw new Error(`CAS ${cas.name} not found`);
+				throw new NotFoundError(`CAS ${cas.name} not found`);
 			}
 
 			const relation = {
