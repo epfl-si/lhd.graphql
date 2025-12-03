@@ -5,14 +5,12 @@ import * as http from 'http';
 import * as cors from 'cors';
 import * as fs from 'fs/promises'
 import {schema} from './nexus/schema';
-import * as path from "node:path";
 import {ApolloServer} from "@apollo/server";
 import {expressMiddleware} from "@as-integrations/express5";
 import {makeRESTAPI} from "./api/authorizations";
 import {formatErrorForNexus} from "./utils/GraphQLErrors";
 import {getPrismaForUser} from "./libs/auditablePrisma";
-import {BackendConfig, configFromDotEnv} from "./libs/config";
-import {getFilePathFromResource} from "./utils/File";
+import {BackendConfig} from "./libs/config";
 import {authenticateFromBarerToken} from "./libs/authentication";
 import {makeRESTFilesAPI} from "./api/files";
 
@@ -57,25 +55,6 @@ export async function makeServer(
 		const html =  await fs.readFile('developer/graphiql.html', 'utf8')
 		res.send(html)
 	})
-
-	app.post('/files/', async (req, res) => {
-		console.log('Getting file');
-		const prisma = getPrismaForUser(configFromDotEnv(), req.user);
-		const filePath = await getFilePathFromResource(prisma, req.body);
-		const fileName = path.basename(filePath);
-		const fullFilePath = path.join(process.env.DOCUMENTS_PATH, filePath);
-		console.log('Getting file', fullFilePath);
-		res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-		res.sendFile(fullFilePath, (err) => {
-			if ( err ) {
-				console.error('Error sending file:', err);
-				res.status(500).send(err.message);
-			} else {
-				console.log('Getting file success', fullFilePath);
-			}
-		});
-	});
-
 
 	app.use('/graphql',
 		expressMiddleware(server, {

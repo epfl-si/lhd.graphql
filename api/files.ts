@@ -10,6 +10,8 @@ import {ID, IDObfuscator} from "../utils/IDObfuscator";
 import {getBioOrgToString} from "../schema/bio/bioorg";
 import {getReportFilesByUnit, sendFileResponse} from "../utils/File";
 import {getUnitToString} from "../schema/roomdetails/units";
+import {getLabHasHazardsAdditionalInfoToString} from "../schema/hazards/hazardsAdditionalInfo";
+import {getLabHasHazardChildToString} from "../schema/hazards/labHazardChild";
 
 const obfuscatedIdParams = {
 	eph_id (req) { return req.params.eph_id },
@@ -46,11 +48,52 @@ export function makeRESTFilesAPI() {
 			sendFileResponse(org.filePath, res);
 		});
 
+	app.get("/hazardAdditionalInfo/:eph_id",
+		checkAPICall(
+			{
+				authorize: (req) => req.user.canListHazards,
+				required: {
+					...obfuscatedIdParams,
+				},
+				validate: {
+					...obfuscatedIdValidators,
+				}
+			}),
+		async (req: Request<GetFile>, res) => {
+			const id: ID = {salt: req.params.salt, eph_id: req.params.eph_id};
+			IDObfuscator.checkId(id);
+			const info = await IDObfuscator.getObjectByObfuscatedId(id,
+				'lab_has_hazards_additional_info', 'id_lab_has_hazards_additional_info',
+				req.prisma, 'hazard info', getLabHasHazardsAdditionalInfoToString);
+			sendFileResponse(info.filePath, res);
+		});
+
+	app.get("/labHasHazardsChild/:eph_id",
+		checkAPICall(
+			{
+				authorize: (req) => req.user.canListHazards,
+				required: {
+					...obfuscatedIdParams,
+				},
+				validate: {
+					...obfuscatedIdValidators,
+				}
+			}),
+		async (req: Request<GetFile>, res) => {
+			const id: ID = {salt: req.params.salt, eph_id: req.params.eph_id};
+			IDObfuscator.checkId(id);
+			const child = await IDObfuscator.getObjectByObfuscatedId(id,
+				'lab_has_hazards_child', 'id_lab_has_hazards_child',
+				req.prisma, 'hazard child', getLabHasHazardChildToString);
+			const submission = JSON.parse(child.submission);
+			sendFileResponse(submission.data.fileLink, res);
+		});
+
 	type GetReportFile = {salt: string, eph_id: string, fileName: string};
 	app.get("/reportFile/:eph_id",
 		checkAPICall(
 			{
-				authorize: (req) => req.user.canListOrganisms,
+				authorize: (req) => req.user.canListReportFiles,
 				required: {
 					...obfuscatedIdParams,
 					fileName (req) { return req.query.fileName }
@@ -69,6 +112,27 @@ export function makeRESTFilesAPI() {
 			const reportFiles = await getReportFilesByUnit(unit);
 			const file = reportFiles.find(file => file.name == req.params.fileName);
 			sendFileResponse(file ? file.path : '', res);
+		});
+
+	type GetFileById = {id: number};
+	app.get("/organismByFormIO/:id",
+		checkAPICall(
+			{
+				authorize: (req) => req.user.canListOrganisms,
+				required: {
+					id (req) { return req.params.id }
+				},
+				validate: {
+					id: Number
+				}
+			}),
+		async (req: Request<GetFileById>, res) => {
+		let filePath = '';
+			const orgByFIO = await req.prisma.bio_org.findUnique({where: {id_bio_org: Number(req.params.id)}});
+			if (orgByFIO) {
+				filePath = orgByFIO.filePath;
+			}
+			sendFileResponse(filePath, res);
 		});
 
 	app.use(errorHandler);

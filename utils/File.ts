@@ -43,31 +43,6 @@ export async function isDirectory(path: string) {
 	}
 }
 
-export async function getFilePathFromResource (prisma: any, body: any) {
-	const id = body.id as string;
-	const model = body.model as string;
-	switch (model) {
-		case 'organismByFormIO':
-			const orgByFIO = await prisma.bio_org.findUnique({where: {id_bio_org: Number(id)}});
-			if (orgByFIO) {
-				return orgByFIO.filePath;
-			}
-			break;
-		case 'labHasHazardsChild':
-			const child = await IDObfuscator.ensureDBObjectIsTheSame(id,
-				'lab_has_hazards_child', 'id_lab_has_hazards_child',
-				prisma, 'hazard child', getLabHasHazardChildToString);
-			const submission = JSON.parse(child.submission);
-			return submission.data.fileLink;
-		case 'hazardAdditionalInfo':
-			const info = await IDObfuscator.ensureDBObjectIsTheSame(id,
-				'lab_has_hazards_additional_info', 'id_lab_has_hazards_additional_info',
-				prisma, 'hazard child', getLabHasHazardsAdditionalInfoToString);
-			return info.filePath;
-	}
-	return '';
-}
-
 export async function getReportFilesByUnit (unit: any) {
 	const encryptedID = IDObfuscator.obfuscate({id: unit.id, obj: getUnitToString(unit)});
 	const reportFolder = "report_audits/pdf/" + unit.id + "/";
