@@ -1,11 +1,11 @@
 import {getNow} from "../libs/date";
 import {checkAPICall} from "./lib/checkedAPICalls";
 import {
+	chemicalNameRegexp,
 	reqRegexp,
 	reqRenewRegexp,
 	roomNameRegexp,
 	singleCAS,
-	chemicalNameRegexp,
 	unitNameRegexp,
 	validateAuth,
 	validateCASList,
@@ -13,7 +13,6 @@ import {
 } from "./lib/lhdValidators";
 import * as express from "express";
 import {Request} from "express";
-import {restAuthenticate} from "./lib/restAuthentication";
 import {getPrismaForUser} from "../libs/auditablePrisma";
 import {configFromDotEnv} from "../libs/config";
 import {errorHandler} from "./lib/errorHandler";
@@ -26,6 +25,7 @@ import {
 import {createChemical, getChemicalWithPagination} from "../model/chemicals";
 import {getRoomsWithPagination} from "../model/rooms";
 import {getParentUnit, getUnitByName} from "../model/units";
+import {getToken} from "./lib/restAuthentication";
 
 export function makeRESTAPI() {
 	const app = express();
@@ -37,7 +37,7 @@ export function makeRESTAPI() {
 		next();
 	});
 
-	app.use('/api', function auditAPI (req, res, next) {
+	app.use(function auditAPI (req, res, next) {
 		console.log(`API CALL - [${getNow()}] - ${req.method} - ${req.protocol}://${req.hostname}${req.originalUrl}`);
 
 		//TODO delete when Catalyse and SNOW have migrated to the new URLs
@@ -51,7 +51,7 @@ export function makeRESTAPI() {
 
 
 	//TODO delete when Catalyse and SNOW have migrated to the new URLs
-	app.post("/api/snow.php", async (req: any, res) => {
+	app.post("/snow.php", async (req: any, res) => {
 		try {
 			const method = req.query.m as string;
 			const request = req.query.req as string;
@@ -144,7 +144,7 @@ export function makeRESTAPI() {
 			res.status(500).json({Message: err.message});
 		}
 	});
-	app.get("/api/catalyse.php", async (req: any, res) => {
+	app.get("/catalyse.php", async (req: any, res) => {
 		try {
 			switch (req.query.m as string) {
 				case "auth_check":
@@ -192,7 +192,7 @@ export function makeRESTAPI() {
 
 
 	type AuthReqParams = {id_unit: number, req: string, date: Date, scipers: number[], cas: string[], room_ids: number[]};
-	app.post("/api/auth_req",
+	app.post("/auth_req",
 		checkAPICall(
 			{
 				authorize: (req) => req.user.canEditAuthorizations,
@@ -236,7 +236,7 @@ export function makeRESTAPI() {
 	);
 
 	type AuthRenewParams = {req: string, date: Date};
-	app.post("/api/auth_renew",
+	app.post("/auth_renew",
 		checkAPICall(
 			{
 				authorize: (req) => req.user.canEditAuthorizations,
@@ -269,7 +269,7 @@ export function makeRESTAPI() {
 	);
 
 	type AddChemParams = {cas: string, en: string, auth: boolean, fr?: string};
-	app.post("/api/add_chem",
+	app.post("/add_chem",
 		checkAPICall(
 			{
 				authorize: (req) => req.user.canEditChemicals,
@@ -299,7 +299,7 @@ export function makeRESTAPI() {
 	});
 
 	type GetChemParams = {cas?: string[]};
-	app.get("/api/get_chem",
+	app.get("/get_chem",
 		checkAPICall(
 			{
 				authorize: (req) => req.user.canListChemicals,
@@ -328,7 +328,7 @@ export function makeRESTAPI() {
 		});
 
 	type AuthCheckParams = {cas: string[], sciper: Number};
-	app.get("/api/auth_check",
+	app.get("/auth_check",
 		checkAPICall(
 			{
 				authorize: (req) => req.user.canListAuthorizations,
@@ -367,7 +367,7 @@ export function makeRESTAPI() {
 		});
 
 	type GetLabsAndUnitsParams = {unit?: string, room?: string};
-	app.get("/api/get_labs_and_units",
+	app.get("/get_labs_and_units",
 		checkAPICall(
 			{
 				authorize: (req) => req.user.canListRooms,
@@ -416,7 +416,7 @@ export function makeRESTAPI() {
 		});
 
 	type GetProfsAndCosecsParams = {unit?: string};
-	app.get("/api/get_profs_and_cosecs",
+	app.get("/get_profs_and_cosecs",
 		checkAPICall(
 			{
 				authorize: (req) => req.user.canListUnits,

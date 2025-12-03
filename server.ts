@@ -94,7 +94,7 @@ export async function makeServer(
 		})
 	);
 
-	app.use(makeRESTAPI());
+	app.use("/api", makeRESTAPI());
 
 	return httpServer;
 }
