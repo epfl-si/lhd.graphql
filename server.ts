@@ -5,18 +5,16 @@ import * as http from 'http';
 import * as cors from 'cors';
 import * as fs from 'fs/promises'
 import {schema} from './nexus/schema';
-
-import {Issuer} from 'openid-client';
-import {UserInfo} from './serverTypes';
 import * as path from "node:path";
 import {ApolloServer} from "@apollo/server";
 import {expressMiddleware} from "@as-integrations/express5";
-import {getBearerToken} from "./libs/authentication";
 import {makeRESTAPI} from "./api/authorizations";
-import {getFormattedError} from "./utils/GraphQLErrors";
+import {formatErrorForNexus} from "./utils/GraphQLErrors";
 import {getPrismaForUser} from "./libs/auditablePrisma";
 import {BackendConfig, configFromDotEnv} from "./libs/config";
 import {getFilePathFromResource} from "./utils/File";
+import {authenticateFromBarerToken} from "./libs/authentication";
+import {makeRESTFilesAPI} from "./api/files";
 
 type TestInjections = {
 	insecure?: boolean;
@@ -39,7 +37,7 @@ export async function makeServer(
 		schema,
 		formatError(formattedError, error: any) {
 			console.error('Server error:', error, error.originalError);
-			const {errorCode, errorMessage} = getFormattedError(formattedError, error);
+			const {errorCode, errorMessage} = formatErrorForNexus(formattedError, error);
 			return {extensions: {code: errorCode}, message: errorMessage};
 		},
 		plugins: [ApolloServerPluginDrainHttpServer({ httpServer })]
@@ -51,13 +49,8 @@ export async function makeServer(
 	app.use(cors());
 
 	async function authenticate(req) {
-		const user = await getLoggedInUser(req);
-		if (!insecure) {
-			if ( req.method === 'POST' && !isHarmless(req) && !user ) {
-				throw new Error('Unauthorized');
-			}
-		}
-		return user;
+		if ( insecure || isHarmless(req) ) return;
+		return await authenticateFromBarerToken(req);
 	}
 
 	app.get('/graphiql', async (req, res) => {
@@ -100,75 +93,14 @@ export async function makeServer(
 }
 
 /**
- * Whether a POST query is harmless.
+ * Whether the request is a harmless POST query.
  *
  * `IntrospectionQuery` GraphQL requests are presumed harmless;
  * everything else returns `false`.
  */
 function isHarmless(req: express.Request): boolean {
 	const query = (req?.body?.query || '').trim();
-	return query.startsWith('query IntrospectionQuery');
-}
-
-let _issuer: Issuer | undefined = undefined;
-
-async function issuer() {
-	if (_issuer) return _issuer;
-
-	_issuer = await Issuer.discover(
-		process.env.OIDC_BASE_URL || 'http://localhost:8080/realms/LHD'
-	);
-
-	return _issuer;
-}
-
-async function getLoggedInUser(req): Promise<object> {
-	async function getUserAuthentication(access_token: string) {
-		const issuer_ = await issuer();
-		const client = new issuer_.Client({ client_id: 'LHDv3 server' });
-
-		const user: UserInfo = await client.userinfo(access_token);
-		const allowedGroups = process.env.ALLOWED_GROUPS.split(',');
-		console.log('Logged in', user);
-		console.log('Allowed groups', allowedGroups);
-
-		if (!(user.groups && user.groups.some(e => allowedGroups.includes(e)))) {
-			throw new Error('Wrong access rights');
-		}
-
-		if (!user.username)
-			user.username = user.preferred_username;
-
-		const hasRoleAdmin = user.groups.indexOf(process.env.ADMIN_GROUP) > -1;
-		const hasRoleManager = user.groups.indexOf(process.env.LHD_GROUP) > -1;
-		const hasRoleManagerOrAdmin = hasRoleAdmin || hasRoleManager;
-		const hasRoleCosec = user.groups.indexOf(process.env.COSEC_GROUP) > -1;
-
-		user.isAdmin = hasRoleAdmin;
-		user.isManager = hasRoleManager;
-		user.isCosec = hasRoleCosec;
-
-		user.canListRooms =
-			user.canEditRooms =
-			user.canListHazards =
-			user.canEditHazards =
-			user.canListUnits =
-			user.canEditUnits =
-			user.canListReportFiles =
-			user.canListChemicals =
-			user.canEditChemicals =
-			user.canListAuthorizations =
-			user.canEditAuthorizations =
-			user.canListPersons =
-			user.canEditOrganisms = hasRoleManagerOrAdmin;
-		user.canListOrganisms = hasRoleManagerOrAdmin || hasRoleCosec;
-
-		return user;
-	}
-
-	const matched = getBearerToken(req);
-	if (!matched) {
-		return undefined;
-	}
-	return await getUserAuthentication(matched);
+	return req.method === 'POST' &&
+		req.url.startsWith("/graphql") &&
+		query.startsWith('query IntrospectionQuery');
 }
