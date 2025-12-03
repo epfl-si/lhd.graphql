@@ -8,6 +8,10 @@ export const unitNameRegexp = new RegExp("[A-Z][A-Z-]*[A-Z]");
 export const roomNameRegexp = new RegExp("[A-Z][A-Z0-9-. ]*[A-Z0-9]");
 export const authRegexp = new RegExp("yes|no|1|0");
 
+export const saltRegexp = new RegExp("[a-f0-9]+");
+export const ephIdRegexp = new RegExp("[a-zA-Z0-9/+=]+");
+export const obfuscatedIdValidators = {eph_id: validateEphId, salt: saltRegexp};
+
 export function validateCommaSeparatedNumbers  (p) { return p.split(',').map(r => this.validate(r, Number)) }
 
 export function validateCASList (p) { return p.split(',').map(r => this.validate(r, casRegexp)) }
@@ -19,4 +23,11 @@ export function validateAuth (p) {
 	else {
 		return ['yes', '1'].indexOf(p) > -1;
 	}
+}
+
+export function validateEphId (p) {
+	const decodedEphId = decodeURIComponent(p);
+	if (!ephIdRegexp.test(decodedEphId))
+		throw new ValidationError(`Failed Regex match`);
+	return decodedEphId;
 }

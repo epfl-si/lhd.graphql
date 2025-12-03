@@ -88,6 +88,7 @@ export async function makeServer(
 	);
 
 	app.use("/api", makeRESTAPI());
+	app.use("/files", makeRESTFilesAPI());
 
 	return httpServer;
 }

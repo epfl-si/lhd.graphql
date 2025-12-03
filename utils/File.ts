@@ -2,7 +2,6 @@ import * as fs from "fs";
 import * as dotenv from "dotenv";
 import {stat} from 'fs/promises';
 import {IDObfuscator} from "./IDObfuscator";
-import {getBioOrgToString} from "../schema/bio/bioorg";
 import {getLabHasHazardChildToString} from "../schema/hazards/labHazardChild";
 import {getLabHasHazardsAdditionalInfoToString} from "../schema/hazards/hazardsAdditionalInfo";
 import {getUnitToString} from "../schema/roomdetails/units";
@@ -49,11 +48,6 @@ export async function getFilePathFromResource (prisma: any, body: any) {
 	const id = body.id as string;
 	const model = body.model as string;
 	switch (model) {
-		case 'organism':
-			const org = await IDObfuscator.ensureDBObjectIsTheSame(id,
-				'bio_org', 'id_bio_org',
-				prisma, 'organism', getBioOrgToString);
-			return org.filePath;
 		case 'organismByFormIO':
 			const orgByFIO = await prisma.bio_org.findUnique({where: {id_bio_org: Number(id)}});
 			if (orgByFIO) {
@@ -103,4 +97,18 @@ export async function getReportFilesByUnit (unit: any) {
 	} else {
 		return [];
 	}
+}
+
+export function sendFileResponse (filePath, res) {
+	const fileName = path.basename(filePath);
+	const fullFilePath = path.join(process.env.DOCUMENTS_PATH, filePath);
+	res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+	res.sendFile(fullFilePath, (err) => {
+		if ( err ) {
+			console.error('Error sending file:', err);
+			res.status(500).send(err.message);
+		} else {
+			console.log('Getting file success', fullFilePath);
+		}
+	});
 }
