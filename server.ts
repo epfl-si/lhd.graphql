@@ -7,12 +7,12 @@ import * as fs from 'fs/promises'
 import {schema} from './nexus/schema';
 import {ApolloServer} from "@apollo/server";
 import {expressMiddleware} from "@as-integrations/express5";
-import {makeRESTAPI} from "./api/authorizations";
-import {formatErrorForNexus} from "./utils/GraphQLErrors";
 import {getPrismaForUser} from "./libs/auditablePrisma";
 import {BackendConfig} from "./libs/config";
 import {authenticateFromBarerToken} from "./libs/authentication";
 import {makeRESTFilesAPI} from "./api/files";
+import {formatErrorForNexus} from "./utils/errors";
+import {makeRESTAPI} from "./api/catalyseSnow";
 
 type TestInjections = {
 	insecure?: boolean;

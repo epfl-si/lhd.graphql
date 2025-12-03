@@ -1,5 +1,5 @@
 import {getUsersFromApi} from "../utils/CallAPI";
-import {NotFoundError} from "../utils/GraphQLErrors";
+import { NotFoundError } from "../utils/errors";
 
 export async function createAuthorization(args, unitId, prisma) {
 	return await prisma.$transaction(async (tx) => {
@@ -141,7 +141,7 @@ export async function getTheAuthorization(args, prisma) {
 
 async function checkRelations(tx, args, authorization) {
 	for ( const holder of args.holders || []) {
-		if ( holder.status === 'New' ) {
+		if ( holder.status === 'New' ) { //TODO sortir l'appelle api de la transaction
 			let p = await tx.Person.findUnique({where: {sciper: holder.sciper}});
 
 			if ( !p ) {

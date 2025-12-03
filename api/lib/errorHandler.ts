@@ -1,5 +1,5 @@
 import {NextFunction, Request, Response} from 'express';
-import {getFormattedError} from "../../utils/GraphQLErrors";
+import {getFormattedError} from "../../utils/errors";
 
 /**
  * Global error-handling middleware.

@@ -29,7 +29,6 @@ export function getFormattedError(error, formattedError = undefined) {
 	return {errorCode, errorMessage, httpCode};
 }
 
-
 export class NotFoundError extends Error {
 	public httpCode: number;
 
