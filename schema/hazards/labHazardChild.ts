@@ -1,8 +1,7 @@
 import {booleanArg, extendType, intArg, list, objectType, stringArg} from 'nexus';
 import {bio_org, lab_has_hazards_child} from 'nexus-prisma';
 import {mutationStatusType} from "../statuses";
-import {getSHA256} from "../../utils/HashingTools";
-import {id, IDObfuscator, submission} from "../../utils/IDObfuscator";
+import {IDObfuscator, submission} from "../../utils/IDObfuscator";
 import {HazardFormChildHistoryStruct} from "./hazardFormChildHistory";
 import {LabHazardStruct} from "./labHazard";
 import {Prisma} from '@prisma/client';

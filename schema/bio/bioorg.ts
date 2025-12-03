@@ -1,9 +1,8 @@
-import {extendType, intArg, list, objectType, stringArg} from 'nexus';
+import {extendType, intArg, objectType, stringArg} from 'nexus';
 import {bio_org} from 'nexus-prisma';
 import {saveBase64File} from "../../utils/File";
 import {mutationStatusType} from "../statuses";
-import {getSHA256} from "../../utils/HashingTools";
-import {id, IDObfuscator} from "../../utils/IDObfuscator";
+import {IDObfuscator} from "../../utils/IDObfuscator";
 import {updateBioOrg} from "../hazards/labHazardChild";
 import {getUserInfoFromAPI} from "../../utils/CallAPI";
 

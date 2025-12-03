@@ -1,6 +1,6 @@
 import {extendType, objectType, stringArg} from 'nexus';
 import {mutationStatusType} from "../statuses";
-import {id, IDObfuscator} from "../../utils/IDObfuscator";
+import {ID, IDObfuscator} from "../../utils/IDObfuscator";
 import {getSHA256} from "../../utils/HashingTools";
 import {hazard_form_child} from "nexus-prisma";
 
@@ -79,7 +79,7 @@ export const HazardFormChildMutations = extendType({
 					if (!args.id) {
 						throw new Error(`Not allowed to create a new hazard form child`);
 					}
-					const id: id = JSON.parse(args.id);
+					const id: ID = JSON.parse(args.id);
 					IDObfuscator.checkId(id);
 					let form = undefined;
 					if (id.eph_id === 'NewHazardFormChild') {

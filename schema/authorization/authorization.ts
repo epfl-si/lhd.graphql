@@ -1,5 +1,5 @@
 import {extendType, inputObjectType, intArg, list, objectType, stringArg} from "nexus";
-import {id, IDObfuscator} from "../../utils/IDObfuscator";
+import {ID, IDObfuscator} from "../../utils/IDObfuscator";
 import {authorization} from "nexus-prisma";
 import {mutationStatusType} from "../statuses";
 import {RoomStruct} from "../global/rooms";
@@ -149,7 +149,7 @@ export const AuthorizationsByRoom = extendType({
 			authorize: (parent, args, context) => context.user.canListAuthorizations,
 			async resolve(parent, args, context) {
 				if (args.roomId) {
-					const id: id = JSON.parse(args.roomId);
+					const id: ID = JSON.parse(args.roomId);
 					IDObfuscator.checkId(id);
 					IDObfuscator.checkSalt(id)
 					const idDeobfuscated = IDObfuscator.deobfuscateId(id);

@@ -5,13 +5,13 @@ export class Data {
 	obj: { [key: string]: any };
 }
 
-export type id = {
+export type ID = {
 	salt: string,
 	eph_id: string
 }
 
 export type submission = {
-	id: id,
+	id: ID,
 	submission: { data: object },
 	formName?: string,
 	children?: submission[]
@@ -35,7 +35,7 @@ export class IDObfuscator {
 		}
 	}
 
-	static checkSalt(s: id) {
+	static checkSalt(s: ID) {
 		const salt = s.salt;
 		const firstPart = s.eph_id.substring(0,s.eph_id.indexOf('-'));
 		const decrypted = decrypt(firstPart);
@@ -45,13 +45,13 @@ export class IDObfuscator {
 		}
 	}
 
-	static deobfuscateId(s: id) {
+	static deobfuscateId(s: ID) {
 		const firstPart = s.eph_id.substring(0,s.eph_id.indexOf('-'));
 		const decrypted = decrypt(firstPart);
 		return parseInt(decrypted.substring(decrypted.indexOf(':')+1));
 	}
 
-	static getDataSHA256(s: id) {
+	static getDataSHA256(s: ID) {
 		return s.eph_id.substring(s.eph_id.indexOf('-')+1);
 	}
 
@@ -62,7 +62,7 @@ export class IDObfuscator {
 		return JSON.parse(argId);
 	}
 
-	static getIdDeobfuscated (id: id) {
+	static getIdDeobfuscated (id: ID) {
 		IDObfuscator.checkId(id);
 		IDObfuscator.checkSalt(id);
 		return IDObfuscator.deobfuscateId(id);
