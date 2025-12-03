@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import {NextFunction, Request, Response} from 'express';
 import {getFormattedError} from "../../utils/GraphQLErrors";
 
 /**
@@ -11,5 +11,6 @@ export function errorHandler(
 	next: NextFunction
 ): void {
 	console.error("API error: ", err);
-	res.status(500).json({error: getFormattedError(err)});
+	const errorStruct = getFormattedError(err);
+	res.status(errorStruct.httpCode).json({error: errorStruct});
 }

@@ -8,8 +8,33 @@ const wellKnowsErrors = {
 	FNP:                          'Filename not permitted'
 }
 
-export function getFormattedError(formattedError, error = undefined) {
-	const errorCode = (error?.originalError?.code || formattedError.extensions?.code || formattedError.code) as string;
-	const errorMessage = errorCode in wellKnowsErrors ? wellKnowsErrors[errorCode] : 'Internal Server Error';
+/**
+ * Format error results for Nexus
+ * @param formattedError passed to the Apollo formatError callback: https://www.apollographql.com/docs/apollo-server/data/errors#for-client-responses
+ * @param error The original exception
+ */
+export function formatErrorForNexus(formattedError, error) {
+	const {errorCode, errorMessage} = getFormattedError(error, formattedError);
 	return {errorCode, errorMessage};
+}
+
+/**
+ * Format error results for API
+ * @param formattedError
+ */
+export function getFormattedError(error, formattedError = undefined) {
+	const errorCode = (error?.originalError?.code || formattedError?.extensions?.code || formattedError?.code) as string;
+	const errorMessage = errorCode in wellKnowsErrors ? wellKnowsErrors[errorCode] : (error.message || 'Internal Server Error');
+	const httpCode = error.httpCode ?? (errorMessage === 'Unauthorized' ? 403 : 500);
+	return {errorCode, errorMessage, httpCode};
+}
+
+
+export class NotFoundError extends Error {
+	public httpCode: number;
+
+	constructor(...args) {
+		super(...args);
+		this.httpCode = 404;
+	}
 }
