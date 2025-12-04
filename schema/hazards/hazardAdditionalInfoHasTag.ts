@@ -3,7 +3,7 @@ import {hazards_additional_info_has_tag} from 'nexus-prisma';
 import {TagStruct} from "./tag";
 import {IDObfuscator} from "../../utils/IDObfuscator";
 import {mutationStatusType} from "../statuses";
-import {getHazardsAdditionalInfoToString} from "./hazardsAdditionalInfo";
+import {getLabHasHazardsAdditionalInfoToString} from "./hazardsAdditionalInfo";
 
 export const HazardsAdditionalInfoHasTagStruct = objectType({
 	name: hazards_additional_info_has_tag.$name,
@@ -83,7 +83,7 @@ export const HazardsAdditionalInfoHasTagMutations = extendType({
 
 					const additionalInfo = await IDObfuscator.ensureDBObjectIsTheSame(args.additionalInfoId,
 						'lab_has_hazards_additional_info', 'id_lab_has_hazards_additional_info',
-						tx, 'Additional Info', getHazardsAdditionalInfoToString);
+						tx, 'Additional Info', getLabHasHazardsAdditionalInfoToString);
 					const tag = await tx.tag.findUnique({ where: { tag_name: args.tag }});
 					await tx.hazards_additional_info_has_tag.create(
 						{ data: {

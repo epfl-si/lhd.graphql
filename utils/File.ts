@@ -2,8 +2,6 @@ import * as fs from "fs";
 import * as dotenv from "dotenv";
 import {stat} from 'fs/promises';
 import {IDObfuscator} from "./IDObfuscator";
-import {getLabHasHazardChildToString} from "../schema/hazards/labHazardChild";
-import {getLabHasHazardsAdditionalInfoToString} from "../schema/hazards/hazardsAdditionalInfo";
 import {getUnitToString} from "../schema/roomdetails/units";
 import * as path from "node:path";
 import {fileNameRegexp} from "../api/lib/lhdValidators";
