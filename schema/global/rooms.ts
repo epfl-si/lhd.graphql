@@ -235,7 +235,7 @@ export const RoomQuery = extendType({
 	type: 'Query',
 	definition(t) {
 		t.crud.rooms({ filtering: true,
-			authorize: (parent, args, context) => context.user.canListRooms,
+			authorize: (parent, args, context) => context.user?.canListRooms,
 			resolve: async (root, args, context, info, originalResolve) => {
 				// Call the original resolver if user is authorized
 				return originalResolve(root, args, context, info);
@@ -262,7 +262,7 @@ export const RoomsWithPaginationQuery = extendType({
 				take: intArg({ default: 20 }),
 				search: stringArg(),
 			},
-			authorize: (parent, args, context) => context.user.canListRooms,
+			authorize: (parent, args, context) => context.user?.canListRooms,
 			async resolve(parent, args, context) {
 				const queryArray = args.search.split("&");
 				const dictionary = queryArray.map(query => query.split("="));
@@ -276,7 +276,7 @@ export const RoomKindQuery = extendType({
 	type: 'Query',
 	definition(t) {
 		t.crud.roomKinds({ filtering: true,
-			authorize: (parent, args, context) => context.user.canListRooms,
+			authorize: (parent, args, context) => context.user?.canListRooms,
 			resolve: async (root, args, context, info, originalResolve) => {
 				// Call the original resolver if user is authorized
 				return originalResolve(root, args, context, info);
@@ -331,7 +331,7 @@ export const RoomMutations = extendType({
 			description: `Create a new room.`,
 			args: roomCreationType,
 			type: "RoomStatus",
-			authorize: (parent, args, context) => context.user.canEditRooms,
+			authorize: (parent, args, context) => context.user?.canEditRooms,
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					for (const room of args.rooms) {
@@ -367,7 +367,7 @@ export const RoomMutations = extendType({
 			description: `Update room details.`,
 			args: roomType,
 			type: "RoomStatus",
-			authorize: (parent, args, context) => context.user.canEditRooms,
+			authorize: (parent, args, context) => context.user?.canEditRooms,
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					const room = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
@@ -413,7 +413,7 @@ export const RoomMutations = extendType({
 			description: `Delete room details by room id (units and hazards too).`,
 			args: roomDeleteType,
 			type: "RoomStatus",
-			authorize: (parent, args, context) => context.user.canEditRooms,
+			authorize: (parent, args, context) => context.user?.canEditRooms,
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					const room = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
@@ -449,7 +449,7 @@ export const RoomFromAPIQuery = extendType({
 			args: {
 				search: stringArg()
 			},
-			authorize: (parent, args, context) => context.user.canListRooms,
+			authorize: (parent, args, context) => context.user?.canListRooms,
 			async resolve(parent, args, context): Promise<any> {
 				const rooms = await getRoomsFromApi(args.search);
 				const roomsList = [];

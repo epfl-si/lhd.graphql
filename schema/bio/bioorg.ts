@@ -58,7 +58,7 @@ export const OrganismsFromFullTextQuery = extendType({
 				skip: intArg({ default: 0 }),
 				take: intArg({ default: 20 })
 			},
-			authorize: (parent, args, context) => context.user.canListOrganisms,
+			authorize: (parent, args, context) => context.user?.canListOrganisms,
 			async resolve(parent, args, context) {
 				const bioList =  await context.prisma.bio_org.findMany({
 					where: { organism: { contains: args.search } },
@@ -100,7 +100,7 @@ export const OrganismMutations = extendType({
 			description: `Add a new organism`,
 			args: newOrganismType,
 			type: "OrganismStatus",
-			authorize: (parent, args, context) => context.user.canEditOrganisms,
+			authorize: (parent, args, context) => context.user?.canEditOrganisms,
 			async resolve(root, args, context) {
 				const userInfo = await getUserInfoFromAPI(context.user.username);
 				return await context.prisma.$transaction(async (tx) => {
@@ -134,7 +134,7 @@ export const OrganismMutations = extendType({
 			description: `Update organism details.`,
 			args: newOrganismType,
 			type: "OrganismStatus",
-			authorize: (parent, args, context) => context.user.canEditOrganisms,
+			authorize: (parent, args, context) => context.user?.canEditOrganisms,
 			async resolve(root, args, context) {
 				const userInfo = await getUserInfoFromAPI(context.user.username);
 				return await context.prisma.$transaction(async (tx) => {
@@ -167,7 +167,7 @@ export const OrganismMutations = extendType({
 			description: `Delete organism details.`,
 			args: newOrganismType,
 			type: "OrganismStatus",
-			authorize: (parent, args, context) => context.user.canEditOrganisms,
+			authorize: (parent, args, context) => context.user?.canEditOrganisms,
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					const org = await IDObfuscator.ensureDBObjectIsTheSame(args.id,

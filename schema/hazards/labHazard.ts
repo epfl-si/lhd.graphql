@@ -96,7 +96,7 @@ export const RoomHazardMutations = extendType({
 			description: `Add a new hazard to the room.`,
 			args: roomHazardChangesType,
 			type: "RoomHazardStatus",
-			authorize: (parent, args, context) => context.user.canEditHazards,
+			authorize: (parent, args, context) => context.user?.canEditHazards,
 			async resolve(root, args, context) {
 				const userInfo = await getUserInfoFromAPI(context.user.username);
 				const roomResult = await context.prisma.$transaction(async (tx) => {

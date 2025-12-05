@@ -50,7 +50,7 @@ export const HazardFormQuery = extendType({
 	type: 'Query',
 	definition(t) {
 		t.crud.hazardForms({ filtering: true, ordering: true,
-			authorize: (parent, args, context) => context.user.isAdmin,
+			authorize: (parent, args, context) => context.user?.isAdmin,
 			resolve: async (root, args, context, info, originalResolve) => {
 				// Call the original resolver if user is authorized
 				return originalResolve(root, args, context, info);
@@ -79,7 +79,7 @@ export const HazardFormMutations = extendType({
 			description: `Create new hazard category with his own form and version.`,
 			args: hazardFormChangesType,
 			type: "HazardFormStatus",
-			authorize: (parent, args, context) => context.user.isAdmin,
+			authorize: (parent, args, context) => context.user?.isAdmin,
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					const id = IDObfuscator.getId(args.id);
@@ -129,7 +129,7 @@ export const HazardFormMutations = extendType({
 			description: `Update form with a new version.`,
 			args: hazardFormChangesType,
 			type: "HazardFormStatus",
-			authorize: (parent, args, context) => context.user.isAdmin,
+			authorize: (parent, args, context) => context.user?.isAdmin,
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					const form = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
