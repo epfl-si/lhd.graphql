@@ -14,23 +14,15 @@ export async function authenticateFromBarerToken(req): Promise<object> {
 	async function getUserAuthentication(access_token: string) {
 		
 		await checkTokenValid(access_token).catch((error) => {
-			return {
-				user: null,
-				httpCode: 401,
-				message: `Not authorized`,
-			};
+			return null;
 		});
 
 		const authenticationResult = parseJwt(access_token);
 		
-		const userGroups = authenticationResult.groups?.map(function(x){return x.replace(/_AppGrpU/g, '');});
+		const userGroups = authenticationResult.groups;
 		const allowedGroups = process.env.ALLOWED_GROUPS.split(',');
 		if (!(userGroups && userGroups.some(e => allowedGroups.includes(e)))) {
-			return {
-				user: null,
-				httpCode: 403,
-				message: `Not authorized`,
-			};
+			return null;
 		}
 
 		const user: UserInfo = {
