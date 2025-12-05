@@ -2,14 +2,15 @@ export type UserInfo = {
 	groups: string[];
 	username: string;
 	isAdmin?: boolean;
-	isManager?: boolean;
 	isCosec?: boolean;
+	isManager?: boolean;
 	canEditHazards?: boolean;
 	canEditRooms?: boolean;
 	canListUnits?: boolean;
 	canListHazards?: boolean;
 	canListRooms?: boolean;
 	canListReportFiles?: boolean;
+	canEditUnits ?: boolean;
 	canListOrganisms?: boolean;
 	canEditOrganisms?: boolean;
 	canListChemicals?: boolean;
