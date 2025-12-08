@@ -3,7 +3,7 @@ import {Request} from "express";
 import {getPrismaForUser} from "../libs/auditablePrisma";
 import {configFromDotEnv} from "../libs/config";
 import {errorHandler} from "./lib/errorHandler";
-import {authenticateFromBarerToken} from "../libs/authentication";
+import {authenticateFromBearerToken} from "../libs/authentication";
 import {checkAPICall} from "./lib/checkedAPICalls";
 import {fileNameRegexp, obfuscatedIdValidators} from "./lib/lhdValidators";
 import {ID, IDObfuscator} from "../utils/IDObfuscator";
@@ -141,7 +141,7 @@ export function makeRESTFilesAPI() {
 }
 
 async function restFilesAuthenticate(req: Request, res, next) {
-	req.user = await authenticateFromBarerToken(req);
+	req.user = await authenticateFromBearerToken(req);
 
 	next();
 }
