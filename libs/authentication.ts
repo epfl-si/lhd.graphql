@@ -64,10 +64,24 @@ function parseJwt (access_token: string) {
 	return JSON.parse(Buffer.from(access_token.split('.')[1], 'base64').toString());
 }
 
+const getJwksUri = (() => {
+	let cachedJwksUri;
+	return async function getJwksUri () {
+		if (! cachedJwksUri) {
+			if (process.env.OIDC_KEYS_URL) {
+				cachedJwksUri = process.env.OIDC_KEYS_URL;
+			} else {
+				const response = await fetch(`${process.env.OIDC_BASE_URL}/.well-known/openid-configuration`);
+				const wellKnown = await response.json();
+				cachedJwksUri = wellKnown.jwks_uri;
+			}
+		}
+		return cachedJwksUri;
+	 }
+})();
+
 async function checkTokenValid(access_token: string) {
-	const client = jwksClient({
-		jwksUri: process.env.OIDC_KEYS_URL,
-	});
+	const client = jwksClient({ jwksUri: await getJwksUri() });
 
 	const getKey = (header, callback) => {
 		client.getSigningKey(header.kid, (err, key) => {
