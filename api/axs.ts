@@ -28,9 +28,9 @@ export function makeRESTAxsAPI() {
 			const args = {
 				search: req.params.room,
 			};
-			const resultNew = await get(args, req.prisma);
+			//const resultNew = await get(args, req.prisma);
 
-			res.json({Message: "Ok", Data: });
+			res.json({Message: "Ok", Data: {}});
 		});
 
 	app.use(errorHandler);
@@ -40,11 +40,11 @@ export function makeRESTAxsAPI() {
 
 function restAxsAuthenticate(req: Request, res, next) {
 	//CHECK IP and token
-	if (req.query.axs !== ) {
+/*	if (req.query.axs !== ) {
 		res.status(403);
 		res.send(`Unauthorized`);
 		return;
-	}
+	}*/
 
 	req.user = {
 		username: 'AXS',
