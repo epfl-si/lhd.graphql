@@ -35,7 +35,7 @@ export const PersonQuery = extendType({
   type: 'Query',
   definition(t) {
     t.crud.people({ filtering: true,
-			authorize: (parent, args, context) => context.user?.canListPersons,
+			authorize: (parent, args, context) => context.user.canListPersons,
 			resolve: async (root, args, context, info, originalResolve) => {
 				// Call the original resolver if user is authorized
 				return originalResolve(root, args, context, info);
@@ -72,7 +72,7 @@ export const PersonFullTextQuery = extendType({
 				search: stringArg(),
 				lhdOnly: booleanArg()
 			},
-			authorize: (parent, args, context) => context.user?.canListPersons,
+			authorize: (parent, args, context) => context.user.canListPersons,
 			async resolve(parent, args, context) {
 				const lhdPeople = await context.prisma.Person.findMany({
 					where: {

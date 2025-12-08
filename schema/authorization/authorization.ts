@@ -127,7 +127,7 @@ export const AuthorizationsWithPaginationQuery = extendType({
 				search: stringArg(),
 				type: stringArg()
 			},
-			authorize: (parent, args, context) => context.user?.canListAuthorizations,
+			authorize: (parent, args, context) => context.user.canListAuthorizations,
 			async resolve(parent, args, context) {
 				return await getAuthorizationsWithPagination(args, context.prisma);
 			}
@@ -146,7 +146,7 @@ export const AuthorizationsByRoom = extendType({
 				roomId: stringArg(),
 				type: stringArg()
 			},
-			authorize: (parent, args, context) => context.user?.canListAuthorizations,
+			authorize: (parent, args, context) => context.user.canListAuthorizations,
 			async resolve(parent, args, context) {
 				if (args.roomId) {
 					const id: ID = JSON.parse(args.roomId);
@@ -230,7 +230,7 @@ export const AuthorizationMutations = extendType({
 			description: `Add a new authorization`,
 			args: newAuthorizationType,
 			type: "AuthorizationStatus",
-			authorize: (parent, args, context) => context.user?.canEditAuthorizations,
+			authorize: (parent, args, context) => context.user.canEditAuthorizations,
 			async resolve(root, args, context) {
 
 				const id = IDObfuscator.getId(args.id_unit);
@@ -246,7 +246,7 @@ export const AuthorizationMutations = extendType({
 			description: `Update authorization details.`,
 			args: newAuthorizationType,
 			type: "AuthorizationStatus",
-			authorize: (parent, args, context) => context.user?.canEditAuthorizations,
+			authorize: (parent, args, context) => context.user.canEditAuthorizations,
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					const auth = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
@@ -265,7 +265,7 @@ export const AuthorizationMutations = extendType({
 			description: `Delete authorization details.`,
 			args: newAuthorizationType,
 			type: "AuthorizationStatus",
-			authorize: (parent, args, context) => context.user?.canEditAuthorizations,
+			authorize: (parent, args, context) => context.user.canEditAuthorizations,
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					const auth = await IDObfuscator.ensureDBObjectIsTheSame(args.id,

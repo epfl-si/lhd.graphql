@@ -103,7 +103,7 @@ export const UnitQuery = extendType({
 	type: 'Query',
 	definition(t) {
 		t.crud.units({ filtering: true,
-			authorize: (parent, args, context) => context.user?.canListUnits,
+			authorize: (parent, args, context) => context.user.canListUnits,
 			resolve: async (root, args, context, info, originalResolve) => {
 				// Call the original resolver if user is authorized
 				return originalResolve(root, args, context, info);
@@ -182,7 +182,7 @@ export const UnitMutations = extendType({
 			description: `Import a new unit from api.epfl.ch.`,
 			args: unitCreationType,
 			type: "UnitStatus",
-			authorize: (parent, args, context) => context.user?.canEditUnits,
+			authorize: (parent, args, context) => context.user.canEditUnits,
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					for (const unit of args.units) {
@@ -243,7 +243,7 @@ export const UnitMutations = extendType({
 			description: `Update unit details (profs, cosecs, sub-units).`,
 			args: unitChangesType,
 			type: "UnitStatus",
-			authorize: (parent, args, context) => context.user?.canEditUnits,
+			authorize: (parent, args, context) => context.user.canEditUnits,
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					const unit = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
@@ -330,7 +330,7 @@ export const UnitMutations = extendType({
 			description: `Delete unit details by unit name (profs, cosecs, sub-units).`,
 			args: unitDeleteType,
 			type: "UnitStatus",
-			authorize: (parent, args, context) => context.user?.canEditUnits,
+			authorize: (parent, args, context) => context.user.canEditUnits,
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					const unit = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
@@ -363,7 +363,7 @@ export const UnitFullTextQuery = extendType({
 				take: intArg({ default: 20 }),
 				search: stringArg(),
 			},
-			authorize: (parent, args, context) => context.user?.canListUnits,
+			authorize: (parent, args, context) => context.user.canListUnits,
 			async resolve(parent, args, context) {
 				const unitList = await context.prisma.Unit.findMany({
 					where: {
@@ -395,7 +395,7 @@ export const UnitFullTextQuery = extendType({
 			args: {
 				search: stringArg(),
 			},
-			authorize: (parent, args, context) => context.user?.canListUnits,
+			authorize: (parent, args, context) => context.user.canListUnits,
 			async resolve(parent, args, context) {
 				return await getUnitByName(args, context.prisma);
 			}
@@ -424,7 +424,7 @@ export const UnitFromAPIQuery = extendType({
 			args: {
 				search: stringArg()
 			},
-			authorize: (parent, args, context) => context.user?.canListUnits,
+			authorize: (parent, args, context) => context.user.canListUnits,
 			async resolve(parent, args, context): Promise<any> {
 				const units = await getUnitsFromApi(args.search);
 				const unitList = [];

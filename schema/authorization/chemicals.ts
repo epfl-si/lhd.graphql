@@ -61,7 +61,7 @@ export const ChemicalsWithPaginationQuery = extendType({
 				take: intArg({ default: 20 }),
 				search: stringArg()
 			},
-			authorize: (parent, args, context) => context.user?.canListChemicals,
+			authorize: (parent, args, context) => context.user.canListChemicals,
 			async resolve(parent, args, context) {
 				const queryArray = args.search.split("&");
 				const dictionary = queryArray.map(query => query.split("="));
@@ -92,7 +92,7 @@ export const ChemicalMutations = extendType({
 			description: `Add a new chemical`,
 			args: newChemicalType,
 			type: "ChemicalStatus",
-			authorize: (parent, args, context) => context.user?.canEditChemicals,
+			authorize: (parent, args, context) => context.user.canEditChemicals,
 			async resolve(root, args, context) {
 				await createChemical(args, context);
 				return mutationStatusType.success();
@@ -102,7 +102,7 @@ export const ChemicalMutations = extendType({
 			description: `Update chemical details.`,
 			args: newChemicalType,
 			type: "ChemicalStatus",
-			authorize: (parent, args, context) => context.user?.canEditChemicals,
+			authorize: (parent, args, context) => context.user.canEditChemicals,
 			async resolve(root, args, context) {
 				await context.prisma.$transaction(async (tx) => {
 					const chem = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
@@ -126,7 +126,7 @@ export const ChemicalMutations = extendType({
 			description: `Delete chemical details.`,
 			args: newChemicalType,
 			type: "ChemicalStatus",
-			authorize: (parent, args, context) => context.user?.canEditChemicals,
+			authorize: (parent, args, context) => context.user.canEditChemicals,
 			async resolve(root, args, context) {
 				await context.prisma.$transaction(async (tx) => {
 					const chem = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
