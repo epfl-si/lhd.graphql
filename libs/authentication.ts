@@ -28,7 +28,8 @@ export async function authenticateFromBearerToken(req): Promise<object> {
 
 	const user: UserInfo = {
 		groups: userGroups,
-		username: authenticationResult.unique_name
+		username: ( authenticationResult.unique_name ||
+			authenticationResult.gaspar )  // EPFL-ism in Entra
 	};
 	console.log('Logged in', user);
 	console.log('Allowed groups', allowedGroups);
