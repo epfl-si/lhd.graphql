@@ -13,8 +13,6 @@ import {
 } from "./lib/lhdValidators";
 import * as express from "express";
 import {Request} from "express";
-import {getPrismaForUser} from "../libs/auditablePrisma";
-import {configFromDotEnv} from "../libs/config";
 import {errorHandler} from "./lib/errorHandler";
 import {
 	createAuthorization,
@@ -26,16 +24,13 @@ import {createChemical, getChemicalWithPagination} from "../model/chemicals";
 import {getRoomsWithPagination} from "../model/rooms";
 import {getParentUnit, getUnitByName} from "../model/units";
 import {getToken} from "./lib/restAuthentication";
+import {setReqPrismaMiddleware} from "./lib/callBacks";
 
 export function makeRESTAPI() {
 	const app = express();
 
 	app.use(restAuthenticate);
-	app.use(function setReqPrismaMiddleware (req: Request, _res, next) {
-		req.prisma = getPrismaForUser(configFromDotEnv(), req.user);
-
-		next();
-	});
+	app.use(setReqPrismaMiddleware);
 
 	app.use(function auditAPI (req, res, next) {
 		console.log(`API CALL - [${getNow()}] - ${req.method} - ${req.protocol}://${req.hostname}${req.originalUrl}`);

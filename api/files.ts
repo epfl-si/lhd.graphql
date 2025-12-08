@@ -1,7 +1,5 @@
 import * as express from "express";
 import {Request} from "express";
-import {getPrismaForUser} from "../libs/auditablePrisma";
-import {configFromDotEnv} from "../libs/config";
 import {errorHandler} from "./lib/errorHandler";
 import {authenticateFromBearerToken} from "../libs/authentication";
 import {checkAPICall} from "./lib/checkedAPICalls";
@@ -12,6 +10,7 @@ import {getReportFilesByUnit, sendFileResponse} from "../utils/File";
 import {getUnitToString} from "../schema/roomdetails/units";
 import {getLabHasHazardsAdditionalInfoToString} from "../schema/hazards/hazardsAdditionalInfo";
 import {getLabHasHazardChildToString} from "../schema/hazards/labHazardChild";
+import {setReqPrismaMiddleware} from "./lib/callBacks";
 
 const obfuscatedIdParams = {
 	eph_id (req) { return req.params.eph_id },
@@ -22,11 +21,7 @@ export function makeRESTFilesAPI() {
 	const app = express();
 
 	app.use(restFilesAuthenticate);
-	app.use(function setReqPrismaMiddleware (req: Request, _res, next) {
-		req.prisma = getPrismaForUser(configFromDotEnv(), req.user);
-
-		next();
-	});
+	app.use(setReqPrismaMiddleware);
 
 	type GetFile = {salt: string, eph_id: string};
 	app.get("/organism/:eph_id",
