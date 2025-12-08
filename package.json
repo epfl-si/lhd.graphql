@@ -51,7 +51,7 @@
     "prepublish": "if [ -z \"$INSTALL_ONLY\" ] ; then yarn codegen ; fi",
     "codegen": "yarn prisma:generate && yarn nexus:reflect",
     "prisma:generate": "prisma generate",
-    "nexus:reflect": "env DO_TYPEGEN=1 ts-node --transpile-only nexus/schema",
+    "nexus:reflect": "env DO_TYPEGEN=1 ts-node --transpile-only nexus/schema.ts",
     "clean": "yarn nexus:clean",
     "nexus:clean": "rm -rf node_modules/@types/typegen-nexus*",
     "start": "sh -c 'node \"$@\" -r ts-node/register index.ts' -- ",
