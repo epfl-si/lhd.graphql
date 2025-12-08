@@ -131,15 +131,26 @@ export async function deleteRoom(tx, context, r:Room) {
 		}
 	});
 	for ( const a of auth ) {
-		const date = (new Date()).toLocaleDateString("en-GB");
-		const [dayCrea, monthCrea, yearCrea] = date.split("/").map(Number);
-		await tx.authorization.update(
-			{ where: { id_authorization: a.id_authorization },
-				data: {
-					status: 'Expired',
-					expiration_date: new Date(yearCrea, monthCrea - 1, dayCrea, 12),
-				}
-			});
+		const authChem = await context.prisma.authorization_has_room.findMany({
+			where: {
+				AND: [
+					{ id_authorization: a.id_authorization },
+					{ room: { isDeleted: false },
+					}
+				]
+			}
+		});
+		if (authChem.length == 1) {
+			const date = (new Date()).toLocaleDateString("en-GB");
+			const [dayCrea, monthCrea, yearCrea] = date.split("/").map(Number);
+			await tx.authorization.update(
+				{ where: { id_authorization: a.id_authorization },
+					data: {
+						status: 'Expired',
+						expiration_date: new Date(yearCrea, monthCrea - 1, dayCrea, 12),
+					}
+				});
+		}
 	}
 
 	await tx.aa.deleteMany(where);
