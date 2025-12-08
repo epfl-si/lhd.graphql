@@ -14,6 +14,7 @@ import {authenticateFromBearerToken} from "./libs/authentication";
 import {makeRESTFilesAPI} from "./api/files";
 import {formatErrorForNexus} from "./utils/errors";
 import {makeRESTAPI} from "./api/catalyseSnow";
+import {makeRESTAxsAPI} from "./api/axs";
 
 type TestInjections = {
 	insecure?: boolean;
@@ -71,6 +72,7 @@ export async function makeServer(
 
 	app.use("/api", makeRESTAPI());
 	app.use("/files", makeRESTFilesAPI());
+	app.use("/axs", makeRESTAxsAPI());
 
 	return httpServer;
 }
