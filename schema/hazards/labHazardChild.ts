@@ -153,7 +153,7 @@ export const HazardsWithPaginationQuery = extendType({
 				search: stringArg(),
 				queryString: stringArg(),
 			},
-			authorize: (parent, args, context) => context.user?.canListHazards,
+			authorize: (parent, args, context) => context.user.canListHazards,
 			async resolve(parent, args, context) {
 				let jsonCondition = Prisma.raw(`1=1`);
 				if (args.queryString != '') {
@@ -277,7 +277,7 @@ export const HazardFetchForExportQuery = extendType({
 				profs: booleanArg(),
 				search: stringArg()
 			},
-			authorize: (parent, args, context) => context.user?.canListHazards,
+			authorize: (parent, args, context) => context.user.canListHazards,
 			async resolve(parent, args, context) {
 				let selectedFieldForUnits = Prisma.raw(``);
 				let selectedFieldsForCosecs = Prisma.raw(``);
@@ -385,7 +385,7 @@ export const HazardChildMutations = extendType({
 			description: `Delete an Hazard child`,
 			args: hazardChildMutationsType,
 			type: "HazardChildStatus",
-			authorize: (parent, args, context) => context.user?.canEditHazards,
+			authorize: (parent, args, context) => context.user.canEditHazards,
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					const child = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
