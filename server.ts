@@ -10,7 +10,7 @@ import {ApolloServer} from "@apollo/server";
 import {expressMiddleware} from "@as-integrations/express5";
 import {getPrismaForUser} from "./libs/auditablePrisma";
 import {BackendConfig} from "./libs/config";
-import {authenticateFromBarerToken} from "./libs/authentication";
+import {authenticateFromBearerToken} from "./libs/authentication";
 import {makeRESTFilesAPI} from "./api/files";
 import {formatErrorForNexus} from "./utils/errors";
 import {makeRESTAPI} from "./api/catalyseSnow";
@@ -49,7 +49,7 @@ export async function makeServer(
 
 	async function authenticate(req) {
 		if ( insecure || isHarmless(req) ) return;
-		return await authenticateFromBarerToken(req);
+		return await authenticateFromBearerToken(req);
 	}
 
 	app.get('/graphiql', async (req, res) => {
