@@ -144,7 +144,6 @@ export const ConnectedUserInfoQuery = extendType({
 	definition(t) {
 		t.field("connectedUserInfo", {
 			type: "ConnectedUserInfo",
-			authorize: (parent, args, context) => context.user != null,
 			async resolve(parent, args, context) {
 				return {
 					groups: context.user.groups,
