@@ -55,7 +55,8 @@ export async function authenticateFromBearerToken(req): Promise<object> {
 		user.canListAuthorizations =
 		user.canEditAuthorizations =
 		user.canListPersons =
-		user.canEditOrganisms = hasRoleManagerOrAdmin;
+		user.canEditOrganisms =
+		user.canListForms = hasRoleManagerOrAdmin;
 	user.canListOrganisms = hasRoleManagerOrAdmin || hasRoleCosec;
 
 	return user;

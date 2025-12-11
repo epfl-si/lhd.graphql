@@ -18,4 +18,5 @@ export type UserInfo = {
 	canListAuthorizations?: boolean;
 	canEditAuthorizations?: boolean;
 	canListPersons?: boolean;
+	canListForms?: boolean;
 };

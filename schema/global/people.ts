@@ -135,6 +135,7 @@ export const ConnectedUserInfoStruct = objectType({
 		t.boolean('canEditAuthorizations');
 		t.boolean('canListHazardsForm');
 		t.boolean('canListPersons');
+		t.boolean('canListForms');
 	},
 });
 
@@ -167,6 +168,7 @@ export const ConnectedUserInfoQuery = extendType({
 					canEditAuthorizations: context.user.canEditAuthorizations,
 					canListHazardsForm: context.user.canListHazardsForm,
 					canListPersons: context.user.canListPersons,
+					canListForms: context.user.canListForms,
 				};
 			}
 		})

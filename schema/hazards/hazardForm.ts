@@ -50,7 +50,7 @@ export const HazardFormQuery = extendType({
 	type: 'Query',
 	definition(t) {
 		t.crud.hazardForms({ filtering: true, ordering: true,
-			authorize: (parent, args, context) => context.user.isAdmin,
+			authorize: (parent, args, context) => context.user.canListForms,
 			resolve: async (root, args, context, info, originalResolve) => {
 				// Call the original resolver if user is authorized
 				return originalResolve(root, args, context, info);
