@@ -4,10 +4,10 @@
 import {Request} from "express";
 import {getBearerToken} from "../../libs/authentication";
 
-export function getTokenFromQueryString(req: Request): string {
-	return req.query.token ? String(req.query.token) : undefined;
+function getTokenFromQueryString(req: Request, parameterName: string): string {
+	return req.query[parameterName] ? String(req.query[parameterName]) : undefined;
 }
 
-export function getToken(req: Request): string {
-	return getTokenFromQueryString(req) ?? getBearerToken(req);
+export function getToken(req: Request, parameterName: string): string {
+	return getTokenFromQueryString(req, parameterName) ?? getBearerToken(req);
 }

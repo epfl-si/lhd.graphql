@@ -469,7 +469,7 @@ export function makeRESTAPI() {
 }
 
 function restAuthenticate(req: Request, res, next) {
-	const token = getToken(req);
+	const token = getToken(req, 'token');
 	const isSnow = token === process.env.SNOW_TOKEN;
 	const isCatalyse = token === process.env.CATALYSE_TOKEN;
 

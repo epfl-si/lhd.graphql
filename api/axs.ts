@@ -4,6 +4,8 @@ import * as express from "express";
 import {Request} from "express";
 import {errorHandler} from "./lib/errorHandler";
 import {auditAPI, setReqPrismaMiddleware} from "./lib/callBacks";
+import {getToken} from "./lib/restAuthentication";
+import {getRoomByNameForAxs} from "../schema/global/rooms";
 
 export function makeRESTAxsAPI() {
 	const app = express();
@@ -39,12 +41,14 @@ export function makeRESTAxsAPI() {
 }
 
 function restAxsAuthenticate(req: Request, res, next) {
-	//CHECK IP and token
-/*	if (req.query.axs !== ) {
-		res.status(403);
-		res.send(`Unauthorized`);
-		return;
-	}*/
+	const allowedIPs = process.env.ALLOWED_IPS.split(",").map(ip => ip.trim());
+	const clientIP = req.headers["x-forwarded-for"] as string || req.socket.remoteAddress;
+
+	const token = getToken(req, 'app');
+
+	if (!allowedIPs.includes(clientIP) || token !== process.env.AXS_TOKEN) {
+		return res.status(403).send("Unauthorized");
+	}
 
 	req.user = {
 		username: 'AXS',
