@@ -73,23 +73,25 @@ export async function sendEmailsForHazards(user: string,
 																						 sciper: string
 																					 }
 	) {
-	const newRoom = await prisma.Room.findFirst(
-		{
-			where: { name: args.room },
-			include: {
-				lab_has_hazards: true
+	if ( process.env.HAZARD_TYPES_TO_EMAIL_AFTER_UPDATE.includes(args.category) ) {
+		const newRoom = await prisma.Room.findFirst(
+			{
+				where: {name: args.room},
+				include: {
+					lab_has_hazards: true
+				}
+			});
+		const oldValues = getHazardLevel(oldRoom.lab_has_hazards, args.category);
+		const newValues = getHazardLevel(newRoom.lab_has_hazards, args.category);
+		const created = (oldValues.laser.length == 0 && newValues.laser.length > 0) || (oldValues.bio.length == 0 && newValues.bio.length > 0);
+		const deleted = (oldValues.laser.length > 0 && newValues.laser.length == 0) || (oldValues.bio.length > 0 && newValues.bio.length == 0);
+		if ( created || deleted ) {
+			if ( userInfo.userEmail !== '' ) {
+				await sendEmailCAE(userInfo.userFullName, userInfo.userEmail, args.room,
+					logAction(created, deleted), args.category, args.additionalInfo.comment);
+				await sendEmailCosec(userInfo.userFullName, userInfo.userEmail, args.room,
+					logAction(created, deleted), args.category, cosecs);
 			}
-		});
-	const oldValues = getHazardLevel(oldRoom.lab_has_hazards, args.category);
-	const newValues = getHazardLevel(newRoom.lab_has_hazards, args.category);
-	const created = (oldValues.laser.length == 0 && newValues.laser.length > 0) || (oldValues.bio.length == 0 && newValues.bio.length > 0);
-	const deleted = (oldValues.laser.length > 0 && newValues.laser.length == 0) || (oldValues.bio.length > 0 && newValues.bio.length == 0);
-	if (process.env.HAZARD_TYPES_TO_EMAIL_AFTER_UPDATE.includes(args.category) && (created || deleted)) {
-		if (userInfo.userEmail !== '') {
-			await sendEmailCAE(userInfo.userFullName, userInfo.userEmail, args.room,
-				logAction(created, deleted), args.category, args.additionalInfo.comment);
-			await sendEmailCosec(userInfo.userFullName, userInfo.userEmail, args.room,
-				logAction(created, deleted), args.category, cosecs);
 		}
 	}
 }
