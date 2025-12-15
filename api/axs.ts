@@ -5,7 +5,7 @@ import {Request} from "express";
 import {errorHandler} from "./lib/errorHandler";
 import {auditAPI, setReqPrismaMiddleware} from "./lib/callBacks";
 import {getToken} from "./lib/restAuthentication";
-import {getRoomByNameForAxs} from "../schema/global/rooms";
+import {getHazardLevel} from "../utils/hazardsParser";
 
 export function makeRESTAxsAPI() {
 	const app = express();
