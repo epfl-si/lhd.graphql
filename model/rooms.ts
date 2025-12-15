@@ -191,3 +191,48 @@ export async function deleteRoom(tx, context, r:Room) {
 			}
 		});
 }
+
+/**
+ * Do not pass to AxS rooms without units and rooms that are cupboard locations
+ * @param args
+ * @param prisma
+ */
+export async function getRoomByNameForAxs(args, prisma) {
+	return await prisma.Room.findFirst({
+		where: {
+			AND: [
+				{ name: { contains: args.room }},
+				{
+					NOT: {
+						AND: [
+							{building: 'BCH'},
+							{floor: '6'}
+						]
+					}
+				},
+				{ unit_has_room: { some: { }}} // At least one unit is available for this room
+			]
+		},
+		include: {
+			unit_has_room: {
+				include: {
+					unit: {
+						include: {
+							unit_has_cosec: {
+								include: {
+									cosec: true
+								}
+							},
+							subunpro: {
+								include: {
+									person: true
+								}
+							}
+						}
+					}
+				}
+			},
+			lab_has_hazards: true
+		},
+	});
+}

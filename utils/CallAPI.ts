@@ -14,6 +14,10 @@ export async function getRoomsFromApi(search: string): Promise<any[]> {
 	return callAPI(`https://${process.env.API_EPFL_CH_URL}/v1/rooms?query=${search}`, "GET");
 }
 
+export async function getGroupMembersFromApi(groupName: string): Promise<any> {
+	return callAPI(`https://${process.env.API_EPFL_CH_URL}/v1/groups/${groupName}/members`, "GET");
+}
+
 export async function getDoorPlugFromApi(roomName: string): Promise<any[]> {
 	return callAPI(`https://${process.env.CRISTAL_URL}/archibus/api/v1/data?dataSource=Rest_EPFL_fiches_de_porte`, "GET");
 }
