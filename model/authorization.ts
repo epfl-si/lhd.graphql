@@ -1,7 +1,8 @@
-import {getUsersFromApi} from "../utils/CallAPI";
-import { NotFoundError } from "../utils/errors";
+import {NotFoundError} from "../utils/errors";
+import {ensureNewHolders} from "./persons";
 
 export async function createAuthorization(args, unitId, prisma) {
+	await ensureNewHolders(args.holders, prisma);
 	return await prisma.$transaction(async (tx) => {
 		const date = args.creation_date ?? (new Date()).toLocaleDateString("en-GB");
 		const [dayCrea, monthCrea, yearCrea] = date.split("/").map(Number);
@@ -141,22 +142,8 @@ export async function getTheAuthorization(args, prisma) {
 
 async function checkRelations(tx, args, authorization) {
 	for ( const holder of args.holders || []) {
-		if ( holder.status === 'New' ) { //TODO sortir l'appelle api de la transaction
+		if ( holder.status === 'New' ) {
 			let p = await tx.Person.findUnique({where: {sciper: holder.sciper}});
-
-			if ( !p ) {
-				const ldapUsers = await getUsersFromApi(holder.sciper + "");
-				const ldapUser = ldapUsers["persons"].find(p => p.id == holder.sciper + "");
-
-				p = await tx.Person.create({
-					data: {
-						surname: ldapUser.lastname,
-						name: ldapUser.firstname,
-						email: ldapUser.email,
-						sciper: parseInt(ldapUser.id)
-					}
-				});
-			}
 
 			const relation = {
 				id_person: Number(p.id_person),
