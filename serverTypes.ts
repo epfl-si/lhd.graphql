@@ -17,6 +17,8 @@ export type UserInfo = {
 	canEditChemicals?: boolean;
 	canListAuthorizations?: boolean;
 	canEditAuthorizations?: boolean;
+	canListDispensations?: boolean;
+	canEditDispensations?: boolean;
 	canListPersons?: boolean;
 	canListForms?: boolean;
 };
