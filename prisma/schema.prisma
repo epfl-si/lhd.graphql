@@ -74,7 +74,7 @@ model auth_chem_old {
   auth_chem_fr  String? @db.VarChar(100)
 }
 
-model Dispensation {
+model DispensationOld {
   id          Int                   @id @default(autoincrement()) @map("id_auth_dsps")
   slug        String                @unique(map: "auth_dsps") @map("auth_dsps") @db.VarChar(10)
   log_in      Int?
@@ -128,7 +128,7 @@ model DispensationVersion {
   date_modified   DateTime?                    @map("notification_date") @db.DateTime(0)
   held            DispensationHeldRelation[]
   in_room         DispensationInRoomRelation[]
-  dispensation    Dispensation                 @relation(fields: [id_dispensation], references: [id], onUpdate: Restrict, map: "auth_dsps_version_ibfk_1")
+  dispensation    DispensationOld                 @relation(fields: [id_dispensation], references: [id], onUpdate: Restrict, map: "auth_dsps_version_ibfk_1")
 
   @@index([id_dispensation], map: "id_auth_dsps")
   @@map("auth_dsps_version")
@@ -510,6 +510,7 @@ model Room {
   lab_has_hazards           lab_has_hazards[]
   lab_has_hazards_additional_info lab_has_hazards_additional_info[]
   authorization_has_room      authorization_has_room[]
+  dispensation_has_room       dispensation_has_room[]
   isDeleted                   Boolean                      @default(false)
 
   @@unique([building, sector, floor, roomNo], name: "unique_lab", map: "unique_lab")
@@ -669,6 +670,7 @@ model Person {
   unit_has_cosec         unit_has_cosec[]
   responsible_for_units   Unit[]
   authorization_has_holder authorization_has_holder[]
+  dispensation_has_holder  dispensation_has_holder[]
 
   @@unique([name, surname, email], name: "unique_per", map: "unique_per")
   @@unique([sciper, name, surname, email], name: "unique_person", map: "unique_person")
@@ -1008,4 +1010,65 @@ model hazards_additional_info_has_tag {
 
   @@index([id_tag], name: "id_tag")
   @@index([id_lab_has_hazards_additional_info], name: "id_lab_has_hazards_additional_info")
+}
+
+model dispensation_subject {
+  id_dispensation_subject     Int        @id @default(autoincrement())
+  subject                     String     @db.VarChar(60)
+  dispensation                dispensation[]
+
+  @@unique([subject], map: "unique_dispensation_subject")
+}
+
+model dispensation {
+  id_dispensation           Int                          @id @default(autoincrement())
+  dispensation              String                       @unique(map: "dispensation") @db.VarChar(50)
+  renewals                  Int
+  id_dispensation_subject   Int
+  other_subject             String                       @db.VarChar(60)
+  requires                  String                       @db.LongText
+  comment                   String?                      @db.LongText
+  status                    String                       @db.VarChar(10)
+  date_start                DateTime                     @db.Date
+  date_end                  DateTime                     @db.Date
+  file_path                 String?                      @db.VarChar(250)
+
+  created_by                String                       @db.VarChar(50)
+  created_on                DateTime                     @db.DateTime(0)
+  modified_by               String                       @db.VarChar(50)
+  modified_on               DateTime                     @db.DateTime(0)
+
+  dispensation_has_room     dispensation_has_room[]
+  dispensation_has_holder   dispensation_has_holder[]
+  dispensation_has_ticket   dispensation_has_ticket[]
+  subject                   dispensation_subject @relation(fields: [id_dispensation_subject], references: [id_dispensation_subject], onUpdate: Restrict, map: "dispensation_has_subject_ibfk_1")
+}
+
+model dispensation_has_ticket {
+  id_dispensation    Int
+  ticket_number      String
+  dispensation       dispensation @relation(fields: [id_dispensation], references: [id_dispensation], onUpdate: Restrict, map: "dispensation_has_ticket_ibfk_1")
+
+  @@unique([id_dispensation, ticket_number], name: "unique_dispensation_has_ticket", map: "unique_dispensation_has_ticket")
+  @@index([ticket_number], map: "ticket_number")
+}
+
+model dispensation_has_holder {
+  id_dispensation    Int
+  id_person          Int
+  dispensation       dispensation @relation(fields: [id_dispensation], references: [id_dispensation], onUpdate: Restrict, map: "dispensation_has_holder_ibfk_1")
+  holder             Person @relation(fields: [id_person], references: [id_person], onUpdate: Restrict, map: "dispensation_has_holder_ibfk_2")
+
+  @@unique([id_dispensation, id_person], name: "unique_dispensation_has_holder", map: "unique_dispensation_has_holder")
+  @@index([id_person], map: "id_person")
+}
+
+model dispensation_has_room {
+  id_dispensation  Int
+  id_lab           Int
+  dispensation     dispensation @relation(fields: [id_dispensation], references: [id_dispensation], onUpdate: Restrict, map: "dispensation_has_room_ibfk_1")
+  room             Room @relation(fields: [id_lab], references: [id], onUpdate: Restrict, map: "dispensation_has_room_ibfk_2")
+
+  @@unique([id_dispensation, id_lab], name: "unique_dispensation_has_room", map: "unique_dispensation_has_room")
+  @@index([id_lab], map: "id_lab")
 }

@@ -84,6 +84,7 @@ import * as hazardsAdditionalInfo from '../schema/hazards/hazardsAdditionalInfo'
 import * as authorizationType from '../schema/authorization/authorization'
 import * as tagType from '../schema/hazards/tag'
 import * as hazardAdditionalInfoHasTagType from '../schema/hazards/hazardAdditionalInfoHasTag'
+import * as subjectType from '../schema/dispensation/subject'
 
 const types = [
 	schoolTypes,
@@ -107,6 +108,7 @@ const types = [
 	authorizationType,
 	tagType,
 	hazardAdditionalInfoHasTagType,
+	subjectType
 ];
 
 // No user-serviceable parts below /////////////////////////////////////////////////
