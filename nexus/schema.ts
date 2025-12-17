@@ -69,7 +69,7 @@ import * as occupancyTypes from '../schema/roomdetails/occupancies';
 import * as peopleTypes from '../schema/global/people';
 import * as roomTypes from '../schema/global/rooms';
 import * as unitTypes from '../schema/roomdetails/units';
-import * as dispensationTypes from '../schema/dispensations';
+import * as dispensationTypes from '../schema/dispensation/dispensation';
 import * as statusTypes from '../schema/statuses';
 import * as hazardCategoryTypes from '../schema/hazards/hazardCategory'
 import * as hazardFormTypes from '../schema/hazards/hazardForm'
