@@ -4,7 +4,6 @@
 
 import {HazLevelStruct} from '../hazards/hazlevel';
 import {BioStruct} from '../bio/biohazard';
-import {DispensationStruct} from '../dispensations';
 import {booleanArg, enumType, extendType, inputObjectType, intArg, list, objectType, stringArg} from 'nexus';
 import {Room, RoomKind} from 'nexus-prisma';
 import {debug as debug_} from 'debug';
@@ -12,7 +11,6 @@ import {UnitMutationType, UnitStruct} from "../roomdetails/units";
 import {mutationStatusType} from "../statuses";
 import {LabHazardStruct} from "../hazards/labHazard";
 import {IDObfuscator} from "../../utils/IDObfuscator";
-import {getSHA256} from "../../utils/HashingTools";
 import {getDoorPlugFromApi, getRoomsFromApi} from "../../utils/CallAPI";
 import {HazardsAdditionalInfoStruct} from "../hazards/hazardsAdditionalInfo";
 import {LabHazardChildStruct} from "../hazards/labHazardChild";
@@ -186,21 +184,6 @@ export const RoomStruct = objectType({
 				// For some reason this is a 1:n relationship in the LHDv2
 				// database ‽
 				return naudits[naudits.length - 1]?.naudits;
-			},
-		});
-		t.nonNull.list.nonNull.field('dispensations', {
-			type: DispensationStruct,
-			description: `The list of all dispensations that concern or have ever concerned this room.`,
-			async resolve(parent, _, context) {
-				const id_lab = parent.id;
-				const dispensationsInRoom =
-					await context.prisma.DispensationInRoomRelation.findMany({
-						where: { id_room: parent.id },
-						include: { dispensation_version: { include: { dispensation: true } } },
-					});
-				return dispensationsInRoom
-					.map(dr => dr?.dispensation_version?.dispensation)
-					.filter(d => d !== undefined);
 			},
 		});
 	},
