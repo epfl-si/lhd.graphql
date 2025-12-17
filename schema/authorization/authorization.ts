@@ -1,4 +1,4 @@
-import {extendType, inputObjectType, intArg, list, objectType, stringArg} from "nexus";
+import {extendType, intArg, list, objectType, stringArg} from "nexus";
 import {ID, IDObfuscator} from "../../utils/IDObfuscator";
 import {authorization} from "nexus-prisma";
 import {mutationStatusType} from "../statuses";
@@ -8,6 +8,8 @@ import {ChemicalStruct} from "./chemicals";
 import {getUnitToString, UnitStruct} from "../roomdetails/units";
 import {RadiationStruct} from "./radiation";
 import {createAuthorization, getAuthorizationsWithPagination, updateAuthorization} from "../../model/authorization";
+import {HolderMutationType, OthersMutationType} from "../../utils/MutationTypes";
+import {ensureNewHolders} from "../../model/persons";
 
 export const AuthorizationStruct = objectType({
 	name: authorization.$name,
@@ -183,23 +185,6 @@ export const AuthorizationsByRoom = extendType({
 	},
 });
 
-const OthersMutationType = inputObjectType({
-	name: "OthersMutationType",
-	definition(t) {
-		t.nonNull.string('status');
-		t.string('name');
-		t.int('id');
-	}
-});
-
-const HolderMutationType = inputObjectType({
-	name: "HolderMutationType",
-	definition(t) {
-		t.nonNull.string('status');
-		t.nonNull.int('sciper');
-	}
-});
-
 const newAuthorizationType = {
 	id: stringArg(),
 	authorization: stringArg(),
@@ -248,6 +233,7 @@ export const AuthorizationMutations = extendType({
 			type: "AuthorizationStatus",
 			authorize: (parent, args, context) => context.user.canEditAuthorizations,
 			async resolve(root, args, context) {
+				await ensureNewHolders(args.holders, context.prisma);
 				return await context.prisma.$transaction(async (tx) => {
 					const auth = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
 						'authorization', 'id_authorization',
