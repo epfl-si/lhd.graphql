@@ -295,7 +295,7 @@ export const DispensationMutations = extendType({
           const date = args.date_start ?? (new Date()).toLocaleDateString("en-GB");
           const [dayCrea, monthCrea, yearCrea] = date.split("/").map(Number);
           const [day, month, year] = args.date_end.split("/").map(Number);
-          const authorization = await tx.dispensation.create({
+          const disp = await tx.dispensation.create({
             data: {
               dispensation: args.dispensation,
               renewals: 0,
@@ -314,7 +314,7 @@ export const DispensationMutations = extendType({
             }
           });
 
-          await checkRelationsForDispensation(tx, args, authorization);
+          await checkRelationsForDispensation(tx, args, disp);
         });
         return mutationStatusType.success();
       }
