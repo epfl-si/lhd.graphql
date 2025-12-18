@@ -290,6 +290,7 @@ export const DispensationMutations = extendType({
       async resolve(root, args, context) {
         const userInfo = await getUserInfoFromAPI(context.user.username);
         await ensureNewHolders(args.holders, context.prisma);
+        const subject = await context.prisma.dispensation_subject.findUnique({where: {subject: args.subject}});
         await context.prisma.$transaction(async (tx) => {
           const date = args.date_start ?? (new Date()).toLocaleDateString("en-GB");
           const [dayCrea, monthCrea, yearCrea] = date.split("/").map(Number);
@@ -298,7 +299,7 @@ export const DispensationMutations = extendType({
             data: {
               dispensation: args.dispensation,
               renewals: 0,
-              //id_dispensation_subject: args., // TODO
+              id_dispensation_subject: subject.id_dispensation_subject,
               other_subject: args.other_subject,
               requires: args.requires,
               comment: args.comment,
