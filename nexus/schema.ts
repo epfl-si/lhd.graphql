@@ -86,6 +86,8 @@ import * as tagType from '../schema/hazards/tag'
 import * as hazardAdditionalInfoHasTagType from '../schema/hazards/hazardAdditionalInfoHasTag'
 import * as mutationType from '../utils/MutationTypes'
 import * as subjectType from '../schema/dispensation/subject'
+import * as ticketTypes from '../schema/dispensation/ticket'
+
 
 const types = [
 	schoolTypes,
@@ -110,7 +112,8 @@ const types = [
 	tagType,
 	hazardAdditionalInfoHasTagType,
 	mutationType,
-	subjectType
+	subjectType,
+	ticketTypes
 ];
 
 // No user-serviceable parts below /////////////////////////////////////////////////
