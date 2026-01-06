@@ -194,7 +194,7 @@ export const DispensationsWithPaginationQuery = extendType({
           },
           orderBy: [
             {
-              dispensation: 'asc',
+              dispensation: 'desc',
             },
           ]
         });
@@ -295,9 +295,14 @@ export const DispensationMutations = extendType({
           const date = args.date_start ?? (new Date()).toLocaleDateString("en-GB");
           const [dayCrea, monthCrea, yearCrea] = date.split("/").map(Number);
           const [day, month, year] = args.date_end.split("/").map(Number);
+          const result = await context.prisma.dispensation.aggregate({
+            _max: {
+              id_dispensation: true,
+            },
+          });
           const disp = await tx.dispensation.create({
             data: {
-              dispensation: args.dispensation,
+              dispensation: `DISP-${result._max.id_dispensation+1}`,
               renewals: 0,
               id_dispensation_subject: subject.id_dispensation_subject,
               other_subject: args.other_subject,
@@ -332,9 +337,7 @@ export const DispensationMutations = extendType({
           const userInfo = await getUserInfoFromAPI(context.user.username);
           const subject = await context.prisma.dispensation_subject.findUnique({where: {subject: args.subject}});
           await ensureNewHolders(args.holders, context.prisma);
-          const [day, month, year] = args.date_end.split("/").map(Number);
-          const newExpDate = new Date(year, month - 1, day, 12);
-          const ren = newExpDate > disp.date_end && disp.status === 'Active' ? (disp.renewals + 1) : disp.renewals;
+          const ren = disp.status === 'Active' ? (disp.renewals + 1) : disp.renewals;
           await context.prisma.$transaction(async (tx) => {
             const [day, month, year] = args.date_end.split("/").map(Number);
             const dispensation = await tx.dispensation.update({
