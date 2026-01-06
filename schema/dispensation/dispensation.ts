@@ -8,6 +8,7 @@ import {HolderMutationType, OthersMutationType, StringMutationType} from "../../
 import {getUserInfoFromAPI} from "../../utils/CallAPI";
 import {checkRelationsForDispensation} from "../../model/dispensation";
 import {ensureNewHolders} from "../../model/persons";
+import {TicketStruct} from "./ticket";
 
 export const DispensationStruct = objectType({
   name: dispensation.$name,
@@ -77,12 +78,11 @@ and recorded indirectly in a DispensationVersion object.
     });
 
     t.nonNull.list.nonNull.field('dispensation_tickets', {
-      type: "String",
+      type: TicketStruct,
       resolve: async (parent, _, context) => {
-        const dispensationsAndticket = await context.prisma.dispensation_has_ticket.findMany({
+        return await context.prisma.dispensation_has_ticket.findMany({
           where: { id_dispensation: parent.id_dispensation }
         });
-        return dispensationsAndticket.map((dispensationAndticket) => dispensationAndticket.ticket_number);
       },
     });
 
@@ -289,8 +289,8 @@ export const DispensationMutations = extendType({
       authorize: (parent, args, context) => context.user.canEditDispensations,
       async resolve(root, args, context) {
         const userInfo = await getUserInfoFromAPI(context.user.username);
-        await ensureNewHolders(args.holders, context.prisma);
         const subject = await context.prisma.dispensation_subject.findUnique({where: {subject: args.subject}});
+        await ensureNewHolders(args.holders, context.prisma);
         await context.prisma.$transaction(async (tx) => {
           const date = args.date_start ?? (new Date()).toLocaleDateString("en-GB");
           const [dayCrea, monthCrea, yearCrea] = date.split("/").map(Number);
@@ -326,24 +326,24 @@ export const DispensationMutations = extendType({
       authorize: (parent, args, context) => context.user.canEditDispensations,
       async resolve(root, args, context) {
         return await context.prisma.$transaction(async (tx) => {
-          const userInfo = await getUserInfoFromAPI(context.user.username);
           const disp = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
             'dispensation', 'id_dispensation',
             tx, 'Dispensation', getDispensationToString);
+          const userInfo = await getUserInfoFromAPI(context.user.username);
+          const subject = await context.prisma.dispensation_subject.findUnique({where: {subject: args.subject}});
           await ensureNewHolders(args.holders, context.prisma);
           const [day, month, year] = args.date_end.split("/").map(Number);
           const newExpDate = new Date(year, month - 1, day, 12);
-          const ren = args.renewals ?? (newExpDate > disp.date_end ? (disp.renewals + 1) : disp.renewals);
+          const ren = newExpDate > disp.date_end && disp.status === 'Active' ? (disp.renewals + 1) : disp.renewals;
           await context.prisma.$transaction(async (tx) => {
             const [day, month, year] = args.date_end.split("/").map(Number);
-            const authorization = await tx.dispensation.update({
+            const dispensation = await tx.dispensation.update({
               where: { id_dispensation: disp.id_dispensation },
               data: {
-                dispensation: args.dispensation,
                 renewals: ren,
-                //id_dispensation_subject: args., // TODO
+                id_dispensation_subject: subject.id_dispensation_subject,
                 other_subject: args.other_subject,
-                requires: args.requires, // TODO
+                requires: args.requires,
                 comment: args.comment,
                 status: args.status,
                 date_end: new Date(year, month - 1, day, 12),
@@ -353,7 +353,7 @@ export const DispensationMutations = extendType({
               }
             });
 
-            await checkRelationsForDispensation(tx, args, authorization);
+            await checkRelationsForDispensation(tx, args, dispensation);
           });
           return mutationStatusType.success();
         });
