@@ -1,5 +1,3 @@
-import {NotFoundError} from "../utils/errors";
-
 export async function checkRelationsForDispensation(tx, args, dispensation) {
 	for ( const holder of args.holders || []) {
 		const p = await tx.Person.findUnique({where: {sciper: holder.sciper}});
@@ -46,5 +44,23 @@ export async function checkRelationsForDispensation(tx, args, dispensation) {
 				});
 			}
 		}
-	} // TODO
+	}
+
+	for ( const ticket of args.tickets || []) {
+		if ( ticket.status === 'New' ) {
+			await tx.dispensation_has_ticket.create({
+				data: {
+					id_dispensation: Number(dispensation.id_dispensation),
+					ticket_number: ticket.name
+				}
+			});
+		} else if ( ticket.status === 'Deleted' ) {
+			await tx.dispensation_has_ticket.deleteMany({
+				where: {
+					id_dispensation: dispensation.id_dispensation,
+					ticket_number: ticket.name
+				}
+			});
+		}
+	}
 }
