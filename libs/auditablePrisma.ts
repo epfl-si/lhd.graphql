@@ -26,7 +26,7 @@ export function getPrismaForUser(config: BackendConfig, user, inject?: TestInjec
 					const oldValue = operation === 'create' ? null : await basePrisma[model].findMany({ where: args.where });
 					newValue = await query(args);
 					try {
-						const source = operation === "create" ? newValue : (operation === 'deleteMany' ? null : oldValue[0]);
+						const source = operation === "create" ? newValue : oldValue[0];
 						const key = source ? Object.keys(source).find(k => k.startsWith("id")) : undefined;
 						const id = key ? source[key] : 0;
 						await basePrisma['mutation_logs'].create({
