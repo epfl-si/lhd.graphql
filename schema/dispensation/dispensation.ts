@@ -306,8 +306,8 @@ export const DispensationMutations = extendType({
               renewals: 0,
               id_dispensation_subject: subject.id_dispensation_subject,
               other_subject: args.other_subject,
-              requires: args.requires,
-              comment: args.comment,
+              requires: decodeURIComponent(args.requires),
+              comment: decodeURIComponent(args.comment),
               status: args.status,
               date_start: new Date(yearCrea, monthCrea - 1, dayCrea, 12),
               date_end: new Date(year, month - 1, day, 12),
@@ -346,8 +346,8 @@ export const DispensationMutations = extendType({
                 renewals: ren,
                 id_dispensation_subject: subject.id_dispensation_subject,
                 other_subject: args.other_subject,
-                requires: args.requires,
-                comment: args.comment,
+                requires: decodeURIComponent(args.requires),
+                comment: decodeURIComponent(args.comment),
                 status: args.status,
                 date_end: new Date(year, month - 1, day, 12),
                 //file_path: args., // TODO
@@ -355,7 +355,6 @@ export const DispensationMutations = extendType({
                 modified_on: new Date()
               }
             });
-
             await checkRelationsForDispensation(tx, args, dispensation);
           });
           return mutationStatusType.success();
