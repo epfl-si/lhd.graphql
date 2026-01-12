@@ -30,7 +30,7 @@ async function sendEmailCAE(modifiedByName: string,
 		.replaceAll("{{comments}}", decodeURIComponent(comments));
 
 	await mailer.sendMail({
-		from: `"No Reply" <${process.env.SMTP_USER}>`,
+		from: `"LHD" <${process.env.SMTP_USER}>`,
 		to: process.env.ENVIRONMENT === 'prod' ? process.env.CAE_TO : modifiedByEmail,
 		cc: process.env.ENVIRONMENT === 'prod' ? [modifiedByEmail, process.env.CAE_CC] : modifiedByEmail,
 		subject: template.subject,
@@ -54,7 +54,7 @@ async function sendEmailCosec(modifiedByName: string,
 		.replaceAll("{{hazardType}}", hazardType);
 
 	await mailer.sendMail({
-		from: `"No Reply" <${process.env.SMTP_USER}>`,
+		from: `"LHD" <${process.env.SMTP_USER}>`,
 		to: process.env.ENVIRONMENT === 'prod' ? cosecs : modifiedByEmail,
 		bcc: process.env.ENVIRONMENT === 'prod' ? [modifiedByEmail, process.env.COSEC_BCC] : modifiedByEmail,
 		subject: template.subject,
@@ -105,7 +105,7 @@ export async function sendEmailsForChemical(user: string, prisma) {
 
 	if (userInfo.userEmail !== '') {
 		await mailer.sendMail({
-			from: `"No Reply" <${process.env.SMTP_USER}>`,
+			from: `"LHD" <${process.env.SMTP_USER}>`,
 			to: process.env.ENVIRONMENT === 'prod' ? process.env.CATALYSE_EMAIL : userInfo.userEmail,
 			subject: template.subject,
 			html: process.env.ENVIRONMENT === 'prod' ? template.body : `${logRecipients([process.env.CATALYSE_EMAIL], [], [])}\n${template.body}`,
