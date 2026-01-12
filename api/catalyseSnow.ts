@@ -47,141 +47,133 @@ export function makeRESTAPI() {
 
 	//TODO delete when Catalyse and SNOW have migrated to the new URLs
 	app.post("/snow.php", async (req: any, res) => {
-		try {
-			const method = req.query.m as string;
-			const request = req.query.req as string;
+		const method = req.query.m as string;
+		const request = req.query.req as string;
 
-			if (!request && method !== 'auth_chem') return res.status(400).json({ Message: "missing <req> string for request+authorisation number of the form req=AUTH_SST-AUTH_REQ" });
-			if (!req.query.date && method !== 'auth_chem') return res.status(400).json({ Message: "missing authorisation expiration <date>" });
-			const expirationDate = new Date(req.query.date as string);
+		if (!request && method !== 'auth_chem') return res.status(400).json({ Message: "missing <req> string for request+authorisation number of the form req=AUTH_SST-AUTH_REQ" });
+		if (!req.query.date && method !== 'auth_chem') return res.status(400).json({ Message: "missing authorisation expiration <date>" });
+		const expirationDate = new Date(req.query.date as string);
 
-			switch (method) {
-				case "auth_req":
-					if ( !req.user.canEditAuthorizations ) {
-						res.status(403).json({Message: 'Unauthorized'});
-						break;
-					}
-
-					const idUnit = parseInt(req.query.id_unit as string);
-					if (!idUnit) return res.status(400).json({ Message: "missing <id_unit>" });
-
-					if (!req.query.room_ids) return res.status(400).json({ Message: "missing <room_ids> list of lab ids" });
-					const roomIds = (req.query.room_ids as string).split(',');
-
-					if (!req.query.scipers) return res.status(400).json({ Message: "missing <scipers> list of authorisation holders" });
-					const scipers = (req.query.scipers as string).split(',');
-
-					const cas = (req.query.cas as string).split(',');
-					const args = {
-						id_unit: idUnit,
-						authorization: request,
-						expiration_date: (new Date(expirationDate)).toLocaleDateString("en-GB"),
-						status: "Active",
-						type: "Chemical",
-						cas: cas.map(c => {
-								return {name: c, status: "New"};
-							}),
-						holders: scipers.map(sc => {
-								return {sciper: parseInt(sc), status: "New"};
-							}),
-						rooms: roomIds.map(r => {
-								return {id: parseInt(r), status: "New"};
-							}),
-					}
-					await createAuthorization(args, args.id_unit, req.prisma);
-					res.json({Message: "Ok"});
+		switch (method) {
+			case "auth_req":
+				if ( !req.user.canEditAuthorizations ) {
+					res.status(403).json({Message: 'Unauthorized'});
 					break;
-				case "auth_renew":
-					if ( !req.user.canEditAuthorizations ) {
-						res.status(403).json({Message: 'Unauthorized'});
-						break;
-					}
+				}
 
-					const reqParts = request.split("-");
-					const requestNumber = `${reqParts[0]}-${reqParts[1]}`;
-					const argsRenew = {
-						search: requestNumber,
-						type: "Chemical"
-					}
+				const idUnit = parseInt(req.query.id_unit as string);
+				if (!idUnit) return res.status(400).json({ Message: "missing <id_unit>" });
 
-					const auth = await getTheAuthorization(argsRenew, req.prisma);
-					const argsUpdate = {
-						expiration_date: (new Date(expirationDate)).toLocaleDateString("en-GB"),
-						status: "Active",
-						renewals: parseInt(reqParts[2])
-					};
-					await updateAuthorization(argsUpdate, auth, req.prisma)
-					res.json({Message: "Ok"});
+				if (!req.query.room_ids) return res.status(400).json({ Message: "missing <room_ids> list of lab ids" });
+				const roomIds = (req.query.room_ids as string).split(',');
+
+				if (!req.query.scipers) return res.status(400).json({ Message: "missing <scipers> list of authorisation holders" });
+				const scipers = (req.query.scipers as string).split(',');
+
+				const cas = (req.query.cas as string).split(',');
+				const args = {
+					id_unit: idUnit,
+					authorization: request,
+					expiration_date: (new Date(expirationDate)).toLocaleDateString("en-GB"),
+					status: "Active",
+					type: "Chemical",
+					cas: cas.map(c => {
+							return {name: c, status: "New"};
+						}),
+					holders: scipers.map(sc => {
+							return {sciper: parseInt(sc), status: "New"};
+						}),
+					rooms: roomIds.map(r => {
+							return {id: parseInt(r), status: "New"};
+						}),
+				}
+				await createAuthorization(args, args.id_unit, req.prisma);
+				res.json({Message: "Ok"});
+				break;
+			case "auth_renew":
+				if ( !req.user.canEditAuthorizations ) {
+					res.status(403).json({Message: 'Unauthorized'});
 					break;
-				case "auth_chem":
-					if ( !req.user.canEditChemicals ) {
-						res.status(403).json({Message: 'Unauthorized'});
-						break;
-					}
+				}
 
-					if ( !req.query.cas ) return res.status(400).json({Message: "missing <cas> code for chemical product"});
-					if ( !req.query.en ) return res.status(400).json({Message: "missing <en> english translation of the chemical name or description"});
-					if ( !req.query.auth ) return res.status(400).json({Message: "missing <auth> flag for setting if the new chemical requires authorisation"});
+				const reqParts = request.split("-");
+				const requestNumber = `${reqParts[0]}-${reqParts[1]}`;
+				const argsRenew = {
+					search: requestNumber,
+					type: "Chemical"
+				}
 
-					const argsChem = {
-						auth_chem_en: req.query.en as string,
-						cas_auth_chem: req.query.cas as string,
-						flag_auth_chem: (req.query.auth as string).toLowerCase() === 'yes' || (req.query.auth as string) === '1'
-					}
-					await createChemical(argsChem, req);
-					res.json({Message: "Ok"});
+				const auth = await getTheAuthorization(argsRenew, req.prisma);
+				const argsUpdate = {
+					expiration_date: (new Date(expirationDate)).toLocaleDateString("en-GB"),
+					status: "Active",
+					renewals: parseInt(reqParts[2])
+				};
+				await updateAuthorization(argsUpdate, auth, req.prisma)
+				res.json({Message: "Ok"});
+				break;
+			case "auth_chem":
+				if ( !req.user.canEditChemicals ) {
+					res.status(403).json({Message: 'Unauthorized'});
 					break;
-				default:
-					res.status(404).json({Message: 'Not Found'});
-					break;
-			}
-		} catch (err: any) {
-			res.status(500).json({Message: err.message});
+				}
+
+				if ( !req.query.cas ) return res.status(400).json({Message: "missing <cas> code for chemical product"});
+				if ( !req.query.en ) return res.status(400).json({Message: "missing <en> english translation of the chemical name or description"});
+				if ( !req.query.auth ) return res.status(400).json({Message: "missing <auth> flag for setting if the new chemical requires authorisation"});
+
+				const argsChem = {
+					auth_chem_en: req.query.en as string,
+					cas_auth_chem: req.query.cas as string,
+					flag_auth_chem: (req.query.auth as string).toLowerCase() === 'yes' || (req.query.auth as string) === '1'
+				}
+				await createChemical(argsChem, req);
+				res.json({Message: "Ok"});
+				break;
+			default:
+				res.status(404).json({Message: 'Not Found'});
+				break;
 		}
 	});
 	app.get("/catalyse.php", async (req: any, res) => {
-		try {
-			switch (req.query.m as string) {
-				case "auth_check":
-					if ( !req.user.canListAuthorizations ) {
-						res.status(403).json({Message: 'Unauthorized'});
-						break;
-					}
-
-					if ( !req.query.sciper ) return res.status(400).json({Message: "Missing sciper number"});
-					if ( !req.query.cas ) return res.status(400).json({Message: "Missing cas number"});
-					const sciper = (req.query.sciper as string);
-					const cas = (req.query.cas as string).split(',');
-
-					const argsCheck = {
-						take: 0,
-						skip: 0,
-						search: `Holder=${sciper}`,
-						type: "Chemical"
-					}
-					const result = await getAuthorizationsWithPagination(argsCheck, req.prisma);
-					const casResult = result.authorizations
-						.filter(auth => auth.expiration_date > new Date())
-						.flatMap(auth => auth.authorization_has_chemical)
-						.flatMap(auth => auth.chemical)
-						.filter(chem => chem.flag_auth_chem == 1)
-						.flatMap(cas => cas.cas_auth_chem);
-					const casAuth = {};
-					cas.forEach(c => {
-						if ( casResult.includes(c) ) {
-							casAuth[c] = 1;
-						} else {
-							casAuth[c] = 0;
-						}
-					})
-					res.json({Message: "Ok", Data: [casAuth]});
+		switch (req.query.m as string) {
+			case "auth_check":
+				if ( !req.user.canListAuthorizations ) {
+					res.status(403).json({Message: 'Unauthorized'});
 					break;
-				default:
-					res.status(404).json({Message: 'Not Found'});
-					break;
-			}
-		} catch (err: any) {
-			res.status(500).json({Message: err.message});
+				}
+
+				if ( !req.query.sciper ) return res.status(400).json({Message: "Missing sciper number"});
+				if ( !req.query.cas ) return res.status(400).json({Message: "Missing cas number"});
+				const sciper = (req.query.sciper as string);
+				const cas = (req.query.cas as string).split(',');
+
+				const argsCheck = {
+					take: 0,
+					skip: 0,
+					search: `Holder=${sciper}`,
+					type: "Chemical"
+				}
+				const result = await getAuthorizationsWithPagination(argsCheck, req.prisma);
+				const casResult = result.authorizations
+					.filter(auth => auth.expiration_date > new Date())
+					.flatMap(auth => auth.authorization_has_chemical)
+					.flatMap(auth => auth.chemical)
+					.filter(chem => chem.flag_auth_chem == 1)
+					.flatMap(cas => cas.cas_auth_chem);
+				const casAuth = {};
+				cas.forEach(c => {
+					if ( casResult.includes(c) ) {
+						casAuth[c] = 1;
+					} else {
+						casAuth[c] = 0;
+					}
+				})
+				res.json({Message: "Ok", Data: [casAuth]});
+				break;
+			default:
+				res.status(404).json({Message: 'Not Found'});
+				break;
 		}
 	});
 
