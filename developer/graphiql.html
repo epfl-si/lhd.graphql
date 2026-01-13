@@ -46,19 +46,19 @@
       These are imports for the GraphIQL Explorer plugin.
      -->
     <script
-            src="https://unpkg.com/@graphiql/plugin-explorer/dist/index.umd.js"
+            src="https://unpkg.com/@graphiql/plugin-explorer@3.0.1/dist/index.umd.js"
             crossorigin
     ></script>
 
     <link
             rel="stylesheet"
-            href="https://unpkg.com/@graphiql/plugin-explorer/dist/style.css"
+            href="https://unpkg.com/@graphiql/plugin-explorer@3.0.1/dist/style.css"
     />
 
     <link rel="stylesheet" href="https://web2018.epfl.ch/6.3.0/css/elements.min.css">
     <script src="https://web2018.epfl.ch/6.3.0/js/elements.min.js"></script>
 
-    <script src="https://unpkg.com/@epfl-si/appauth@0.11.0/dist/umd/bundle.min.js"></script>
+    <script src="https://unpkg.com/@epfl-si/appauth@0.13.0/dist/umd/bundle.min.js"></script>
 </head>
 
 <body>
@@ -130,17 +130,19 @@
                 login();
             }
         });
-
-		host = window.location.host.indexOf(".epfl.ch") > -1 ? "https://satosaaas.epfl.ch" : "http://localhost:8080/realms/LHD";
-		client = window.location.host.indexOf("lhd-test.epfl.ch") > -1 ? "LHDv3_test" : (window.location.host.indexOf("lhd.epfl.ch") > -1 ? "LHDv3_prod" : "LHDv3");
-		scope = window.location.host.indexOf(".epfl.ch") > -1 ? "openid profile tequila" : "openid";
+        
+        host = "server.OIDC_BASE_URL";
+        client = "server.REACT_CLIENT_ID";
+        scope = "openid profile email " + client + "/.default";
         oidc = new window.Appauth.OpenIDConnect({
             debug: true,
             authServerUrl: host,
             client: {
-				clientId: client,
-				scope: scope
+                clientId: client,
+                redirectUri: window.location,
+                scope: scope
             },
+            storage: new window.Appauth.LocalStorageBackend(),
             minValiditySeconds: 270
         });
 
