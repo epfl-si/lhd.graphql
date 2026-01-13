@@ -10,6 +10,7 @@ import {checkRelationsForDispensation} from "../../model/dispensation";
 import {ensureNewHolders} from "../../model/persons";
 import {TicketStruct} from "./ticket";
 import {saveBase64File} from "../../utils/File";
+import {sendEmailForNewDispensation} from "../../utils/Email/Mailer";
 
 export const DispensationStruct = objectType({
   name: dispensation.$name,
@@ -301,7 +302,7 @@ export const DispensationMutations = extendType({
             id_dispensation: true,
           },
         });
-        await context.prisma.$transaction(async (tx) => {
+        const dispensation = await context.prisma.$transaction(async (tx) => {
           const disp = await tx.dispensation.create({
             data: {
               dispensation: `DISP-${result._max.id_dispensation+1}`,
@@ -326,7 +327,18 @@ export const DispensationMutations = extendType({
             }
           });
           await checkRelationsForDispensation(tx, args, disp);
+          return disp;
         });
+        const dispensationForEmail = await context.prisma.dispensation.findUnique({
+          where: { id_dispensation: dispensation.id_dispensation },
+          include: {
+            subject: true,
+            dispensation_has_room : { include: { room: true } },
+            dispensation_has_holder: { include: { holder: true } },
+            dispensation_has_ticket: true
+            }
+        });
+        await sendEmailForNewDispensation(userInfo.userFullName, userInfo.userEmail, dispensationForEmail);
         return mutationStatusType.success();
       }
     });

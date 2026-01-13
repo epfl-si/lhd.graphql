@@ -114,6 +114,33 @@ export async function sendEmailsForChemical(user: string, prisma) {
 	}
 }
 
+export async function sendEmailForNewDispensation(modifiedByName: string,
+															modifiedByEmail: string,
+															dispensation: any) {
+	const template = EMAIL_TEMPLATES.NEW_DISPENSATION;
+
+	const body = template.body.replaceAll("{{modifiedByName}}", modifiedByName)
+		.replaceAll("{{dispNumber}}", dispensation.dispensation)
+		.replaceAll("{{subject}}", dispensation.subject.subject)
+		.replaceAll("{{dateStart}}", (dispensation.date_start).toLocaleDateString("en-GB"))
+		.replaceAll("{{dateEnd}}", (dispensation.date_end).toLocaleDateString("en-GB"))
+		.replaceAll("{{rooms}}", dispensation.dispensation_has_room.map(dhr => dhr.room.name).join(', '))
+		.replaceAll("{{holders}}", dispensation.dispensation_has_holder.map(dhr => `${dhr.holder.name} ${dhr.holder.surname} (${dhr.holder.sciper})`).join(', '))
+		.replaceAll("{{requirements}}", dispensation.requires)
+		.replaceAll("{{comments}}", dispensation.comment)
+		.replaceAll("{{status}}", dispensation.status)
+		.replaceAll("{{tickets}}", dispensation.dispensation_has_ticket.map(dhr => dhr.ticket_number).join(', '));
+
+	const holders = dispensation.dispensation_has_holder.map(dhr => dhr.holder.email);
+	await mailer.sendMail({
+		from: `"LHD" <${process.env.SMTP_USER}>`,
+		to: process.env.ENVIRONMENT === 'prod' ? holders : modifiedByEmail,
+		cc: process.env.ENVIRONMENT === 'prod' ? [modifiedByEmail, process.env.DISPENSATION_CC] : modifiedByEmail,
+		subject: template.subject.replaceAll("{{dispNumber}}", dispensation.dispensation),
+		html: process.env.ENVIRONMENT === 'prod' ? body : `${logRecipients(holders, [], [modifiedByEmail, process.env.DISPENSATION_CC] )}\n${body}`
+	});
+}
+
 function getFormattedDate() {
 	const date = new Date();
 

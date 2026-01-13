@@ -57,6 +57,22 @@ OHS Support`,
 en pièce jointe vous pouvez trouver la liste des produits chimiques mise à jour.<br/>
 Cordialement,<br/>
 LHD`
+	},
+	NEW_DISPENSATION: {
+		subject: `Dispensation/Dérogation: {{dispNumber}}`,
+		body: `A dispensation has been granted in your name by the OHS.<br/>
+Une dérogation vous a été accordée par le OHS.<br/><br/>
+• <b>Dispensation/Dérogation</b>: <a href="${process.env.APP_BASE_PATH}/dispensationscontrol?Dispensation={{dispNumber}}">{{dispNumber}}</a><br/>
+• <b>Author/Auteur</b>: {{modifiedByName}}<br/>
+• <b>Subject/Sujet</b>: {{subject}}<br/>
+• <b>Start date/Début</b>: {{dateStart}}<br/>
+• <b>Expiration date/Echéance</b>: {{dateEnd}}<br/>
+• <b>Room/Local</b>: {{rooms}}<br/>
+• <b>Holder/Détenteur</b>: {{holders}}<br/>
+• <b>Requirements/Requis</b>: {{requirements}}<br/>
+• <b>Comment/Commentaire</b>: {{comments}}<br/>
+• <b>Status/Etat</b>: {{status}}<br/>
+• <b>Numéro ticket OHS</b>: {{tickets}}<br/>`,
 	}
 } as const satisfies Record<string, EmailTemplate>;
 
