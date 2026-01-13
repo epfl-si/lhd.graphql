@@ -11,6 +11,7 @@ import {getUnitToString} from "../schema/roomdetails/units";
 import {getLabHasHazardsAdditionalInfoToString} from "../schema/hazards/hazardsAdditionalInfo";
 import {getLabHasHazardChildToString} from "../schema/hazards/labHazardChild";
 import {setReqPrismaMiddleware} from "./lib/callBacks";
+import {getDispensationToString} from "../schema/dispensation/dispensation";
 
 const obfuscatedIdParams = {
 	eph_id (req) { return req.params.eph_id },
@@ -128,6 +129,26 @@ export function makeRESTFilesAPI() {
 				filePath = orgByFIO.filePath;
 			}
 			sendFileResponse(filePath, res);
+		});
+
+	app.get("/dispensation/:eph_id",
+		checkAPICall(
+			{
+				authorize: (req) => req.user.canListHazards,
+				required: {
+					...obfuscatedIdParams,
+				},
+				validate: {
+					...obfuscatedIdValidators,
+				}
+			}),
+		async (req: Request<GetFile>, res) => {
+			const id: ID = {salt: req.params.salt, eph_id: req.params.eph_id};
+			IDObfuscator.checkId(id);
+			const info = await IDObfuscator.getObjectByObfuscatedId(id,
+				'dispensation', 'id_dispensation',
+				req.prisma, 'dispensation', getDispensationToString);
+			sendFileResponse(info.file_path, res);
 		});
 
 	app.use(errorHandler);

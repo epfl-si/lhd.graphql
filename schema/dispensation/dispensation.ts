@@ -9,6 +9,7 @@ import {getUserInfoFromAPI} from "../../utils/CallAPI";
 import {checkRelationsForDispensation} from "../../model/dispensation";
 import {ensureNewHolders} from "../../model/persons";
 import {TicketStruct} from "./ticket";
+import {saveBase64File} from "../../utils/File";
 
 export const DispensationStruct = objectType({
   name: dispensation.$name,
@@ -262,7 +263,8 @@ const newDispensationType = {
   status: stringArg(),
   date_start: stringArg(),
   date_end: stringArg(),
-  file_path: stringArg(),
+  file: stringArg(),
+  file_name: stringArg(),
   created_by: stringArg(),
   created_on: stringArg(),
   modified_by: stringArg(),
@@ -291,15 +293,15 @@ export const DispensationMutations = extendType({
         const userInfo = await getUserInfoFromAPI(context.user.username);
         const subject = await context.prisma.dispensation_subject.findUnique({where: {subject: args.subject}});
         await ensureNewHolders(args.holders, context.prisma);
+        const date = args.date_start ?? (new Date()).toLocaleDateString("en-GB");
+        const [dayCrea, monthCrea, yearCrea] = date.split("/").map(Number);
+        const [day, month, year] = args.date_end.split("/").map(Number);
+        const result = await context.prisma.dispensation.aggregate({
+          _max: {
+            id_dispensation: true,
+          },
+        });
         await context.prisma.$transaction(async (tx) => {
-          const date = args.date_start ?? (new Date()).toLocaleDateString("en-GB");
-          const [dayCrea, monthCrea, yearCrea] = date.split("/").map(Number);
-          const [day, month, year] = args.date_end.split("/").map(Number);
-          const result = await context.prisma.dispensation.aggregate({
-            _max: {
-              id_dispensation: true,
-            },
-          });
           const disp = await tx.dispensation.create({
             data: {
               dispensation: `DISP-${result._max.id_dispensation+1}`,
@@ -311,14 +313,18 @@ export const DispensationMutations = extendType({
               status: args.status,
               date_start: new Date(yearCrea, monthCrea - 1, dayCrea, 12),
               date_end: new Date(year, month - 1, day, 12),
-              //file_path: args., // TODO
               created_by: `${userInfo.userFullName} (${userInfo.sciper})`,
               created_on: new Date(),
               modified_by: `${userInfo.userFullName} (${userInfo.sciper})`,
               modified_on: new Date()
             }
           });
-
+          await tx.dispensation.update({
+            where: { id_dispensation: disp.id_dispensation },
+            data: {
+              file_path: getFilePath(args, disp.id_dispensation)
+            }
+          });
           await checkRelationsForDispensation(tx, args, disp);
         });
         return mutationStatusType.success();
@@ -338,8 +344,9 @@ export const DispensationMutations = extendType({
           const subject = await context.prisma.dispensation_subject.findUnique({where: {subject: args.subject}});
           await ensureNewHolders(args.holders, context.prisma);
           const ren = disp.status === 'Active' ? (disp.renewals + 1) : disp.renewals;
+          const [day, month, year] = args.date_end.split("/").map(Number);
+
           await context.prisma.$transaction(async (tx) => {
-            const [day, month, year] = args.date_end.split("/").map(Number);
             const dispensation = await tx.dispensation.update({
               where: { id_dispensation: disp.id_dispensation },
               data: {
@@ -350,7 +357,7 @@ export const DispensationMutations = extendType({
                 comment: decodeURIComponent(args.comment),
                 status: args.status,
                 date_end: new Date(year, month - 1, day, 12),
-                //file_path: args., // TODO
+                file_path: getFilePath(args, disp.id_dispensation),
                 modified_by: `${userInfo.userFullName} (${userInfo.sciper})`,
                 modified_on: new Date()
               }
@@ -383,3 +390,11 @@ export const DispensationMutations = extendType({
     });
   }
 });
+
+function getFilePath (args, id) {
+  let filePath = '';
+  if (args.file && args.file_name) {
+    filePath = saveBase64File(args.file, process.env.DISPENSATION_DOCUMENT_FOLDER + '/' + id + '/', args.file_name)
+  }
+  return filePath;
+}

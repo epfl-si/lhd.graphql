@@ -136,6 +136,13 @@ async function groupByModifiedOn(data, prisma) {
 						after: new Intl.DateTimeFormat('en-GB').format(new Date(change["after"])),
 					}
 				}
+				else if (field === 'file_path') {
+					return {
+						field,
+						before: change["before"] ? change["before"].split('/').pop() : '',
+						after: change["after"] ? change["after"].split('/').pop() : '',
+					}
+				}
 				return {
 					field,
 					before: !change["before"] || change["before"] === 'undefined' ? '' : change["before"],
