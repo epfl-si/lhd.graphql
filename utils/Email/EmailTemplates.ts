@@ -1,5 +1,3 @@
-import {objectType} from "nexus";
-
 export type EmailTemplate = {
 	subject: string;
 	body: string;
@@ -61,7 +59,25 @@ LHD`
 	NEW_DISPENSATION: {
 		subject: `Dispensation/Dérogation: {{dispNumber}}`,
 		body: `A dispensation has been granted in your name by the OHS.<br/>
-Une dérogation vous a été accordée par le OHS.<br/><br/>
+Une dérogation vous a été accordée par le OHS.
+${getDispensationEmailBody()}`,
+	},
+	RENEW_DISPENSATION: {
+		subject: `Dispensation/Dérogation: {{dispNumber}}`,
+		body: `A renewal of the dispensation {{dispNumber}} has been granted in your name by the OHS.<br/>
+Un renouvellement de la dérogation {{dispNumber}} vous a été accordée par le OHS.
+${getDispensationEmailBody()}`,
+	},
+	EXPIRED_DISPENSATION: {
+		subject: `Dispensation/Dérogation: {{dispNumber}}`,
+		body: `The dispensation {{dispNumber}} has expired. If an extension is required, please submit a new request on https://go.epfl.ch/support-ohs.<br/>
+La dérogation {{dispNumber}} a expiré. Si une prolongation est nécessaire, veuillez soumettre une nouvelle demande sur https://go.epfl.ch/support-ohs.
+${getDispensationEmailBody()}`,
+	}
+} as const satisfies Record<string, EmailTemplate>;
+
+function getDispensationEmailBody () {
+	return `<br/><br/>
 • <b>Dispensation/Dérogation</b>: <a href="${process.env.APP_BASE_PATH}/dispensationscontrol?Dispensation={{dispNumber}}">{{dispNumber}}</a><br/>
 • <b>Author/Auteur</b>: {{modifiedByName}}<br/>
 • <b>Subject/Sujet</b>: {{subject}}<br/>
@@ -72,9 +88,8 @@ Une dérogation vous a été accordée par le OHS.<br/><br/>
 • <b>Requirements/Requis</b>: {{requirements}}<br/>
 • <b>Comment/Commentaire</b>: {{comments}}<br/>
 • <b>Status/Etat</b>: {{status}}<br/>
-• <b>Numéro ticket OHS</b>: {{tickets}}<br/>`,
-	}
-} as const satisfies Record<string, EmailTemplate>;
+• <b>Numéro ticket OHS</b>: {{tickets}}<br/>`;
+}
 
 export function logRecipients (to: string[], cc: string[], bcc: string[]) {
 	return `<b>TO</b>: ${to.join(', ')}<br/>

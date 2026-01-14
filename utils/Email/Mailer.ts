@@ -114,22 +114,21 @@ export async function sendEmailsForChemical(user: string, prisma) {
 	}
 }
 
-export async function sendEmailForNewDispensation(modifiedByName: string,
+export async function sendEmailForDispensation(modifiedByName: string,
 															modifiedByEmail: string,
-															dispensation: any) {
-	const template = EMAIL_TEMPLATES.NEW_DISPENSATION;
-
+															dispensation: any,
+															template: { body: string; subject: string; }) {
 	const body = template.body.replaceAll("{{modifiedByName}}", modifiedByName)
 		.replaceAll("{{dispNumber}}", dispensation.dispensation)
 		.replaceAll("{{subject}}", dispensation.subject.subject)
 		.replaceAll("{{dateStart}}", (dispensation.date_start).toLocaleDateString("en-GB"))
 		.replaceAll("{{dateEnd}}", (dispensation.date_end).toLocaleDateString("en-GB"))
-		.replaceAll("{{rooms}}", dispensation.dispensation_has_room.map(dhr => dhr.room.name).join(', '))
-		.replaceAll("{{holders}}", dispensation.dispensation_has_holder.map(dhr => `${dhr.holder.name} ${dhr.holder.surname} (${dhr.holder.sciper})`).join(', '))
 		.replaceAll("{{requirements}}", dispensation.requires)
 		.replaceAll("{{comments}}", dispensation.comment)
 		.replaceAll("{{status}}", dispensation.status)
-		.replaceAll("{{tickets}}", dispensation.dispensation_has_ticket.map(dhr => dhr.ticket_number).join(', '));
+		.replaceAll("{{rooms}}", dispensation.dispensation_has_room.map(dhr => `<a href="${process.env.APP_BASE_PATH}/roomdetails?room=${dhr.room.name}">${dhr.room.name}</a>`).join(', '))
+		.replaceAll("{{holders}}", dispensation.dispensation_has_holder.map(dhr => `${dhr.holder.name} ${dhr.holder.surname} (${dhr.holder.sciper})`).join(', '))
+		.replaceAll("{{tickets}}", dispensation.dispensation_has_ticket.map(dhr => `<a href="https://go.epfl.ch/${dhr.ticket_number}">${dhr.ticket_number}</a>`).join(', '));
 
 	const holders = dispensation.dispensation_has_holder.map(dhr => dhr.holder.email);
 	await mailer.sendMail({

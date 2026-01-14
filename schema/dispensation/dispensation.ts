@@ -10,7 +10,8 @@ import {checkRelationsForDispensation} from "../../model/dispensation";
 import {ensureNewHolders} from "../../model/persons";
 import {TicketStruct} from "./ticket";
 import {saveBase64File} from "../../utils/File";
-import {sendEmailForNewDispensation} from "../../utils/Email/Mailer";
+import {sendEmailForDispensation,} from "../../utils/Email/Mailer";
+import {EMAIL_TEMPLATES} from "../../utils/Email/EmailTemplates";
 
 export const DispensationStruct = objectType({
   name: dispensation.$name,
@@ -329,7 +330,7 @@ export const DispensationMutations = extendType({
           await checkRelationsForDispensation(tx, args, disp);
           return disp;
         });
-        const dispensationForEmail = await context.prisma.dispensation.findUnique({
+        const dispCreated = await context.prisma.dispensation.findUnique({
           where: { id_dispensation: dispensation.id_dispensation },
           include: {
             subject: true,
@@ -338,7 +339,7 @@ export const DispensationMutations = extendType({
             dispensation_has_ticket: true
             }
         });
-        await sendEmailForNewDispensation(userInfo.userFullName, userInfo.userEmail, dispensationForEmail);
+        await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispCreated, EMAIL_TEMPLATES.NEW_DISPENSATION);
         return mutationStatusType.success();
       }
     });
@@ -348,36 +349,49 @@ export const DispensationMutations = extendType({
       type: "DispensationStatus",
       authorize: (parent, args, context) => context.user.canEditDispensations,
       async resolve(root, args, context) {
-        return await context.prisma.$transaction(async (tx) => {
-          const disp = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
-            'dispensation', 'id_dispensation',
-            tx, 'Dispensation', getDispensationToString);
-          const userInfo = await getUserInfoFromAPI(context.user.username);
-          const subject = await context.prisma.dispensation_subject.findUnique({where: {subject: args.subject}});
-          await ensureNewHolders(args.holders, context.prisma);
-          const ren = disp.status === 'Active' ? (disp.renewals + 1) : disp.renewals;
-          const [day, month, year] = args.date_end.split("/").map(Number);
-
-          await context.prisma.$transaction(async (tx) => {
-            const dispensation = await tx.dispensation.update({
-              where: { id_dispensation: disp.id_dispensation },
-              data: {
-                renewals: ren,
-                id_dispensation_subject: subject.id_dispensation_subject,
-                other_subject: args.other_subject,
-                requires: decodeURIComponent(args.requires),
-                comment: decodeURIComponent(args.comment),
-                status: args.status,
-                date_end: new Date(year, month - 1, day, 12),
-                file_path: getFilePath(args, disp.id_dispensation),
-                modified_by: `${userInfo.userFullName} (${userInfo.sciper})`,
-                modified_on: new Date()
-              }
-            });
-            await checkRelationsForDispensation(tx, args, dispensation);
+        const userInfo = await getUserInfoFromAPI(context.user.username);
+        const disp = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
+          'dispensation', 'id_dispensation',
+          context.prisma, 'Dispensation', getDispensationToString);
+        const subject = await context.prisma.dispensation_subject.findUnique({where: {subject: args.subject}});
+        await ensureNewHolders(args.holders, context.prisma);
+        const ren = disp.status === 'Active' ? (disp.renewals + 1) : disp.renewals;
+        const [day, month, year] = args.date_end.split("/").map(Number);
+        const expirationDate = new Date();
+        expirationDate.setHours(12, 0, 0, 0);
+        await context.prisma.$transaction(async (tx) => {
+          const dispensation = await tx.dispensation.update({
+            where: { id_dispensation: disp.id_dispensation },
+            data: {
+              renewals: ren,
+              id_dispensation_subject: subject.id_dispensation_subject,
+              other_subject: args.other_subject,
+              requires: decodeURIComponent(args.requires),
+              comment: decodeURIComponent(args.comment),
+              status: args.status,
+              date_end: args.status === 'Expired' ? expirationDate : new Date(year, month - 1, day, 12),
+              file_path: getFilePath(args, disp.id_dispensation),
+              modified_by: `${userInfo.userFullName} (${userInfo.sciper})`,
+              modified_on: new Date()
+            }
           });
-          return mutationStatusType.success();
+          await checkRelationsForDispensation(tx, args, dispensation);
         });
+        const dispUpdated = await context.prisma.dispensation.findUnique({
+          where: { id_dispensation: disp.id_dispensation },
+          include: {
+            subject: true,
+            dispensation_has_room : { include: { room: true } },
+            dispensation_has_holder: { include: { holder: true } },
+            dispensation_has_ticket: true
+          }
+        });
+        if (dispUpdated.status === 'Expired') {
+          await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispUpdated, EMAIL_TEMPLATES.EXPIRED_DISPENSATION);
+        } else if (disp.date_end < dispUpdated.date_end) {
+          await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispUpdated, EMAIL_TEMPLATES.RENEW_DISPENSATION);
+        }
+        return mutationStatusType.success();
       }
     });
     t.nonNull.field('deleteDispensation', {
@@ -386,18 +400,16 @@ export const DispensationMutations = extendType({
       type: "DispensationStatus",
       authorize: (parent, args, context) => context.user.canEditDispensations,
       async resolve(root, args, context) {
-        return await context.prisma.$transaction(async (tx) => {
-          const disp = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
-            'dispensation', 'id_dispensation',
-            tx, 'Dispensation', getDispensationToString);
-
+        const disp = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
+          'dispensation', 'id_dispensation',
+          context.prisma, 'Dispensation', getDispensationToString);
+        await context.prisma.$transaction(async (tx) => {
           await tx.dispensation_has_room.deleteMany({ where: { id_dispensation: disp.id_dispensation }});
           await tx.dispensation_has_holder.deleteMany({ where: { id_dispensation: disp.id_dispensation }});
           await tx.dispensation_has_ticket.deleteMany({ where: { id_dispensation: disp.id_dispensation }});
           await tx.dispensation.delete({ where: { id_dispensation: disp.id_dispensation }});
-
-          return mutationStatusType.success();
         });
+        return mutationStatusType.success();
       }
     });
   }
