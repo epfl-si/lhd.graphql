@@ -339,7 +339,9 @@ export const DispensationMutations = extendType({
             dispensation_has_ticket: true
             }
         });
-        await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispCreated, EMAIL_TEMPLATES.NEW_DISPENSATION);
+        if (dispCreated.status === 'Active') {
+          await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispCreated, EMAIL_TEMPLATES.NEW_DISPENSATION);
+        }
         return mutationStatusType.success();
       }
     });
@@ -388,7 +390,7 @@ export const DispensationMutations = extendType({
         });
         if (dispUpdated.status === 'Expired') {
           await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispUpdated, EMAIL_TEMPLATES.EXPIRED_DISPENSATION);
-        } else if (disp.date_end < dispUpdated.date_end) {
+        } else if (disp.date_end < dispUpdated.date_end && dispUpdated.status === 'Active') {
           await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispUpdated, EMAIL_TEMPLATES.RENEW_DISPENSATION);
         }
         return mutationStatusType.success();
