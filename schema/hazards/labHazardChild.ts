@@ -3,7 +3,7 @@ import {bio_org, lab_has_hazards_child} from 'nexus-prisma';
 import {mutationStatusType} from "../statuses";
 import {IDObfuscator, submission} from "../../utils/IDObfuscator";
 import {HazardFormChildHistoryStruct} from "./hazardFormChildHistory";
-import {LabHazardStruct} from "./labHazard";
+import {getLabHasHazardToString, LabHazardStruct} from "./labHazard";
 import {Prisma} from '@prisma/client';
 
 export const LabHazardChildStruct = objectType({
@@ -127,7 +127,7 @@ export const HazardFlat = objectType({
 		t.string("parent_submission");
 		t.string("child_submission");
 		t.string("id_lab_has_hazards_child");
-		t.int("id_lab_has_hazards");
+		t.string("id_lab_has_hazards");
 		t.string("global_comment");
 		t.string("modified_by");
 		t.field("modified_on", { type: "DateTime" });
@@ -195,13 +195,15 @@ export const HazardsWithPaginationQuery = extendType({
 				}
 
 
-				const rawQuery = Prisma.sql`select distinct l.lab_display, 
-hc.hazard_category_name, 
-lhh.submission as parent_submission, 
+				const rawQuery = Prisma.sql`select distinct l.lab_display,
+l.id_lab,
+hc.hazard_category_name,
+lhh.submission as parent_submission,
 lhhc.submission as child_submission,
 lhhc.id_lab_has_hazards_child,
 lhh.id_lab_has_hazards,
 lhhc.id_hazard_form_child_history,
+hfh.id_hazard_form_history,
 lhhai.comment as global_comment,
 lhhai.modified_by,
 lhhai.modified_on,
@@ -237,6 +239,9 @@ order by l.lab_display asc
 						const encryptedID = IDObfuscator.obfuscate({id: h.id_lab_has_hazards_child, obj: getLabHasHazardChildToString(h)});
 						h.id_lab_has_hazards_child = JSON.stringify(encryptedID);
 					}
+					h.submission = h.parent_submission;
+					const encryptedIDForParent = IDObfuscator.obfuscate({id: h.id_lab_has_hazards, obj: getLabHasHazardToString(h)});
+					h.id_lab_has_hazards = JSON.stringify(encryptedIDForParent);
 					return h;
 				});
 				const totalCount = hazardList.length;

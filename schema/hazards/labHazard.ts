@@ -1,8 +1,7 @@
-import {arg, extendType, inputObjectType, list, objectType, stringArg} from 'nexus';
+import {arg, extendType, inputObjectType, objectType, stringArg} from 'nexus';
 import {lab_has_hazards} from 'nexus-prisma';
 import {HazardFormHistoryStruct} from "./hazardFormHistory";
 import {mutationStatusType} from "../statuses";
-import {getSHA256} from "../../utils/HashingTools";
 import {IDObfuscator, submission} from "../../utils/IDObfuscator";
 import {LabHazardChildStruct, updateHazardFormChild} from "./labHazardChild";
 import {RoomStruct} from "../global/rooms";
@@ -55,7 +54,7 @@ export const LabHazardStruct = objectType({
 	},
 });
 
-function getLabHasHazardToString(parent) {
+export function getLabHasHazardToString(parent) {
 	return {
 		id_lab_has_hazards: parent.id_lab_has_hazards,
 		id_lab: parent.id_lab,
@@ -160,17 +159,7 @@ export const RoomHazardMutations = extendType({
 								}
 							}
 							else if (h.submission.data['status'] === 'Deleted') {
-								await tx.lab_has_hazards_child.deleteMany({
-									where: {
-										id_lab_has_hazards: haz.id_lab_has_hazards
-									}
-								});
-
-								await tx.lab_has_hazards.delete({
-										where: {
-											id_lab_has_hazards: haz.id_lab_has_hazards
-										}
-									});
+								await deleteHazard(haz.id_lab_has_hazards, tx);
 							}
 						}
 					}
@@ -223,5 +212,36 @@ export const RoomHazardMutations = extendType({
 				return mutationStatusType.success();
 			}
 		});
+		t.nonNull.field('deleteHazard', {
+			description: `Delete an Hazard`,
+			args: {
+				id: stringArg(),
+			},
+			type: "RoomHazardStatus",
+			authorize: (parent, args, context) => context.user.canEditHazards,
+			async resolve(root, args, context) {
+				const haz = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
+					'lab_has_hazards', 'id_lab_has_hazards',
+					context.prisma, 'Hazard', getLabHasHazardToString);
+				await context.prisma.$transaction(async (tx) => {
+					await deleteHazard(haz.id_lab_has_hazards, tx);
+				});
+				return mutationStatusType.success();
+			}
+		});
 	}
 });
+
+async function deleteHazard (id: Number, tx) {
+	await tx.lab_has_hazards_child.deleteMany({
+		where: {
+			id_lab_has_hazards: id
+		}
+	});
+
+	await tx.lab_has_hazards.delete({
+		where: {
+			id_lab_has_hazards: id
+		}
+	});
+}
