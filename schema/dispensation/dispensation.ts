@@ -357,8 +357,10 @@ export const DispensationMutations = extendType({
           context.prisma, 'Dispensation', getDispensationToString);
         const subject = await context.prisma.dispensation_subject.findUnique({where: {subject: args.subject}});
         await ensureNewHolders(args.holders, context.prisma);
-        const ren = disp.status === 'Active' ? (disp.renewals + 1) : disp.renewals;
         const [day, month, year] = args.date_end.split("/").map(Number);
+        const newDateEnd = new Date(year, month - 1, day, 12);
+        disp.date_end.setHours(12, 0, 0, 0);
+        const ren = disp.status === 'Active' && disp.date_end < newDateEnd ? (disp.renewals + 1) : disp.renewals;
         const expirationDate = new Date();
         expirationDate.setHours(12, 0, 0, 0);
         await context.prisma.$transaction(async (tx) => {
@@ -371,7 +373,7 @@ export const DispensationMutations = extendType({
               requires: decodeURIComponent(args.requires),
               comment: decodeURIComponent(args.comment),
               status: args.status,
-              date_end: args.status === 'Expired' ? expirationDate : new Date(year, month - 1, day, 12),
+              date_end: args.status === 'Expired' ? expirationDate : newDateEnd,
               file_path: getFilePath(args, disp.id_dispensation),
               modified_by: `${userInfo.userFullName} (${userInfo.sciper})`,
               modified_on: new Date()
@@ -388,10 +390,14 @@ export const DispensationMutations = extendType({
             dispensation_has_ticket: true
           }
         });
-        if (dispUpdated.status === 'Expired') {
-          await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispUpdated, EMAIL_TEMPLATES.EXPIRED_DISPENSATION);
-        } else if (disp.renewals < dispUpdated.renewals && dispUpdated.status === 'Active') {
+        if (disp.renewals < dispUpdated.renewals && dispUpdated.status === 'Active') {
           await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispUpdated, EMAIL_TEMPLATES.RENEW_DISPENSATION);
+        } else if (dispUpdated.status === 'Active') {
+          await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispUpdated, EMAIL_TEMPLATES.MODIFIED_DISPENSATION);
+        } else if (dispUpdated.status === 'Expired' && disp.status !== 'Expired') {
+          await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispUpdated, EMAIL_TEMPLATES.EXPIRED_DISPENSATION);
+        } else if (dispUpdated.status === 'Cancelled' && disp.status !== 'Cancelled') {
+          await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispUpdated, EMAIL_TEMPLATES.CANCELLED_DISPENSATION);
         }
         return mutationStatusType.success();
       }
