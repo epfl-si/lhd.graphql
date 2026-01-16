@@ -390,7 +390,7 @@ export const DispensationMutations = extendType({
         });
         if (dispUpdated.status === 'Expired') {
           await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispUpdated, EMAIL_TEMPLATES.EXPIRED_DISPENSATION);
-        } else if (disp.date_end < dispUpdated.date_end && dispUpdated.status === 'Active') {
+        } else if (disp.renewals < dispUpdated.renewals && dispUpdated.status === 'Active') {
           await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispUpdated, EMAIL_TEMPLATES.RENEW_DISPENSATION);
         }
         return mutationStatusType.success();
