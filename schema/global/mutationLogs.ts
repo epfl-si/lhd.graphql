@@ -103,12 +103,12 @@ async function groupByModifiedOn(data, prisma) {
 		const diffs = await Promise.all(Object.entries(entry.diff).map(
 			async ([field, change]) => {
 				if (field === 'id_dispensation_subject') {
-					const oldSubject = await prisma.dispensation_subject.findUnique({where: {id_dispensation_subject: Number(change["before"]) }});
-					const newSubject = await prisma.dispensation_subject.findUnique({where: {id_dispensation_subject: Number(change["after"]) }});
+					const oldSubject = change["before"] ? await prisma.dispensation_subject.findUnique({where: {id_dispensation_subject: Number(change["before"]) }}) : '';
+					const newSubject = change["after"] ? await prisma.dispensation_subject.findUnique({where: {id_dispensation_subject: Number(change["after"]) }}) : '';
 					return {
 						field,
-						before: oldSubject.subject,
-						after: newSubject.subject,
+						before: oldSubject ? `${oldSubject.subject}` : '',
+						after: newSubject ? `${newSubject.subject}` : ''
 					}
 				}
 				else if (field === 'id_person') {
@@ -132,8 +132,8 @@ async function groupByModifiedOn(data, prisma) {
 				else if (field === 'date_end') {
 					return {
 						field,
-						before: new Intl.DateTimeFormat('en-GB').format(new Date(change["before"])),
-						after: new Intl.DateTimeFormat('en-GB').format(new Date(change["after"])),
+						before: change["before"] ? new Intl.DateTimeFormat('en-GB').format(new Date(change["before"])) : '',
+						after: change["after"] ? new Intl.DateTimeFormat('en-GB').format(new Date(change["after"])) : '',
 					}
 				}
 				else if (field === 'file_path') {
