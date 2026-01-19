@@ -392,6 +392,8 @@ export const DispensationMutations = extendType({
         });
         if (disp.renewals < dispUpdated.renewals && dispUpdated.status === 'Active') {
           await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispUpdated, EMAIL_TEMPLATES.RENEW_DISPENSATION);
+        } else if (disp.status === 'Draft' && dispUpdated.status === 'Active') {
+          await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispUpdated, EMAIL_TEMPLATES.NEW_DISPENSATION);
         } else if (dispUpdated.status === 'Active') {
           await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispUpdated, EMAIL_TEMPLATES.MODIFIED_DISPENSATION);
         } else if (dispUpdated.status === 'Expired' && disp.status !== 'Expired') {
