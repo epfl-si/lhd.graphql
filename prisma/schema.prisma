@@ -794,6 +794,7 @@ model Unit {
   unit_has_room             unit_has_room[]
   unit_has_storage_for_room unit_has_storage_for_room[]
   authorization             authorization[]
+  dispensation_has_unit     dispensation_has_unit[]
   responsible               Person? @relation(fields: [responsible_id], references: [id_person], onUpdate: Restrict, map: "unit_has_responsible")
 
   @@unique([name, id_institute], name: "unique_un", map: "unique_un")
@@ -1041,6 +1042,7 @@ model dispensation {
   dispensation_has_room     dispensation_has_room[]
   dispensation_has_holder   dispensation_has_holder[]
   dispensation_has_ticket   dispensation_has_ticket[]
+  dispensation_has_unit     dispensation_has_unit[]
   subject                   dispensation_subject @relation(fields: [id_dispensation_subject], references: [id_dispensation_subject], onUpdate: Restrict, map: "dispensation_has_subject_ibfk_1")
 }
 
@@ -1071,4 +1073,14 @@ model dispensation_has_room {
 
   @@unique([id_dispensation, id_lab], name: "unique_dispensation_has_room", map: "unique_dispensation_has_room")
   @@index([id_lab], map: "id_lab")
+}
+
+model dispensation_has_unit {
+  id_dispensation  Int
+  id_unit           Int
+  dispensation     dispensation @relation(fields: [id_dispensation], references: [id_dispensation], onUpdate: Restrict, map: "dispensation_has_unit_ibfk_1")
+  unit             Unit @relation(fields: [id_unit], references: [id], onUpdate: Restrict, map: "dispensation_has_unit_ibfk_2")
+
+  @@unique([id_dispensation, id_unit], name: "unique_dispensation_has_unit", map: "unique_dispensation_has_unit")
+  @@index([id_unit], map: "id_unit")
 }
