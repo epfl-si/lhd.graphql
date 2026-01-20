@@ -12,6 +12,7 @@ import {TicketStruct} from "./ticket";
 import {saveBase64File} from "../../utils/File";
 import {sendEmailForDispensation,} from "../../utils/Email/Mailer";
 import {EMAIL_TEMPLATES} from "../../utils/Email/EmailTemplates";
+import {UnitStruct} from "../roomdetails/units";
 
 export const DispensationStruct = objectType({
   name: dispensation.$name,
@@ -76,6 +77,19 @@ and recorded indirectly in a DispensationVersion object.
         const peopleIDs = new Set(dispensationsAndPeople.map((dispensationAndPerson) => dispensationAndPerson.id_person));
         return await context.prisma.Person.findMany({
           where: { id_person: { in: [...peopleIDs] }}
+        })
+      },
+    });
+
+    t.nonNull.list.nonNull.field('dispensation_units', {
+      type: UnitStruct,
+      resolve: async (parent, _, context) => {
+        const dispensationsAndUnits = await context.prisma.dispensation_has_unit.findMany({
+          where: { id_dispensation: parent.id_dispensation }
+        });
+        const unitIDs = new Set(dispensationsAndUnits.map((dispensationsAndUnit) => dispensationsAndUnit.id_unit));
+        return await context.prisma.Unit.findMany({
+          where: { id: { in: [...unitIDs] }}
         })
       },
     });
@@ -168,6 +182,14 @@ export const DispensationsWithPaginationQuery = extendType({
               whereCondition.push({ status: { contains: value }})
             } else if (query[0] === 'Room') {
               whereCondition.push({ dispensation_has_room: { some: {room: {is: {name: {contains: value}}}} }})
+            } else if (query[0] === 'Unit') {
+              whereCondition.push({
+                OR: [
+                  { dispensation_has_unit: { some: {unit: {is: {name: {contains: value}}}} }},
+                  { dispensation_has_unit: { some: {unit: {is: {institute: {is: {name: {contains: value}}}}}} }},
+                  { dispensation_has_unit: { some: {unit: {is: {institute: {is: {school: {is: {name: {contains: value}}}}}}}} }}
+                ]
+              })
             } else if (query[0] === 'Holder') {
               whereCondition.push({
                 dispensation_has_holder: {
@@ -272,6 +294,7 @@ const newDispensationType = {
   modified_by: stringArg(),
   modified_on: stringArg(),
   rooms: list(OthersMutationType),
+  units: list(OthersMutationType),
   holders: list(HolderMutationType),
   tickets: list(StringMutationType),
 };
@@ -417,6 +440,7 @@ export const DispensationMutations = extendType({
           await tx.dispensation_has_room.deleteMany({ where: { id_dispensation: disp.id_dispensation }});
           await tx.dispensation_has_holder.deleteMany({ where: { id_dispensation: disp.id_dispensation }});
           await tx.dispensation_has_ticket.deleteMany({ where: { id_dispensation: disp.id_dispensation }});
+          await tx.dispensation_has_unit.deleteMany({ where: { id_dispensation: disp.id_dispensation }});
           await tx.dispensation.delete({ where: { id_dispensation: disp.id_dispensation }});
         });
         return mutationStatusType.success();

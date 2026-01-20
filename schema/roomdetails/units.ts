@@ -403,6 +403,40 @@ export const UnitFullTextQuery = extendType({
 	},
 })
 
+export const UnitsForDispensationQuery = extendType({
+	type: 'Query',
+	definition(t) {
+		t.field("unitsForDispensation", {
+			type: list(UnitStruct),
+			args: {
+				rooms: stringArg(),
+			},
+			authorize: (parent, args, context) => context.user.canListUnits,
+			async resolve(parent, args, context) {
+				const roomNames = args.rooms.split(',');
+				return await context.prisma.Unit.findMany({
+					where: {
+						unit_has_room: {
+							some: {
+								room: {
+									name: {
+										in: roomNames
+									}
+								}
+							}
+						}
+					},
+					orderBy: [
+						{
+							name: 'asc',
+						},
+					]
+				});
+			}
+		});
+	},
+})
+
 export const UnitFromAPI = objectType({
 	name: "UnitFromAPI",
 	definition(t) {

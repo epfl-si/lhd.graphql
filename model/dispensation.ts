@@ -46,6 +46,26 @@ export async function checkRelationsForDispensation(tx, args, dispensation) {
 		}
 	}
 
+	for ( const unit of args.units || []) {
+		const u = await tx.Unit.findFirst({where: {name: unit.name}});
+		if ( unit.status === 'New' ) {
+			if ( !u ) throw new Error(`Dispensation not created: unit not found`);
+			await tx.dispensation_has_unit.create({
+				data: {
+					id_unit: Number(u.id),
+					id_dispensation: Number(dispensation.id_dispensation)
+				}
+			});
+		} else if ( unit.status === 'Deleted' && u) {
+			await tx.dispensation_has_unit.deleteMany({
+				where: {
+					id_dispensation: dispensation.id_dispensation,
+					id_unit: u.id
+				}
+			});
+		}
+	}
+
 	for ( const ticket of args.tickets || []) {
 		if ( ticket.status === 'New' ) {
 			await tx.dispensation_has_ticket.create({

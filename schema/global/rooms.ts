@@ -189,7 +189,7 @@ export const RoomStruct = objectType({
 	},
 });
 
-function getRoomToString(parent) {
+export function getRoomToString(parent) {
 	return {
 		id: parent.id,
 		sciper_lab: parent.sciper_lab,
