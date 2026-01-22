@@ -109,6 +109,7 @@ export async function getDispensation (prisma, id) {
 			subject: true,
 			dispensation_has_room : { include: { room: true } },
 			dispensation_has_holder: { include: { holder: true } },
+			dispensation_has_unit: { include: { unit: { include: { subunpro: { include: { person: true } } } } } },
 			dispensation_has_ticket: true
 		}
 	});
@@ -130,6 +131,7 @@ export async function getExpiringDispensations (prisma) {
 			subject: true,
 			dispensation_has_room : { include: { room: true } },
 			dispensation_has_holder: { include: { holder: true } },
+			dispensation_has_unit: { include: { unit: { include: { subunpro: { include: { person: true } } } } } },
 			dispensation_has_ticket: true
 		}
 	});

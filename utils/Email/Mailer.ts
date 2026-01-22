@@ -131,12 +131,14 @@ export async function sendEmailForDispensation(modifiedByName: string,
 		.replaceAll("{{tickets}}", dispensation.dispensation_has_ticket.map(dhr => `<a href="https://go.epfl.ch/${dhr.ticket_number}">${dhr.ticket_number}</a>`).join(', '));
 
 	const holders = dispensation.dispensation_has_holder.map(dhr => dhr.holder.email);
+	const profs = dispensation.dispensation_has_unit.flatMap(dhu => dhu.unit.subunpro).map(pers => pers.person.email);
+	const cc = [modifiedByEmail, process.env.DISPENSATION_CC, profs];
 	await mailer.sendMail({
 		from: `"LHD" <${process.env.SMTP_USER}>`,
 		to: process.env.ENVIRONMENT === 'prod' ? holders : modifiedByEmail,
-		cc: process.env.ENVIRONMENT === 'prod' ? [modifiedByEmail, process.env.DISPENSATION_CC] : modifiedByEmail,
+		cc: process.env.ENVIRONMENT === 'prod' ? cc : modifiedByEmail,
 		subject: template.subject.replaceAll("{{dispNumber}}", dispensation.dispensation),
-		html: process.env.ENVIRONMENT === 'prod' ? body : `${logRecipients(holders, [], [modifiedByEmail, process.env.DISPENSATION_CC] )}\n${body}`
+		html: process.env.ENVIRONMENT === 'prod' ? body : `${logRecipients(holders, cc, [] )}\n${body}`
 	});
 }
 
@@ -152,7 +154,7 @@ export async function sendEmailForAuthorization(modifiedByName: string,
 		to: process.env.ENVIRONMENT === 'prod' ? holders : modifiedByEmail,
 		cc: process.env.ENVIRONMENT === 'prod' ? [modifiedByEmail] : modifiedByEmail,
 		subject: template.subject.replaceAll("{{authNumber}}", authorization.authorization),
-		html: process.env.ENVIRONMENT === 'prod' ? body : `${logRecipients(holders, [], [modifiedByEmail] )}\n${body}`
+		html: process.env.ENVIRONMENT === 'prod' ? body : `${logRecipients(holders, [modifiedByEmail], [] )}\n${body}`
 	});
 }
 
