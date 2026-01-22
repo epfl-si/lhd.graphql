@@ -321,15 +321,10 @@ export const DispensationMutations = extendType({
         const date = args.date_start ?? (new Date()).toLocaleDateString("en-GB");
         const [dayCrea, monthCrea, yearCrea] = date.split("/").map(Number);
         const [day, month, year] = args.date_end.split("/").map(Number);
-        const result = await context.prisma.dispensation.aggregate({
-          _max: {
-            id_dispensation: true,
-          },
-        });
         const dispensation = await context.prisma.$transaction(async (tx) => {
           const disp = await tx.dispensation.create({
             data: {
-              dispensation: `DISP-${result._max.id_dispensation+1}`,
+              dispensation: `DISP-TEMP`,
               renewals: 0,
               id_dispensation_subject: subject.id_dispensation_subject,
               other_subject: args.other_subject,
@@ -347,6 +342,7 @@ export const DispensationMutations = extendType({
           await tx.dispensation.update({
             where: { id_dispensation: disp.id_dispensation },
             data: {
+              dispensation: `DISP-${disp.id_dispensation}`,
               file_path: getFilePath(args, disp.id_dispensation)
             }
           });
