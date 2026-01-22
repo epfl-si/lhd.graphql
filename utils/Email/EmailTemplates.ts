@@ -85,6 +85,22 @@ ${getDispensationEmailBody()}`,
 		body: `The dispensation {{dispNumber}} has been cancelled.<br/>
 La dérogation {{dispNumber}} a étée anullée.
 ${getDispensationEmailBody()}`,
+	},
+	EXPIRING_DISPENSATION: {
+		subject: `Dispensation/Dérogation: {{dispNumber}}`,
+		body: `The dispensation {{dispNumber}} is expiring. If an extension is required, please submit a new request on https://go.epfl.ch/support-ohs.<br/>
+La dérogation {{dispNumber}} est en train d'expirer. Si une prolongation est nécessaire, veuillez soumettre une nouvelle demande sur https://go.epfl.ch/support-ohs.
+${getDispensationEmailBody()}`,
+	},
+	EXPIRED_AUTHORIZATION: {
+		subject: `Authorization/Autorisation: {{authNumber}}`,
+		body: `The authorization {{authNumber}} has expired.<br/>
+L'autorisation {{authNumber}} a expirée.`,
+	},
+	EXPIRING_AUTHORIZATION: {
+		subject: `Authorization/Autorisation: {{authNumber}}`,
+		body: `The authorization {{authNumber}} is expiring.<br/>
+L'autorisation {{authNumber}} est en train d'expirer.`,
 	}
 } as const satisfies Record<string, EmailTemplate>;
 

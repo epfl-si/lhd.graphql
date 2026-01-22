@@ -245,3 +245,33 @@ async function checkRelations(tx, args, authorization) {
 		}
 	}
 }
+
+export async function getExpiredAuthorizations (prisma) {
+	return await prisma.authorization.findMany({
+		where: { expiration_date: { lt: new Date() }, status: 'Active' }
+	});
+}
+
+export async function expireAuthorization (tx, auth) {
+	return await tx.authorization.update({
+		where: { id_authorization: auth.id_authorization },
+		data: {
+			status: 'Expired'
+		}
+	});
+}
+
+export async function getExpiringAuthorizations (prisma) {
+	const thirtyDaysFromNow = new Date();
+	thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+
+	return await prisma.authorization.findMany({
+		where: {
+			expiration_date: {
+				gte: new Date(),           // greater than or equal to now (not expired yet)
+				lte: thirtyDaysFromNow     // less than or equal to 30 days from now
+			},
+			status: 'Active'
+		}
+	});
+}

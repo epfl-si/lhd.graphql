@@ -140,6 +140,22 @@ export async function sendEmailForDispensation(modifiedByName: string,
 	});
 }
 
+export async function sendEmailForAuthorization(modifiedByName: string,
+																							 modifiedByEmail: string,
+																							 authorization: any,
+																							 template: { body: string; subject: string; }) {
+	const body = template.body.replaceAll("{{authNumber}}", authorization.authorization);
+
+	const holders = [];
+	await mailer.sendMail({
+		from: `"LHD" <${process.env.SMTP_USER}>`,
+		to: process.env.ENVIRONMENT === 'prod' ? holders : modifiedByEmail,
+		cc: process.env.ENVIRONMENT === 'prod' ? [modifiedByEmail] : modifiedByEmail,
+		subject: template.subject.replaceAll("{{authNumber}}", authorization.authorization),
+		html: process.env.ENVIRONMENT === 'prod' ? body : `${logRecipients(holders, [], [modifiedByEmail] )}\n${body}`
+	});
+}
+
 function getFormattedDate() {
 	const date = new Date();
 
