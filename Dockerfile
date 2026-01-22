@@ -9,6 +9,8 @@ ENV PATH /app/node_modules/.bin:$PATH
 ENV HAZARD_DOCUMENT_FOLDER=hazards/
 ENV DOCUMENTS_PATH=/var/documents
 
+RUN yarn global add tsx
+
 # install app dependencies
 COPY package.json ./
 COPY yarn.lock ./
