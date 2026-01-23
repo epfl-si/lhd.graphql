@@ -103,15 +103,6 @@ and recorded indirectly in a DispensationVersion object.
       },
     });
 
-    /*t.field('unit', {
-      type: UnitStruct,
-      resolve: async (parent, _, context) => {
-        return await context.prisma.unit.findUnique({
-          where: { id: parent.id_unit ?? 0 }
-        });
-      },
-    });*/
-
     t.string('id', {
       resolve: async (parent, _, context) => {
         const encryptedID = IDObfuscator.obfuscate({id: parent.id_dispensation, obj: getDispensationToString(parent)});
