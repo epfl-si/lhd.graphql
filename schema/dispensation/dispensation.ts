@@ -371,9 +371,7 @@ export const DispensationMutations = extendType({
         const [day, month, year] = args.date_end.split("/").map(Number);
         const newDateEnd = new Date(year, month - 1, day, 12);
         disp.date_end.setHours(12, 0, 0, 0);
-        const ren = disp.status === 'Active' && disp.date_end < newDateEnd ? (disp.renewals + 1) : disp.renewals;
-        const expirationDate = new Date();
-        expirationDate.setHours(12, 0, 0, 0);
+        const ren = disp.date_end < newDateEnd ? (disp.renewals + 1) : disp.renewals;
         await context.prisma.$transaction(async (tx) => {
           const dispensation = await tx.dispensation.update({
             where: { id_dispensation: disp.id_dispensation },
@@ -384,7 +382,7 @@ export const DispensationMutations = extendType({
               requires: decodeURIComponent(args.requires),
               comment: decodeURIComponent(args.comment),
               status: args.status,
-              date_end: args.status === 'Expired' ? expirationDate : newDateEnd,
+              date_end: newDateEnd,
               file_path: getFilePath(args, disp.id_dispensation),
               modified_by: `${userInfo.userFullName} (${userInfo.sciper})`,
               modified_on: new Date()
