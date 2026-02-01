@@ -210,7 +210,7 @@ export const DispensationsWithPaginationQuery = extendType({
           },
           orderBy: [
             {
-              dispensation: 'desc',
+              id_dispensation: 'desc',
             },
           ]
         });
