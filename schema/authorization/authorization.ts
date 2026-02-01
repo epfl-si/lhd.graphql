@@ -9,7 +9,7 @@ import {getUnitToString, UnitStruct} from "../roomdetails/units";
 import {RadiationStruct} from "./radiation";
 import {createAuthorization, getAuthorizationsWithPagination, updateAuthorization} from "../../model/authorization";
 import {HolderMutationType, OthersMutationType} from "../../utils/MutationTypes";
-import {ensureNewHolders} from "../../model/persons";
+import {ensurePerson} from "../../model/persons";
 
 export const AuthorizationStruct = objectType({
 	name: authorization.$name,
@@ -223,7 +223,8 @@ export const AuthorizationMutations = extendType({
 				const unit = await context.prisma.Unit.findUnique({where: {id: idDeobfuscatedForUnit}})
 				if (!unit) throw new Error(`Authorization not created`);
 
-				await createAuthorization(args, unit.id, context.prisma);
+				const newHolders = args.holders.filter(holder => holder.status === 'New');
+				await createAuthorization(args, unit.id, context.prisma, newHolders);
 				return mutationStatusType.success();
 			}
 		});
@@ -233,7 +234,8 @@ export const AuthorizationMutations = extendType({
 			type: "AuthorizationStatus",
 			authorize: (parent, args, context) => context.user.canEditAuthorizations,
 			async resolve(root, args, context) {
-				await ensureNewHolders(args.holders, context.prisma);
+				const newHolders = args.holders.filter(holder => holder.status === 'New');
+				await ensurePerson(newHolders, context.prisma);
 				return await context.prisma.$transaction(async (tx) => {
 					const auth = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
 						'authorization', 'id_authorization',

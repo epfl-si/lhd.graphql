@@ -17,9 +17,8 @@ export async function findOrCreatePerson(tx, sciperId, firstName, lastName, emai
 	return p;
 }
 
-export async function ensureNewHolders(holders, prisma) {
-	const newHolders = holders.filter(holder => holder.status === 'New');
-	for ( const holder of newHolders ) {
+export async function ensurePerson(persons, prisma) {
+	for ( const holder of persons ) {
 		let p = await prisma.Person.findUnique({where: {sciper: holder.sciper}});
 
 		if ( !p ) {

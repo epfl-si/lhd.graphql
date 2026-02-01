@@ -1,8 +1,8 @@
 import {NotFoundError} from "../utils/errors";
-import {ensureNewHolders} from "./persons";
+import {ensurePerson} from "./persons";
 
-export async function createAuthorization(args, unitId, prisma) {
-	await ensureNewHolders(args.holders, prisma);
+export async function createAuthorization(args, unitId, prisma, newHolders) {
+	await ensurePerson(newHolders, prisma);
 	return await prisma.$transaction(async (tx) => {
 		const date = args.creation_date ?? (new Date()).toLocaleDateString("en-GB");
 		const [dayCrea, monthCrea, yearCrea] = date.split("/").map(Number);

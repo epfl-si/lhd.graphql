@@ -7,7 +7,7 @@ import {mutationStatusType} from "../statuses";
 import {HolderMutationType, OthersMutationType, StringMutationType} from "../../utils/MutationTypes";
 import {getUserInfoFromAPI} from "../../utils/CallAPI";
 import {checkRelationsForDispensation} from "../../model/dispensation";
-import {ensureNewHolders} from "../../model/persons";
+import {ensurePerson} from "../../model/persons";
 import {TicketStruct} from "./ticket";
 import {saveBase64File} from "../../utils/File";
 import {sendEmailForDispensation,} from "../../utils/Email/Mailer";
@@ -308,7 +308,8 @@ export const DispensationMutations = extendType({
       async resolve(root, args, context) {
         const userInfo = await getUserInfoFromAPI(context.user.username);
         const subject = await context.prisma.dispensation_subject.findUnique({where: {subject: args.subject}});
-        await ensureNewHolders(args.holders, context.prisma);
+        const newHolders = args.holders.filter(holder => holder.status === 'New');
+        await ensurePerson(newHolders, context.prisma);
         const date = args.date_start ?? (new Date()).toLocaleDateString("en-GB");
         const [dayCrea, monthCrea, yearCrea] = date.split("/").map(Number);
         const [day, month, year] = args.date_end.split("/").map(Number);
@@ -367,7 +368,8 @@ export const DispensationMutations = extendType({
           'dispensation', 'id_dispensation',
           context.prisma, 'Dispensation', getDispensationToString);
         const subject = await context.prisma.dispensation_subject.findUnique({where: {subject: args.subject}});
-        await ensureNewHolders(args.holders, context.prisma);
+        const newHolders = args.holders.filter(holder => holder.status === 'New');
+        await ensurePerson(newHolders, context.prisma);
         const [day, month, year] = args.date_end.split("/").map(Number);
         const newDateEnd = new Date(year, month - 1, day, 12);
         disp.date_end.setHours(12, 0, 0, 0);
