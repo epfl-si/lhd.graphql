@@ -1,6 +1,6 @@
 import {Room} from "nexus-prisma";
 
-export async function getRoomsWithPagination(args, dictionary, prisma) {
+export async function getRoomsWithPagination(prisma, args, dictionary) {
 	const whereCondition = [];
 	whereCondition.push({ isDeleted: false });
 	dictionary.forEach(query => {
@@ -223,7 +223,7 @@ export async function deleteRoom(tx, context, r:Room) {
  * @param args
  * @param prisma
  */
-export async function getRoomByNameForAxs(args, prisma) {
+export async function getRoomByNameForAxs(prisma, args) {
 	return await prisma.Room.findFirst({
 		where: {
 			AND: [

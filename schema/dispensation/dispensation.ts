@@ -309,7 +309,7 @@ export const DispensationMutations = extendType({
         const userInfo = await getUserInfoFromAPI(context.user.username);
         const subject = await context.prisma.dispensation_subject.findUnique({where: {subject: args.subject}});
         const newHolders = args.holders.filter(holder => holder.status === 'New');
-        await ensurePerson(newHolders, context.prisma);
+        await ensurePerson(context.prisma, newHolders);
         const date = args.date_start ?? (new Date()).toLocaleDateString("en-GB");
         const [dayCrea, monthCrea, yearCrea] = date.split("/").map(Number);
         const [day, month, year] = args.date_end.split("/").map(Number);
@@ -369,7 +369,7 @@ export const DispensationMutations = extendType({
           context.prisma, 'Dispensation', getDispensationToString);
         const subject = await context.prisma.dispensation_subject.findUnique({where: {subject: args.subject}});
         const newHolders = args.holders.filter(holder => holder.status === 'New');
-        await ensurePerson(newHolders, context.prisma);
+        await ensurePerson(context.prisma, newHolders);
         const [day, month, year] = args.date_end.split("/").map(Number);
         const newDateEnd = new Date(year, month - 1, day, 12);
         disp.date_end.setHours(12, 0, 0, 0);

@@ -158,7 +158,7 @@ export const OrganismMutations = extendType({
 							}
 						});
 
-					await updateBioOrg(org, updatedOrganism, tx, context);
+					await updateBioOrg(tx, org, updatedOrganism);
 					return mutationStatusType.success();
 				});
 			}

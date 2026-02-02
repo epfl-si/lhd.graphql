@@ -46,7 +46,7 @@ export function makeRESTAxsAPI() {
 			const args = {
 				room: req.params.room,
 			};
-			const roomResult = await getRoomByNameForAxs(args, req.prisma);
+			const roomResult = await getRoomByNameForAxs(req.prisma, args);
 
 			if (!roomResult) {
 				res.json({ lhd_room: null, error: "This room is not in the LHD database" });

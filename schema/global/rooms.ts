@@ -249,7 +249,7 @@ export const RoomsWithPaginationQuery = extendType({
 			async resolve(parent, args, context) {
 				const queryArray = args.search.split("&");
 				const dictionary = queryArray.map(query => query.split("="));
-				return await getRoomsWithPagination(args, dictionary, context.prisma);
+				return await getRoomsWithPagination(context.prisma, args, dictionary);
 			}
 		});
 	},

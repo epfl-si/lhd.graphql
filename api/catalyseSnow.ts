@@ -88,7 +88,7 @@ export function makeRESTAPI() {
 						}),
 				}
 				const newHolders = args.holders.filter(holder => holder.status === 'New');
-				await createAuthorization(args, args.id_unit, req.prisma, newHolders);
+				await createAuthorization(req.prisma, args, args.id_unit, newHolders);
 				res.json({Message: "Ok"});
 				break;
 			case "auth_renew":
@@ -104,13 +104,13 @@ export function makeRESTAPI() {
 					type: "Chemical"
 				}
 
-				const auth = await getTheAuthorization(argsRenew, req.prisma);
+				const auth = await getTheAuthorization(req.prisma, argsRenew);
 				const argsUpdate = {
 					expiration_date: (new Date(expirationDate)).toLocaleDateString("en-GB"),
 					status: "Active",
 					renewals: parseInt(reqParts[2])
 				};
-				await updateAuthorization(argsUpdate, auth, req.prisma)
+				await updateAuthorization(req.prisma, argsUpdate, auth)
 				res.json({Message: "Ok"});
 				break;
 			case "auth_chem":
@@ -155,7 +155,7 @@ export function makeRESTAPI() {
 					search: `Holder=${sciper}`,
 					type: "Chemical"
 				}
-				const result = await getAuthorizationsWithPagination(argsCheck, req.prisma);
+				const result = await getAuthorizationsWithPagination(req.prisma, argsCheck);
 				const casResult = result.authorizations
 					.filter(auth => auth.expiration_date > new Date())
 					.flatMap(auth => auth.authorization_has_chemical)
@@ -219,7 +219,7 @@ export function makeRESTAPI() {
 				}),
 			}
 			const newHolders = args.holders.filter(holder => holder.status === 'New');
-			await createAuthorization(args, args.id_unit, req.prisma, newHolders);
+			await createAuthorization(req.prisma, args, args.id_unit, newHolders);
 			res.json({Message: "Ok"});
 		}
 	);
@@ -246,13 +246,13 @@ export function makeRESTAPI() {
 				type: "Chemical"
 			}
 
-			const auth = await getTheAuthorization(argsRenew, req.prisma);
+			const auth = await getTheAuthorization(req.prisma, argsRenew);
 			const argsUpdate = {
 				expiration_date: (new Date(req.params.date)).toLocaleDateString("en-GB"),
 				status: "Active",
 				renewals: parseInt(reqParts[2])
 			};
-			await updateAuthorization(argsUpdate, auth, req.prisma)
+			await updateAuthorization(req.prisma, argsUpdate, auth)
 			res.json({Message: "Ok"});
 		}
 	);
@@ -300,7 +300,7 @@ export function makeRESTAPI() {
 				}
 			}),
 		async (req: Request<GetChemParams>, res) => {
-			const resultNew = await getChemicalWithPagination([], 0, 0, req.prisma);
+			const resultNew = await getChemicalWithPagination(req.prisma, [], 0, 0);
 			const all = resultNew.chemicals.map(chem => {
 				return {
 					cas_auth_chem: chem.cas_auth_chem,
@@ -337,7 +337,7 @@ export function makeRESTAPI() {
 				search: `Holder=${req.params.sciper}`,
 				type: "Chemical"
 			}
-			const result = await getAuthorizationsWithPagination(argsCheck, req.prisma);
+			const result = await getAuthorizationsWithPagination(req.prisma, argsCheck);
 			const casResult = result.authorizations
 				.filter(auth => auth.expiration_date > new Date())
 				.flatMap(auth => auth.authorization_has_chemical)
@@ -376,13 +376,13 @@ export function makeRESTAPI() {
 			const args = {
 				take: 0
 			};
-			const resultNew = await getRoomsWithPagination(args, conditions, req.prisma);
+			const resultNew = await getRoomsWithPagination(req.prisma, args, conditions);
 			for ( let i = 0; i<resultNew.rooms.length; i++) {
 				for ( let j = 0; j<resultNew.rooms[i].unit_has_room.length; j++) {
 					resultNew.rooms[i].unit_has_room[j].realID = resultNew.rooms[i].unit_has_room[j].id_unit;
 					if ( resultNew.rooms[i].unit_has_room[j].unit.unitId == null) {
 						const parentName = resultNew.rooms[i].unit_has_room[j].unit.name.substring(0, resultNew.rooms[i].unit_has_room[j].unit.name.indexOf(' ('));
-						const parent = await getParentUnit(parentName, req.prisma);
+						const parent = await getParentUnit(req.prisma, parentName);
 						resultNew.rooms[i].unit_has_room[j].realID = parent.length > 0 ? parent[0].id : null;
 					}
 				}
@@ -420,7 +420,7 @@ export function makeRESTAPI() {
 			const args = {
 				search: req.params.unit,
 			};
-			const resultNew = await getUnitByName(args, req.prisma);
+			const resultNew = await getUnitByName(req.prisma, args);
 			const unitMap: { [unit: string]: {unit: string, id_unit: number, sciper: string[], sciper_cosec: string[], rooms: string[] }; } = {};
 			resultNew.forEach(unit => {
 				const unitName = unit.name.split(' (')[0];

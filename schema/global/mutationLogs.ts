@@ -89,7 +89,7 @@ export const MutationLogsByTable = extendType({
 							}
 						}
 					});
-					return await groupByModifiedOn(res, context.prisma);
+					return await groupByModifiedOn(context.prisma, res);
 				}
 				return [];
 			}
@@ -97,7 +97,7 @@ export const MutationLogsByTable = extendType({
 	},
 });
 
-async function groupByModifiedOn(data, prisma) {
+async function groupByModifiedOn(prisma, data) {
 	const result = [];
 	for (const entry of data) {
 		const diffs = await Promise.all(Object.entries(entry.diff).map(

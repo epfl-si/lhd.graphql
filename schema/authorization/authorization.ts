@@ -131,7 +131,7 @@ export const AuthorizationsWithPaginationQuery = extendType({
 			},
 			authorize: (parent, args, context) => context.user.canListAuthorizations,
 			async resolve(parent, args, context) {
-				return await getAuthorizationsWithPagination(args, context.prisma);
+				return await getAuthorizationsWithPagination(context.prisma, args);
 			}
 		});
 	},
@@ -224,7 +224,7 @@ export const AuthorizationMutations = extendType({
 				if (!unit) throw new Error(`Authorization not created`);
 
 				const newHolders = args.holders.filter(holder => holder.status === 'New');
-				await createAuthorization(args, unit.id, context.prisma, newHolders);
+				await createAuthorization(context.prisma, args, unit.id, newHolders);
 				return mutationStatusType.success();
 			}
 		});
@@ -235,7 +235,7 @@ export const AuthorizationMutations = extendType({
 			authorize: (parent, args, context) => context.user.canEditAuthorizations,
 			async resolve(root, args, context) {
 				const newHolders = args.holders.filter(holder => holder.status === 'New');
-				await ensurePerson(newHolders, context.prisma);
+				await ensurePerson(context.prisma, newHolders);
 				return await context.prisma.$transaction(async (tx) => {
 					const auth = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
 						'authorization', 'id_authorization',
@@ -244,7 +244,7 @@ export const AuthorizationMutations = extendType({
 					const unit = await IDObfuscator.ensureDBObjectIsTheSame(args.id_unit,
 						'Unit', 'id',
 						tx, 'Authorization', getUnitToString);
-					await updateAuthorization({ ...args, id_unit: unit.id}, auth, context.prisma, tx);
+					await updateAuthorization(context.prisma, { ...args, id_unit: unit.id}, auth, tx);
 					return mutationStatusType.success();
 				});
 			}

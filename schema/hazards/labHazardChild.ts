@@ -47,7 +47,7 @@ export function getLabHasHazardChildToString(parent) {
 	};
 }
 
-export async function updateHazardFormChild(child: submission, tx: any, context: any, room: string, parentHazard: number) {
+export async function updateHazardFormChild(tx: any, child: submission, parentHazard: number) {
 	IDObfuscator.checkId(child.id);
 
 	const formChild = await tx.hazard_form_child.findFirst({where: {hazard_form_child_name: child.formName}});
@@ -100,7 +100,7 @@ export async function updateHazardFormChild(child: submission, tx: any, context:
 	}
 }
 
-export async function updateBioOrg(oldBioOrg: bio_org, newBioOrg: bio_org, tx: any, context: any) {
+export async function updateBioOrg(tx: any, oldBioOrg: bio_org, newBioOrg: bio_org) {
 	const children = await tx.lab_has_hazards_child.findMany({where: {submission: {contains: `"organism":"${oldBioOrg.organism}"`}}});
 	for ( const child of children ) {
 		const newSubmission = JSON.parse(child.submission);

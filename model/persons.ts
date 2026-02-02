@@ -17,7 +17,7 @@ export async function findOrCreatePerson(tx, sciperId, firstName, lastName, emai
 	return p;
 }
 
-export async function ensurePerson(persons, prisma) {
+export async function ensurePerson(prisma, persons) {
 	for ( const holder of persons ) {
 		let p = await prisma.Person.findUnique({where: {sciper: holder.sciper}});
 

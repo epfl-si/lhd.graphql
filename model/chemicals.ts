@@ -11,10 +11,10 @@ export async function createChemical(args, {prisma, user}) {
 			}
 		});
 	});
-	await sendEmailsForChemical(user.username, prisma);
+	await sendEmailsForChemical(prisma, user.username);
 }
 
-export async function getChemicalWithPagination(whereConditionsDict, take, skip, prisma) {
+export async function getChemicalWithPagination(prisma, whereConditionsDict, take, skip) {
 	const whereCondition = [];
 	if (whereConditionsDict.length == 0) {
 		whereCondition.push({ cas_auth_chem: { contains: '' }})

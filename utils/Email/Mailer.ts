@@ -62,12 +62,12 @@ async function sendEmailCosec(modifiedByName: string,
 	});
 }
 
-export async function sendEmailsForHazards(user: string,
-																					 args: any,
-																					 oldRoom: any,
-																					 cosecs: string[],
-																					 prisma: any,
-																					 userInfo: {
+export async function sendEmailsForHazards(
+	prisma: any,
+	args: any,
+	oldRoom: any,
+	cosecs: string[],
+	userInfo: {
 																						 userFullName: string;
 																						 userEmail: string;
 																						 sciper: string
@@ -96,7 +96,7 @@ export async function sendEmailsForHazards(user: string,
 	}
 }
 
-export async function sendEmailsForChemical(user: string, prisma) {
+export async function sendEmailsForChemical(prisma, user: string) {
 	const userInfo = await getUserInfoFromAPI(user);
 	const chemicals = await prisma.auth_chem.findMany({where: {flag_auth_chem: true}});
 	const template = EMAIL_TEMPLATES.CHEMICAL;

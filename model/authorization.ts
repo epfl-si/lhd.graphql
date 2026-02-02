@@ -1,8 +1,8 @@
 import {NotFoundError} from "../utils/errors";
 import {ensurePerson} from "./persons";
 
-export async function createAuthorization(args, unitId, prisma, newHolders) {
-	await ensurePerson(newHolders, prisma);
+export async function createAuthorization(prisma, args, unitId, newHolders) {
+	await ensurePerson(prisma, newHolders);
 	return await prisma.$transaction(async (tx) => {
 		const date = args.creation_date ?? (new Date()).toLocaleDateString("en-GB");
 		const [dayCrea, monthCrea, yearCrea] = date.split("/").map(Number);
@@ -24,7 +24,7 @@ export async function createAuthorization(args, unitId, prisma, newHolders) {
 	});
 }
 
-export async function updateAuthorization(args, auth, prisma, tx = undefined) {
+export async function updateAuthorization(prisma, args, auth, tx = undefined) {
 	if (tx) {
 		await doUpdateAuthorization(tx);
 	} else {
@@ -54,7 +54,7 @@ export async function updateAuthorization(args, auth, prisma, tx = undefined) {
 	}
 }
 
-export async function getAuthorizationsWithPagination(args, prisma) {
+export async function getAuthorizationsWithPagination(prisma, args) {
 	const queryArray = args.search.split("&");
 	const dictionary = queryArray.map(query => query.split("="));
 	const whereCondition = [];
@@ -116,7 +116,7 @@ export async function getAuthorizationsWithPagination(args, prisma) {
 	return { authorizations, totalCount };
 }
 
-export async function getTheAuthorization(args, prisma) {
+export async function getTheAuthorization(prisma, args) {
 	const whereCondition = [];
 	whereCondition.push({ type: args.type})
 	whereCondition.push({ authorization: args.search })

@@ -65,7 +65,7 @@ export const ChemicalsWithPaginationQuery = extendType({
 			async resolve(parent, args, context) {
 				const queryArray = args.search.split("&");
 				const dictionary = queryArray.map(query => query.split("="));
-				return await getChemicalWithPagination(dictionary, args.take, args.skip, context.prisma);
+				return await getChemicalWithPagination(context.prisma, dictionary, args.take, args.skip);
 			}
 		});
 	},
@@ -118,7 +118,7 @@ export const ChemicalMutations = extendType({
 							}
 						});
 				});
-				await sendEmailsForChemical(context.user.username, context.prisma);
+				await sendEmailsForChemical(context.prisma, context.user.username);
 				return mutationStatusType.success();
 			}
 		});
@@ -139,7 +139,7 @@ export const ChemicalMutations = extendType({
 
 					//TODO delete authorizations?
 				});
-				await sendEmailsForChemical(context.user.username, context.prisma);
+				await sendEmailsForChemical(context.prisma, context.user.username);
 				return mutationStatusType.success();
 			}
 		});

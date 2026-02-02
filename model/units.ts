@@ -48,7 +48,7 @@ export async function deleteUnitCascade(tx, context, u:Unit) {
 	});
 }
 
-export async function getUnitByName(args, prisma) {
+export async function getUnitByName(prisma, args) {
 	return await prisma.Unit.findMany({
 		where: {
 			OR: [
@@ -66,7 +66,7 @@ export async function getUnitByName(args, prisma) {
 	});
 }
 
-export async function getParentUnit(nameParent: string, prisma) {
+export async function getParentUnit(prisma, nameParent: string) {
 	return await prisma.Unit.findMany({
 		where: {name: nameParent},
 		orderBy: [

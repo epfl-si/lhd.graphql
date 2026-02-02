@@ -137,7 +137,7 @@ export const RoomHazardMutations = extendType({
 							})
 
 							for await (const child of h.children) {
-								await updateHazardFormChild(child, tx, context, args.room, hazard.id_lab_has_hazards)
+								await updateHazardFormChild(tx, child, hazard.id_lab_has_hazards)
 							}
 						}
 						else if (!h.id.eph_id.startsWith('newHazard')) {
@@ -155,7 +155,7 @@ export const RoomHazardMutations = extendType({
 									});
 
 								for await (const child of h.children) {
-									await updateHazardFormChild(child, tx, context, args.room, hazard.id_lab_has_hazards)
+									await updateHazardFormChild(tx, child, hazard.id_lab_has_hazards)
 								}
 							}
 							else if (h.submission.data['status'] === 'Deleted') {
@@ -208,7 +208,7 @@ export const RoomHazardMutations = extendType({
 							cosecs.push(uhc.cosec.email);
 					})
 				});
-				await sendEmailsForHazards(context.user.username, args, roomResult, cosecs, context.prisma, userInfo);
+				await sendEmailsForHazards(context.prisma, args, roomResult, cosecs, userInfo);
 				return mutationStatusType.success();
 			}
 		});
