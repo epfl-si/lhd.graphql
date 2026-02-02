@@ -1,16 +1,16 @@
 import * as express from "express";
 import {Request} from "express";
-import {errorHandler} from "./lib/errorHandler";
+import {errorHandler} from "../api/lib/errorHandler";
 import {authenticateFromBearerToken} from "../libs/authentication";
-import {checkAPICall} from "./lib/checkedAPICalls";
-import {fileNameRegexp, obfuscatedIdValidators} from "./lib/lhdValidators";
+import {checkAPICall} from "../api/lib/checkedAPICalls";
+import {fileNameRegexp, obfuscatedIdValidators} from "../api/lib/lhdValidators";
 import {ID, IDObfuscator} from "../utils/IDObfuscator";
 import {getBioOrgToString} from "../schema/bio/bioorg";
 import {getReportFilesByUnit, sendFileResponse} from "../utils/File";
 import {getUnitToString} from "../schema/roomdetails/units";
 import {getLabHasHazardsAdditionalInfoToString} from "../schema/hazards/hazardsAdditionalInfo";
 import {getLabHasHazardChildToString} from "../schema/hazards/labHazardChild";
-import {setReqPrismaMiddleware} from "./lib/callBacks";
+import {setReqPrismaMiddleware} from "../api/lib/callBacks";
 import {getDispensationToString} from "../schema/dispensation/dispensation";
 
 const obfuscatedIdParams = {

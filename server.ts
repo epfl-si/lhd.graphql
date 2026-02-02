@@ -11,7 +11,7 @@ import {expressMiddleware} from "@as-integrations/express5";
 import {getPrismaForUser} from "./libs/auditablePrisma";
 import {BackendConfig} from "./libs/config";
 import {authenticateFromBearerToken} from "./libs/authentication";
-import {makeRESTFilesAPI} from "./api/files";
+import {makeRESTFilesAPI} from "./file/files";
 import {formatErrorForNexus} from "./utils/errors";
 import {makeRESTAPI} from "./api/catalyseSnow";
 import {makeRESTAxsAPI} from "./api/axs";
