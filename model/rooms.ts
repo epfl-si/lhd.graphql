@@ -219,9 +219,9 @@ export async function deleteRoom(tx, context, r:Room) {
 }
 
 /**
- * Do not pass to AxS rooms without units and rooms that are cupboard locations
- * @param args
+ * Get rooms for BCH 6 that have at least one unit attached
  * @param prisma
+ * @param args
  */
 export async function getRoomByNameForAxs(prisma, args) {
 	return await prisma.Room.findFirst({
