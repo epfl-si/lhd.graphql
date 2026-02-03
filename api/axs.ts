@@ -36,71 +36,72 @@ export function makeRESTAxsAPI() {
 
 			if (!roomResult) {
 				res.json({ lhd_room: null, error: "This room is not in the LHD database" });
-			} else {
-				const bioLevel = getHazardLevel(roomResult.lab_has_hazards, 'Biological');
-				const laserLevel = getHazardLevel(roomResult.lab_has_hazards, 'Laser');
-
-				const bioScipers = await getAxpBioRecipients(bioLevel.bio);
-
-				res.json({ lhd_room: {
-						room: roomResult.name,
-						sciper_prof: [
-							...new Set(roomResult.unit_has_room.flatMap(uhr => uhr.unit.subunpro.map(uhp => uhp.person.sciper)))
-						],
-						sciper_cosec: [
-							...new Set(roomResult.unit_has_room.flatMap(uhr => uhr.unit.unit_has_cosec.map(uhc => uhc.cosec.sciper)))
-						],
-						hazard: {
-							bio: bioLevel.bio.length > 0,
-							nano: false,
-							laser: laserLevel.laser.length > 0,
-							irad: false,
-							chem: false,
-							cryo: false,
-							elec: false,
-							mag: false,
-							noise: false,
-							gas: false
-						},
-						training: {
-							bio: bioLevel.bio.length > 0,
-							nano: false,
-							laser: laserLevel.laser.length > 0,
-							irad: false,
-							chem: false,
-							cryo: false,
-							elec: false,
-							mag: false,
-							noise: false,
-							gas: false
-						},
-						med_check:{
-							bio: bioLevel.bio.length > 0,
-							nano: false,
-							laser: false,
-							irad: false,
-							chem: false,
-							cryo: false,
-							elec: false,
-							mag: false,
-							noise: false,
-							gas: false
-						},
-						dsps_signature: {
-							bio: bioScipers.length > 0 ? bioScipers : false,
-							nano: false,
-							laser: false,
-							irad: false,
-							chem: false,
-							cryo: false,
-							elec: false,
-							mag: false,
-							noise: false,
-							gas: false
-						}
-					}
-				});
+				return;
 			}
+
+			const bioLevel = getHazardLevel(roomResult.lab_has_hazards, 'Biological');
+			const laserLevel = getHazardLevel(roomResult.lab_has_hazards, 'Laser');
+
+			const bioScipers = await getAxpBioRecipients(bioLevel.bio);
+
+			res.json({ lhd_room: {
+					room: roomResult.name,
+					sciper_prof: [
+						...new Set(roomResult.unit_has_room.flatMap(uhr => uhr.unit.subunpro.map(uhp => uhp.person.sciper)))
+					],
+					sciper_cosec: [
+						...new Set(roomResult.unit_has_room.flatMap(uhr => uhr.unit.unit_has_cosec.map(uhc => uhc.cosec.sciper)))
+					],
+					hazard: {
+						bio: bioLevel.bio.length > 0,
+						nano: false,
+						laser: laserLevel.laser.length > 0,
+						irad: false,
+						chem: false,
+						cryo: false,
+						elec: false,
+						mag: false,
+						noise: false,
+						gas: false
+					},
+					training: {
+						bio: bioLevel.bio.length > 0,
+						nano: false,
+						laser: laserLevel.laser.length > 0,
+						irad: false,
+						chem: false,
+						cryo: false,
+						elec: false,
+						mag: false,
+						noise: false,
+						gas: false
+					},
+					med_check:{
+						bio: bioLevel.bio.length > 0,
+						nano: false,
+						laser: false,
+						irad: false,
+						chem: false,
+						cryo: false,
+						elec: false,
+						mag: false,
+						noise: false,
+						gas: false
+					},
+					dsps_signature: {
+						bio: bioScipers.length > 0 ? bioScipers : false,
+						nano: false,
+						laser: false,
+						irad: false,
+						chem: false,
+						cryo: false,
+						elec: false,
+						mag: false,
+						noise: false,
+						gas: false
+					}
+				}
+			});
 		});
 
 	app.use(errorHandler);
