@@ -3,7 +3,7 @@ export type EmailTemplate = {
 	body: string;
 };
 
-export const HAZARDS_CAE: EmailTemplate = {
+export const hazardsCae: EmailTemplate = {
 	subject: `[Workflow AxS] Modification d’un local dangereux`,
 	body: `Bonjour,<br/><br/>
 A la suite d’un changement dans LHD, par {{modifiedByName}} le {{modifiedOn}}, le
@@ -24,7 +24,7 @@ En cas de questions, merci de contacter la personne en copie de ce message.<br/>
 Merci d’avance,<br/>
 Support OHS`,
 }
-export const HAZARDS_COSEC: EmailTemplate = {
+export const hazardsCosec: EmailTemplate = {
 	subject: `[Fiche de porte] Mise à jour nécessaire / Update needed`,
 	body: `<i>------ ENGLISH BELOW ------</i><br/><br/>
 Bonjour,<br/><br/>
@@ -48,55 +48,55 @@ If you have any questions, please open a ticket via <a href="https://go.epfl.ch/
 Thank you for your cooperation,<br/>
 OHS Support`,
 }
-export const CHEMICAL: EmailTemplate = {
+export const chemical: EmailTemplate = {
 	subject: 'LHD - Mise à jour de la table des produits chimiques sous autorisation',
 	body: `Bonjour, <br/>
 en pièce jointe vous pouvez trouver la liste des produits chimiques mise à jour.<br/>
 Cordialement,<br/>
 LHD`
 }
-export const NEW_DISPENSATION: EmailTemplate = {
+export const newDispensation: EmailTemplate = {
 	subject: `Dispensation/Dérogation: {{dispNumber}}`,
 	body: `A dispensation has been granted in your name by the OHS.<br/>
 Une dérogation vous a été accordée par le OHS.
 ${getDispensationEmailBody()}`,
 }
-export const RENEW_DISPENSATION: EmailTemplate = {
+export const renewDispensation: EmailTemplate = {
 	subject: `Dispensation/Dérogation: {{dispNumber}}`,
 	body: `A renewal of the dispensation {{dispNumber}} has been granted in your name by the OHS.<br/>
 Un renouvellement de la dérogation {{dispNumber}} vous a été accordée par le OHS.
 ${getDispensationEmailBody()}`,
 }
-export const EXPIRED_DISPENSATION: EmailTemplate = {
+export const expiredDispensation: EmailTemplate = {
 	subject: `Dispensation/Dérogation: {{dispNumber}}`,
 	body: `The dispensation {{dispNumber}} has expired. If an extension is required, please submit a new request on https://go.epfl.ch/support-ohs.<br/>
 La dérogation {{dispNumber}} a expiré. Si une prolongation est nécessaire, veuillez soumettre une nouvelle demande sur https://go.epfl.ch/support-ohs.
 ${getDispensationEmailBody()}`,
 }
-export const MODIFIED_DISPENSATION: EmailTemplate = {
+export const modifiedDispensation: EmailTemplate = {
 	subject: `Dispensation/Dérogation: {{dispNumber}}`,
 	body: `The dispensation {{dispNumber}} has been modified.<br/>
 La dérogation {{dispNumber}} a étée modifiée.
 ${getDispensationEmailBody()}`,
 }
-export const CANCELLED_DISPENSATION: EmailTemplate = {
+export const cancelledDispensation: EmailTemplate = {
 	subject: `Dispensation/Dérogation: {{dispNumber}}`,
 	body: `The dispensation {{dispNumber}} has been cancelled.<br/>
 La dérogation {{dispNumber}} a étée anullée.
 ${getDispensationEmailBody()}`,
 }
-export const EXPIRING_DISPENSATION: EmailTemplate = {
+export const expiringDispensation: EmailTemplate = {
 	subject: `Dispensation/Dérogation: {{dispNumber}}`,
 	body: `The dispensation {{dispNumber}} is expiring. If an extension is required, please submit a new request on https://go.epfl.ch/support-ohs.<br/>
 La dérogation {{dispNumber}} est en train d'expirer. Si une prolongation est nécessaire, veuillez soumettre une nouvelle demande sur https://go.epfl.ch/support-ohs.
 ${getDispensationEmailBody()}`,
 }
-export const EXPIRED_AUTHORIZATION: EmailTemplate = {
+export const expiredAuthorization: EmailTemplate = {
 	subject: `Authorization/Autorisation: {{authNumber}}`,
 	body: `The authorization {{authNumber}} has expired.<br/>
 L'autorisation {{authNumber}} a expirée.`,
 }
-export const EXPIRING_AUTHORIZATION: EmailTemplate = {
+export const expiringAuthorization: EmailTemplate = {
 	subject: `Authorization/Autorisation: {{authNumber}}`,
 	body: `The authorization {{authNumber}} is expiring.<br/>
 L'autorisation {{authNumber}} est en train d'expirer.`,

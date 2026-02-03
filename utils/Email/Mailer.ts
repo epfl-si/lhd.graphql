@@ -1,5 +1,5 @@
 import * as nodemailer from "nodemailer";
-import {CHEMICAL, HAZARDS_CAE, HAZARDS_COSEC, logAction, logRecipients} from "./EmailTemplates";
+import {chemical, hazardsCae, hazardsCosec, logAction, logRecipients} from "./EmailTemplates";
 import {getUserInfoFromAPI} from "../CallAPI";
 import {getHazardLevel} from "../hazardsParser";
 
@@ -19,7 +19,7 @@ async function sendEmailCAE(modifiedByName: string,
 														action: object,
 														hazardType: string,
 														comments: string) {
-	const template = HAZARDS_CAE;
+	const template = hazardsCae;
 
 	const body = template.body.replaceAll("{{modifiedByName}}", modifiedByName)
 		.replaceAll("{{modifiedOn}}", (new Date()).toLocaleDateString("en-GB"))
@@ -44,7 +44,7 @@ async function sendEmailCosec(modifiedByName: string,
 															action: object,
 															hazardType: string,
 															cosecs: string[]) {
-	const template = HAZARDS_COSEC;
+	const template = hazardsCosec;
 
 	const body = template.body.replaceAll("{{modifiedByName}}", modifiedByName)
 		.replaceAll("{{modifiedOn}}", (new Date()).toLocaleDateString("en-GB"))
@@ -99,7 +99,7 @@ export async function sendEmailsForHazards(
 export async function sendEmailsForChemical(prisma, user: string) {
 	const userInfo = await getUserInfoFromAPI(user);
 	const chemicals = await prisma.auth_chem.findMany({where: {flag_auth_chem: true}});
-	const template = CHEMICAL;
+	const template = chemical;
 
 	const csv: string = chemicals.map(chem => `${chem.cas_auth_chem},"${chem.auth_chem_en}"`).join('\n');
 

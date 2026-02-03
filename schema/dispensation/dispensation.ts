@@ -13,11 +13,11 @@ import {saveBase64File} from "../../utils/File";
 import {sendEmailForDispensation,} from "../../utils/Email/Mailer";
 import {UnitStruct} from "../roomdetails/units";
 import {
-  CANCELLED_DISPENSATION,
-  EXPIRED_DISPENSATION,
-  MODIFIED_DISPENSATION,
-  NEW_DISPENSATION,
-  RENEW_DISPENSATION
+  cancelledDispensation,
+  expiredDispensation,
+  modifiedDispensation,
+  newDispensation,
+  renewDispensation
 } from "../../utils/Email/EmailTemplates";
 
 export const DispensationStruct = objectType({
@@ -358,7 +358,7 @@ export const DispensationMutations = extendType({
             }
         });
         if (dispCreated.status === 'Active') {
-          await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispCreated, NEW_DISPENSATION);
+          await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispCreated, newDispensation);
         }
         return mutationStatusType.success();
       }
@@ -409,15 +409,15 @@ export const DispensationMutations = extendType({
           }
         });
         if (disp.renewals < dispUpdated.renewals && dispUpdated.status === 'Active') {
-          await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispUpdated, RENEW_DISPENSATION);
+          await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispUpdated, renewDispensation);
         } else if (disp.status === 'Draft' && dispUpdated.status === 'Active') {
-          await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispUpdated, NEW_DISPENSATION);
+          await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispUpdated, newDispensation);
         } else if (dispUpdated.status === 'Active') {
-          await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispUpdated, MODIFIED_DISPENSATION);
+          await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispUpdated, modifiedDispensation);
         } else if (dispUpdated.status === 'Expired' && disp.status !== 'Expired') {
-          await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispUpdated, EXPIRED_DISPENSATION);
+          await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispUpdated, expiredDispensation);
         } else if (dispUpdated.status === 'Cancelled' && disp.status !== 'Cancelled') {
-          await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispUpdated, CANCELLED_DISPENSATION);
+          await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, dispUpdated, cancelledDispensation);
         }
         return mutationStatusType.success();
       }
