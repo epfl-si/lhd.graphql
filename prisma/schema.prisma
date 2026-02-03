@@ -937,7 +937,7 @@ model authorization {
   renewals                    Int
   id_unit                     Int?
   expiration_date             DateTime?     @db.Date
-  status                      String        @db.VarChar(30)
+  status                      authorization_status
   creation_date               DateTime      @db.Date
   type                        String
   authority                   String?
@@ -947,6 +947,11 @@ model authorization {
   authorization_has_holder    authorization_has_holder[]
   authorization_has_chemical  authorization_has_chemical[]
   authorization_has_radiation  authorization_has_radiation[]
+}
+
+enum authorization_status {
+  Active
+  Expired
 }
 
 model authorization_has_room {
@@ -1029,7 +1034,7 @@ model dispensation {
   subject_other             String                       @db.VarChar(60)
   description               String                       @map("requires") @db.LongText
   comment                   String?                      @db.LongText
-  status                    String                       @db.VarChar(10)
+  status                    dispensation_status
   date_start                DateTime                     @db.Date
   date_end                  DateTime                     @db.Date
   file_path                 String?                      @db.VarChar(250)
@@ -1044,6 +1049,13 @@ model dispensation {
   dispensation_has_ticket   dispensation_has_ticket[]
   dispensation_has_unit     dispensation_has_unit[]
   subject                   dispensation_subject @relation(fields: [id_dispensation_subject], references: [id_dispensation_subject], onUpdate: Restrict, map: "dispensation_has_subject_ibfk_1")
+}
+
+enum dispensation_status {
+  Draft
+  Active
+  Expired
+  Cancelled
 }
 
 model dispensation_has_ticket {
