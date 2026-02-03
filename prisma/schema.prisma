@@ -74,7 +74,7 @@ model auth_chem_old {
   auth_chem_fr  String? @db.VarChar(100)
 }
 
-model DispensationOld {
+model LHDv2Dispensation {
   id          Int                   @id @default(autoincrement()) @map("id_auth_dsps")
   slug        String                @unique(map: "auth_dsps") @map("auth_dsps") @db.VarChar(10)
   log_in      Int?
@@ -128,7 +128,7 @@ model DispensationVersion {
   date_modified   DateTime?                    @map("notification_date") @db.DateTime(0)
   held            DispensationHeldRelation[]
   in_room         DispensationInRoomRelation[]
-  dispensation    DispensationOld                 @relation(fields: [id_dispensation], references: [id], onUpdate: Restrict, map: "auth_dsps_version_ibfk_1")
+  dispensation    LHDv2Dispensation                 @relation(fields: [id_dispensation], references: [id], onUpdate: Restrict, map: "auth_dsps_version_ibfk_1")
 
   @@index([id_dispensation], map: "id_auth_dsps")
   @@map("auth_dsps_version")
