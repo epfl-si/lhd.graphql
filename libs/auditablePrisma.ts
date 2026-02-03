@@ -8,6 +8,33 @@ type TestInjections = {
 	onQuery?: (q: Prisma.QueryEvent) => void;
 };
 
+/**
+ * Creates and returns a Prisma client instance scoped to a specific user,
+ * with optional query logging and automatic mutation auditing.
+ *
+ * This function wraps the base Prisma client using `$extends` to intercept
+ * all Prisma operations. For write operations (`create`, `update`, `delete`,
+ * `deleteMany`), it automatically records an audit entry in the
+ * `mutation_logs` table, capturing:
+ *  - the user who performed the action
+ *  - the affected table and record ID
+ *  - the action type
+ *  - the old and new values (when applicable)
+ *
+ * Query logging can be enabled in two ways:
+ *  - Via `inject.onQuery`, which emits Prisma query events (useful for tests)
+ *  - Via the `debug` namespace `prisma:query`
+ *
+ * The database connection URL is taken from the provided backend config,
+ * allowing per-environment configuration.
+ *
+ * @param config - Backend configuration containing the database URL.
+ * @param user - The currently authenticated user; used for audit logging.
+ * @param inject - Optional test injections, such as a query event handler.
+ *
+ * @returns A Prisma client instance configured for the given user, with
+ *          auditing and optional query logging enabled.
+ */
 export function getPrismaForUser(config: BackendConfig, user, inject?: TestInjections) {
 	const clientOptions: Prisma.PrismaClientOptions = {};
 	if (inject?.onQuery) {
