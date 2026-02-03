@@ -12,6 +12,13 @@ const cronUser = {
 };
 const prisma = getPrismaForUser(configFromDotEnv(), cronUser);
 
+/**
+ * Checks for all expiring authorizations
+ * (where `expiration_date` is greater than or equal to now (not expired yet) but less than or equal to 30 days from now
+ * and the status is still `Active`).
+ *
+ * For each expiring authorization, notifies the related holders.
+ */
 async function notifyExpiringAuthorizations () {
 	const expiringDisps =  await getExpiringAuthorizations(prisma);
 	for (const disp of expiringDisps) {

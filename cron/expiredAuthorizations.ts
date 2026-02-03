@@ -12,6 +12,13 @@ const cronUser = {
 };
 const prisma = getPrismaForUser(configFromDotEnv(), cronUser);
 
+/**
+ * Checks for all expired authorizations (where `expiration_date` is earlier
+ * than today and the status is still `Active`).
+ *
+ * For each expired authorization, updates its status to `Expired` and notifies
+ * the related holders.
+ */
 async function expireAndNotifyAuthorizations () {
 	const expiredAuths =  await getExpiredAuthorizations(prisma);
 	for (const auth of expiredAuths) {
