@@ -15,19 +15,12 @@ import {UnitStruct} from "../roomdetails/units";
 export const DispensationStruct = objectType({
   name: dispensation.$name,
   description: `A manually-managed record for a permitted, hazardous activity.
-
 Examples of eligible activities include using / procuring chemicals ("subject"
 is "Chemical substances"), storing waste ("subject" is "Chemical waste"),
 procuring / using gas with various associated hazards ("subject" being one
 of "Flammable Gas", "Gas", "Inert Gas" and "Oxydising Gas") and more - LHD
 operators may create new kinds of dispensations from an “other, please specify”
-UI.
-
-Dispensations have a **slug**, which is a symbolic denominator that is unique
-through the lifecycle of the dispensation, and is always of the form DSPS-nnn,
-where nnn is a sequence number as an integer. All the other fields are mutable
-and recorded indirectly in a DispensationVersion object.
-`,
+UI.`,
   definition(t) {
     t.field(dispensation.dispensation);
     t.field(dispensation.renewals);
