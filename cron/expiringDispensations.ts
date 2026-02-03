@@ -5,8 +5,8 @@ import {sendEmailForDispensation} from "../utils/Email/Mailer";
 import {EMAIL_TEMPLATES} from "../utils/Email/EmailTemplates";
 
 const userInfo = {
-	username: 'CronJobs',
-	userFullName: 'CronJob',
+	username: 'LHD-cron',
+	userFullName: 'LHD-cron',
 	userEmail: process.env.CRONJOBS_EMAIL ?? '',
 	canEditDispensations: true
 };

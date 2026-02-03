@@ -5,8 +5,8 @@ import {EMAIL_TEMPLATES} from "../utils/Email/EmailTemplates";
 import {expireAuthorization, getExpiredAuthorizations} from "../model/authorization";
 
 const userInfo = {
-	username: 'CronJobs',
-	userFullName: 'CronJob',
+	username: 'LHD-cron',
+	userFullName: 'LHD-cron',
 	userEmail: process.env.CRONJOBS_EMAIL ?? '',
 	canEditAuthorizations: true
 };
