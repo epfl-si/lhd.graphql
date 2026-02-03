@@ -33,7 +33,7 @@ and recorded indirectly in a DispensationVersion object.
   definition(t) {
     t.field(dispensation.dispensation);
     t.field(dispensation.renewals);
-    t.field(dispensation.other_subject);
+    t.field(dispensation.subject_other);
     t.field(dispensation.requires);
     t.field(dispensation.comment);
     t.field(dispensation.status);
@@ -118,7 +118,7 @@ export function getDispensationToString(parent) {
     dispensation: parent.dispensation,
     renewals: parent.renewals,
     id_dispensation_subject: parent.id_dispensation_subject,
-    other_subject: parent.other_subject,
+    subject_other: parent.subject_other,
     requires: parent.requires,
     comment: parent.comment,
     status: parent.status,
@@ -272,7 +272,7 @@ const newDispensationType = {
   dispensation: stringArg(),
   renewals: intArg(),
   subject: stringArg(),
-  other_subject: stringArg(),
+  subject_other: stringArg(),
   requires: stringArg(),
   comment: stringArg(),
   status: stringArg(),
@@ -319,7 +319,7 @@ export const DispensationMutations = extendType({
               dispensation: `DISP-TEMP`,
               renewals: 0,
               id_dispensation_subject: subject.id_dispensation_subject,
-              other_subject: args.other_subject,
+              subject_other: args.subject_other,
               requires: decodeURIComponent(args.requires),
               comment: decodeURIComponent(args.comment),
               status: args.status,
@@ -380,7 +380,7 @@ export const DispensationMutations = extendType({
             data: {
               renewals: ren,
               id_dispensation_subject: subject.id_dispensation_subject,
-              other_subject: args.other_subject,
+              subject_other: args.subject_other,
               requires: decodeURIComponent(args.requires),
               comment: decodeURIComponent(args.comment),
               status: args.status,

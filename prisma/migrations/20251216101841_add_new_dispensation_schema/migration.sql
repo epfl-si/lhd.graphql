@@ -13,7 +13,7 @@ CREATE TABLE `dispensation` (
     `dispensation` VARCHAR(50) NOT NULL,
     `renewals` INTEGER NOT NULL,
     `id_dispensation_subject` INTEGER NOT NULL,
-    `other_subject` VARCHAR(60) NOT NULL,
+    `subject_other` VARCHAR(60) NOT NULL,
     `requires` LONGTEXT NOT NULL,
     `comment` LONGTEXT NULL,
     `status` VARCHAR(10) NOT NULL,

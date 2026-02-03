@@ -1026,7 +1026,7 @@ model dispensation {
   dispensation              String                       @unique(map: "dispensation") @db.VarChar(50)
   renewals                  Int
   id_dispensation_subject   Int
-  other_subject             String                       @db.VarChar(60)
+  subject_other             String                       @db.VarChar(60)
   requires                  String                       @db.LongText
   comment                   String?                      @db.LongText
   status                    String                       @db.VarChar(10)
