@@ -67,7 +67,8 @@ export async function getAuthorizationsWithPagination(prisma, args) {
 			} else if (query[0] === 'Authorization') {
 				whereCondition.push({ authorization: { contains: value }})
 			} else if (query[0] === 'Status') {
-				whereCondition.push({ status: { contains: value }})
+				const matchedStatus = findAuthorizationStatus(value);
+				if (matchedStatus) whereCondition.push({ status: matchedStatus })
 			} else if (query[0] === 'Room') {
 				whereCondition.push({ authorization_has_room: { some: {room: {is: {name: {contains: value}}}} }})
 			} else if (query[0] === 'Holder') {
@@ -274,4 +275,12 @@ export async function getExpiringAuthorizations (prisma) {
 			status: 'Active'
 		}
 	});
+}
+
+function findAuthorizationStatus(input) {
+	const validStatuses = ['Active', 'Expired'];
+
+	return validStatuses.find(
+		status => status.toLowerCase().indexOf(input.trim().toLowerCase()) > -1
+	);
 }
