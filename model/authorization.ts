@@ -20,7 +20,7 @@ export async function createAuthorization(prisma, args, unitId, newHolders) {
 			}
 		});
 
-		await checkRelations(tx, args, authorization);
+		await changeForAuthorization(tx, args, authorization);
 	});
 }
 
@@ -50,7 +50,7 @@ export async function updateAuthorization(prisma, args, auth, tx = undefined) {
 				data: data
 			});
 
-		await checkRelations(tx, args, updatedAuthorization);
+		await changeForAuthorization(tx, args, updatedAuthorization);
 	}
 }
 
@@ -140,8 +140,8 @@ export async function getTheAuthorization(prisma, args) {
 	}
 }
 
-async function checkRelations(tx, args, authorization) {
-	for ( const holder of args.holders || []) {
+async function changeForAuthorization(tx, changes, authorization) {
+	for ( const holder of changes.holders || []) {
 		if ( holder.status === 'New' ) {
 			let p = await tx.Person.findUnique({where: {sciper: holder.sciper}});
 
@@ -166,7 +166,7 @@ async function checkRelations(tx, args, authorization) {
 		}
 	}
 
-	for ( const room of args.rooms || []) {
+	for ( const room of changes.rooms || []) {
 		if ( room.status === 'New' ) {
 			let r = undefined;
 			if ( room.name ) {
@@ -196,7 +196,7 @@ async function checkRelations(tx, args, authorization) {
 		}
 	}
 
-	for ( const source of args.radiations || []) {
+	for ( const source of changes.radiations || []) {
 		if ( source.status === 'New' ) {
 			const relation = {
 				id_authorization: Number(authorization.id_authorization),
@@ -216,7 +216,7 @@ async function checkRelations(tx, args, authorization) {
 		}
 	}
 
-	for ( const cas of args.cas || []) {
+	for ( const cas of changes.cas || []) {
 		if ( cas.status === 'New' ) {
 			let p = await tx.auth_chem.findUnique({where: {cas_auth_chem: cas.name}});
 

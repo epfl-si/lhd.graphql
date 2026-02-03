@@ -1,5 +1,5 @@
-export async function checkRelationsForDispensation(tx, args, dispensation) {
-	for ( const holder of args.holders || []) {
+export async function changeForDispensation(tx, changes, dispensation) {
+	for ( const holder of changes.holders || []) {
 		const p = await tx.Person.findUnique({where: {sciper: holder.sciper}});
 		if ( holder.status === 'New' ) {
 			await tx.dispensation_has_holder.create({
@@ -18,7 +18,7 @@ export async function checkRelationsForDispensation(tx, args, dispensation) {
 		}
 	}
 
-	for ( const room of args.rooms || []) {
+	for ( const room of changes.rooms || []) {
 		if ( room.status === 'New' ) {
 			let r = undefined;
 			if ( room.name ) {
@@ -46,7 +46,7 @@ export async function checkRelationsForDispensation(tx, args, dispensation) {
 		}
 	}
 
-	for ( const unit of args.units || []) {
+	for ( const unit of changes.units || []) {
 		const u = await tx.Unit.findFirst({where: {name: unit.name}});
 		if ( unit.status === 'New' ) {
 			if ( !u ) throw new Error(`Dispensation not created: unit not found`);
@@ -66,7 +66,7 @@ export async function checkRelationsForDispensation(tx, args, dispensation) {
 		}
 	}
 
-	for ( const ticket of args.tickets || []) {
+	for ( const ticket of changes.tickets || []) {
 		if ( ticket.status === 'New' ) {
 			await tx.dispensation_has_ticket.create({
 				data: {

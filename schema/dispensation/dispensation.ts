@@ -6,7 +6,7 @@ import {ID, IDObfuscator} from "../../utils/IDObfuscator";
 import {mutationStatusType} from "../statuses";
 import {HolderMutationType, OthersMutationType, StringMutationType} from "../../utils/MutationTypes";
 import {getUserInfoFromAPI} from "../../utils/CallAPI";
-import {checkRelationsForDispensation} from "../../model/dispensation";
+import {changeForDispensation} from "../../model/dispensation";
 import {ensurePerson} from "../../model/persons";
 import {TicketStruct} from "./ticket";
 import {saveBase64File} from "../../utils/File";
@@ -337,7 +337,7 @@ export const DispensationMutations = extendType({
               file_path: getFilePath(args, disp.id_dispensation)
             }
           });
-          await checkRelationsForDispensation(tx, args, disp);
+          await changeForDispensation(tx, args, disp);
           return disp;
         });
         const dispCreated = await context.prisma.dispensation.findUnique({
@@ -389,7 +389,7 @@ export const DispensationMutations = extendType({
               modified_on: new Date()
             }
           });
-          await checkRelationsForDispensation(tx, args, dispensation);
+          await changeForDispensation(tx, args, dispensation);
         });
         const dispUpdated = await context.prisma.dispensation.findUnique({
           where: { id_dispensation: disp.id_dispensation },
