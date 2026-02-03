@@ -2,7 +2,6 @@ import {getPrismaForUser} from "../libs/auditablePrisma";
 import {configFromDotEnv} from "../libs/config";
 import {expireDispensation, getDispensation, getExpiredDispensations} from "../model/dispensation";
 import {sendEmailForDispensation} from "../utils/Email/Mailer";
-import {expiredDispensation} from "../utils/Email/EmailTemplates";
 
 const cronUser = {
 	username: 'LHD-cron',
@@ -25,7 +24,7 @@ async function expireAndNotifyDispensations () {
 		await prisma.$transaction(async (tx) => {
 			await expireDispensation(tx, disp, cronUser);
 			const updated = await getDispensation(tx, disp.id_dispensation);
-			await sendEmailForDispensation(cronUser.userFullName, cronUser.userEmail, updated, expiredDispensation);
+			await sendEmailForDispensation(cronUser.userFullName, cronUser.userEmail, updated, 'expiredDispensation');
 		},{
 			maxWait: 10000, // Max time (ms) to wait for a transaction slot (default: 2000)
 			timeout: 30000, // Max time (ms) the transaction can run (default: 5000)

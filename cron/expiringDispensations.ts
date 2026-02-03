@@ -2,7 +2,6 @@ import {getPrismaForUser} from "../libs/auditablePrisma";
 import {configFromDotEnv} from "../libs/config";
 import {getExpiringDispensations} from "../model/dispensation";
 import {sendEmailForDispensation} from "../utils/Email/Mailer";
-import {expiringDispensation} from "../utils/Email/EmailTemplates";
 
 const cronUser = {
 	username: 'LHD-cron',
@@ -22,7 +21,7 @@ const prisma = getPrismaForUser(configFromDotEnv(), cronUser);
 async function notifyExpiringDispensations () {
 	const expiringDisps =  await getExpiringDispensations(prisma);
 	for (const disp of expiringDisps) {
-		await sendEmailForDispensation(disp.modified_by, cronUser.userEmail, disp, expiringDispensation);
+		await sendEmailForDispensation(disp.modified_by, cronUser.userEmail, disp, 'expiringDispensation');
 	}
 }
 

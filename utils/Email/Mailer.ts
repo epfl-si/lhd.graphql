@@ -1,5 +1,14 @@
 import * as nodemailer from "nodemailer";
-import {chemical, hazardsCae, hazardsCosec, logAction, logRecipients} from "./EmailTemplates";
+import {
+	cancelledDispensation,
+	chemical, expiredDispensation,
+	expiringDispensation,
+	hazardsCae,
+	hazardsCosec,
+	logAction,
+	logRecipients, modifiedDispensation, newDispensation,
+	renewDispensation
+} from "./EmailTemplates";
 import {getUserInfoFromAPI} from "../CallAPI";
 import {getHazardLevel} from "../hazardsParser";
 
@@ -117,7 +126,34 @@ export async function sendEmailsForChemical(prisma, user: string) {
 export async function sendEmailForDispensation(modifiedByName: string,
 															modifiedByEmail: string,
 															dispensation: any,
-															template: { body: string; subject: string; }) {
+															action: 'newDispensation' |
+																'renewDispensation' |
+																'expiredDispensation' |
+																'modifiedDispensation' |
+																'cancelledDispensation' |
+																'expiringDispensation'
+) {
+	let template = newDispensation;
+	switch ( action ) {
+		case "newDispensation":
+			template = newDispensation;
+			break;
+		case "renewDispensation":
+			template = renewDispensation;
+			break;
+		case "expiredDispensation":
+			template = expiredDispensation;
+			break;
+		case "modifiedDispensation":
+			template = modifiedDispensation;
+			break;
+		case "cancelledDispensation":
+			template = cancelledDispensation;
+			break;
+		case "expiringDispensation":
+			template = expiringDispensation;
+			break;
+	}
 	const body = template.body.replaceAll("{{modifiedByName}}", modifiedByName)
 		.replaceAll("{{dispNumber}}", dispensation.dispensation)
 		.replaceAll("{{subject}}", dispensation.subject.subject)
