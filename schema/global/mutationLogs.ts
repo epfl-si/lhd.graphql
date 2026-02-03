@@ -120,6 +120,15 @@ async function groupByModifiedOn(prisma, data) {
 						after: newValue ? `${newValue.name} ${newValue.surname}` : ''
 					}
 				}
+				else if (field === 'id_unit') {
+					const oldValue = change["before"] ? await prisma.Unit.findUnique({where: {id: Number(change["before"]) }}) : undefined;
+					const newValue = change["after"] ? await prisma.Unit.findUnique({where: {id: Number(change["after"]) }}) : undefined;
+					return {
+						field,
+						before: oldValue ? oldValue.name : '',
+						after: newValue ? newValue.name : ''
+					}
+				}
 				else if (field === 'id_lab') {
 					const oldValue = change["before"] ? await prisma.room.findUnique({where: {id: Number(change["before"]) }}) : undefined;
 					const newValue = change["after"] ? await prisma.room.findUnique({where: {id: Number(change["after"]) }}) : undefined;
