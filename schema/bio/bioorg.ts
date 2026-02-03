@@ -43,7 +43,7 @@ export const BioOrgQuery = extendType({
 export const BiosWithPaginationStruct = objectType({
 	name: 'BiosWithPagination',
 	definition(t) {
-		t.list.field('bios', { type: 'bio_org' });
+		t.nonNull.list.nonNull.field('bios', { type: 'bio_org' });
 		t.int('totalCount');
 	},
 });

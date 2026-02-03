@@ -113,7 +113,7 @@ export const AuthorizationQuery = extendType({
 export const AuthorizationsWithPaginationStruct = objectType({
 	name: 'AuthorizationsWithPagination',
 	definition(t) {
-		t.list.field('authorizations', { type: 'authorization' });
+		t.nonNull.list.nonNull.field('authorizations', { type: 'authorization' });
 		t.int('totalCount');
 	},
 });

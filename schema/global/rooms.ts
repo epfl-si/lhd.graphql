@@ -230,7 +230,7 @@ export const RoomQuery = extendType({
 export const RoomsWithPaginationStruct = objectType({
 	name: 'RoomsWithPagination',
 	definition(t) {
-		t.list.field('rooms', { type: 'Room' });
+		t.nonNull.list.nonNull.field('rooms', { type: 'Room' });
 		t.int('totalCount');
 	},
 });

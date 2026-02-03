@@ -46,7 +46,7 @@ export const ChemicalQuery = extendType({
 export const ChemicalsWithPaginationStruct = objectType({
 	name: 'ChemicalsWithPagination',
 	definition(t) {
-		t.list.field('chemicals', { type: 'auth_chem' });
+		t.nonNull.list.nonNull.field('chemicals', { type: 'auth_chem' });
 		t.int('totalCount');
 	},
 });

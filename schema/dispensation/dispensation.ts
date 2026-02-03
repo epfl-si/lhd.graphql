@@ -133,7 +133,7 @@ export const DispensationQuery = extendType({
 export const DispensationsWithPaginationStruct = objectType({
   name: 'DispensationsWithPagination',
   definition(t) {
-    t.list.field('dispensations', { type: 'dispensation' });
+    t.nonNull.list.nonNull.field('dispensations', { type: 'dispensation' });
     t.int('totalCount');
   },
 });

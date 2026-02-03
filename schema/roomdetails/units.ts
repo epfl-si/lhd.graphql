@@ -348,7 +348,7 @@ export const UnitMutations = extendType({
 export const UnitsWithPaginationStruct = objectType({
 	name: 'UnitsWithPagination',
 	definition(t) {
-		t.list.field('units', { type: 'Unit' });
+		t.nonNull.list.nonNull.field('units', { type: 'Unit' });
 		t.int('totalCount');
 	},
 });

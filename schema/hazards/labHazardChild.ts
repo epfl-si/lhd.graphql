@@ -138,7 +138,7 @@ export const HazardFlat = objectType({
 export const HazardsWithPaginationStruct = objectType({
 	name: 'HazardsWithPagination',
 	definition(t) {
-		t.list.field('hazards', { type: 'HazardFlat' });
+		t.nonNull.list.nonNull.field('hazards', { type: 'HazardFlat' });
 		t.int('totalCount');
 	},
 });
