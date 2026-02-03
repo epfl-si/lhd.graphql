@@ -40,11 +40,7 @@ export function makeRESTAxsAPI() {
 				const bioLevel = getHazardLevel(roomResult.lab_has_hazards, 'Biological');
 				const laserLevel = getHazardLevel(roomResult.lab_has_hazards, 'Laser');
 
-				const bioScipers = [];
-				if (bioLevel.bio.length > 0) {
-					const members = await getGroupMembersFromApi(process.env.AXP_BIO_SIGNATURES_GROUP);
-					bioScipers.push(...members.members.map(m => m.id));
-				}
+				const bioScipers = await getAxpBioRecipients(bioLevel.bio);
 
 				res.json({ lhd_room: {
 						room: roomResult.name,
@@ -110,6 +106,15 @@ export function makeRESTAxsAPI() {
 	app.use(errorHandler);
 
 	return app;
+}
+
+async function getAxpBioRecipients (bio) {
+	const bioScipers = [];
+	if (bio.length > 0) {
+		const members = await getGroupMembersFromApi(process.env.AXP_BIO_SIGNATURES_GROUP);
+		bioScipers.push(...members.members.map(m => m.id));
+	}
+	return bioScipers;
 }
 
 function restAxsAuthenticate(req: Request, res, next) {
