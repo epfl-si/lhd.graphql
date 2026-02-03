@@ -32,7 +32,7 @@ and recorded indirectly in a DispensationVersion object.
     t.field(dispensation.dispensation);
     t.field(dispensation.renewals);
     t.field(dispensation.subject_other);
-    t.field(dispensation.requires);
+    t.field(dispensation.description);
     t.field(dispensation.comment);
     t.field(dispensation.status);
     t.field(dispensation.date_start);
@@ -117,7 +117,7 @@ export function getDispensationToString(parent) {
     renewals: parent.renewals,
     id_dispensation_subject: parent.id_dispensation_subject,
     subject_other: parent.subject_other,
-    requires: parent.requires,
+    description: parent.description,
     comment: parent.comment,
     status: parent.status,
     date_start: parent.date_start,
@@ -271,7 +271,7 @@ const newDispensationType = {
   renewals: intArg(),
   subject: stringArg(),
   subject_other: stringArg(),
-  requires: stringArg(),
+  description: stringArg(),
   comment: stringArg(),
   status: stringArg(),
   date_start: stringArg(),
@@ -318,7 +318,7 @@ export const DispensationMutations = extendType({
               renewals: 0,
               id_dispensation_subject: subject.id_dispensation_subject,
               subject_other: args.subject_other,
-              requires: decodeURIComponent(args.requires),
+              description: decodeURIComponent(args.description),
               comment: decodeURIComponent(args.comment),
               status: args.status,
               date_start: new Date(yearCrea, monthCrea - 1, dayCrea, 12),
@@ -379,7 +379,7 @@ export const DispensationMutations = extendType({
               renewals: ren,
               id_dispensation_subject: subject.id_dispensation_subject,
               subject_other: args.subject_other,
-              requires: decodeURIComponent(args.requires),
+              description: decodeURIComponent(args.description),
               comment: decodeURIComponent(args.comment),
               status: args.status,
               date_end: newDateEnd,

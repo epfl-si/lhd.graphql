@@ -159,7 +159,7 @@ export async function sendEmailForDispensation(modifiedByName: string,
 		.replaceAll("{{subject}}", dispensation.subject.subject)
 		.replaceAll("{{dateStart}}", (dispensation.date_start).toLocaleDateString("en-GB"))
 		.replaceAll("{{dateEnd}}", (dispensation.date_end).toLocaleDateString("en-GB"))
-		.replaceAll("{{requirements}}", dispensation.requires)
+		.replaceAll("{{requirements}}", dispensation.description)
 		.replaceAll("{{comments}}", dispensation.comment)
 		.replaceAll("{{status}}", dispensation.status)
 		.replaceAll("{{rooms}}", dispensation.dispensation_has_room.map(dhr => `<a href="${process.env.APP_BASE_PATH}/roomdetails?room=${dhr.room.name}">${dhr.room.name}</a>`).join(', '))

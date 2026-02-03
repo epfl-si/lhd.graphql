@@ -1027,7 +1027,7 @@ model dispensation {
   renewals                  Int
   id_dispensation_subject   Int
   subject_other             String                       @db.VarChar(60)
-  requires                  String                       @db.LongText
+  description               String                       @map("requires") @db.LongText
   comment                   String?                      @db.LongText
   status                    String                       @db.VarChar(10)
   date_start                DateTime                     @db.Date
