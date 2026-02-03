@@ -9,12 +9,12 @@ import fetch from 'node-fetch';
 import { debug as debug_ } from 'debug';
 import {
 	makeServer,
-	configFromDotEnv, // Hermetic tests for a brown-field DB are hard mmkay
 } from '../../server';
 import { AddressInfo } from 'node:net';
 
 import { HookFunction } from 'mocha';
 import { Prisma } from '@prisma/client';
+import {configFromDotEnv} from "../../libs/config";
 
 const debug = debug_('lhd-tests:graphql');
 
