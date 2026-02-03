@@ -258,7 +258,8 @@ export function makeRESTAPI() {
 	);
 
 	type AddChemParams = {cas: string, en: string, auth: boolean, fr?: string};
-	app.post("/add_chem", // Replace auth_chem
+	/* Will replace /auth_chem endpoint*/
+	app.post("/add_chem",
 		checkAPICall(
 			{
 				authorize: (req) => req.user.canEditChemicals,
