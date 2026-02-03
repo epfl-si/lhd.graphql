@@ -113,7 +113,7 @@ export function makeRESTAxsAPI() {
 }
 
 function restAxsAuthenticate(req: Request, res, next) {
-	const allowedIPs = process.env.ALLOWED_IPS.split(",").map(ip => ip.trim());
+	const allowedIPs = process.env.AXS_ALLOWED_IPS.split(",").map(ip => ip.trim());
 	const clientIP = req.headers["x-forwarded-for"] as string || req.socket.remoteAddress;
 
 	const token = getToken(req, 'app');
