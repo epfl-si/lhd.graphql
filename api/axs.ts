@@ -16,20 +16,6 @@ export function makeRESTAxsAPI() {
 	app.use(setReqPrismaMiddleware);
 	app.use(auditAPI);
 
-	/**
-	 * Three classes of laboratories in LHD
-	 * DSPS Relevant: laboratory with hazard of level high, have at least one hazard=true, might have all training and med_check false
-	 * DSPS Irrelevant: laboratory with hazard of level low, have at least one hazard=true, all training and med_check are false
-	 * No hazards: laboratory with no hazards, have all hazards/training/medcheck false
-	 *
-	 * With the current configuration no distinction is made between the laboratories DSPS irrelevant and
-	 * the laboratories No hazards => the laboratories DSPS irrelevant are downgraded to No hazards
-	 * meaning that they are set with hazard=false
-	 *
-	 * The distinction between DSPS Irrelevant and No hazards should be made if the signature of Cosec/Prof is
-	 * required only for those labs with at least one hazard of low or high level is true and
-	 * the labs No hazards would not require a signature
-	 */
 	type GetAXSParams = {room?: string};
 	app.get("/",
 		checkAPICall(
