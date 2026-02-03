@@ -24,7 +24,7 @@ import {createChemical, getChemicalWithPagination} from "../model/chemicals";
 import {getRoomsWithPagination} from "../model/rooms";
 import {getParentUnit, getUnitByName} from "../model/units";
 import {getToken} from "./lib/restAuthentication";
-import {setReqPrismaMiddleware} from "./lib/callBacks";
+import {setReqPrismaMiddleware} from "./lib/rest";
 
 export function makeRESTAPI() {
 	const app = express();

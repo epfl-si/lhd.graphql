@@ -10,7 +10,7 @@ import {getReportFilesByUnit, sendFileResponse} from "../utils/File";
 import {getUnitToString} from "../schema/roomdetails/units";
 import {getLabHasHazardsAdditionalInfoToString} from "../schema/hazards/hazardsAdditionalInfo";
 import {getLabHasHazardChildToString} from "../schema/hazards/labHazardChild";
-import {setReqPrismaMiddleware} from "../api/lib/callBacks";
+import {setReqPrismaMiddleware} from "../api/lib/rest";
 import {getDispensationToString} from "../schema/dispensation/dispensation";
 
 const obfuscatedIdParams = {

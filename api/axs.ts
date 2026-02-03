@@ -3,7 +3,7 @@ import {roomNameRegexp} from "./lib/lhdValidators";
 import * as express from "express";
 import {Request} from "express";
 import {errorHandler} from "./lib/errorHandler";
-import {auditAPI, setReqPrismaMiddleware} from "./lib/callBacks";
+import {auditAPI, setReqPrismaMiddleware} from "./lib/rest";
 import {getToken} from "./lib/restAuthentication";
 import {getRoomByNameForAxs} from "../model/rooms";
 import {getHazardLevel} from "../utils/hazardsParser";
