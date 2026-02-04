@@ -25,6 +25,7 @@ UI.`,
     t.field(dispensation.dispensation);
     t.field(dispensation.renewals);
     t.field(dispensation.subject_other);
+    t.field(dispensation.expiring_notification_sent);
     t.field(dispensation.description);
     t.field(dispensation.comment);
     t.field(dispensation.status);
@@ -110,6 +111,7 @@ export function getDispensationToString(parent) {
     renewals: parent.renewals,
     id_dispensation_subject: parent.id_dispensation_subject,
     subject_other: parent.subject_other,
+    expiring_notification_sent: parent.expiring_notification_sent,
     description: parent.description,
     comment: parent.comment,
     status: parent.status,

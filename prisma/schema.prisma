@@ -1038,6 +1038,7 @@ model dispensation {
   date_start                DateTime                     @db.Date
   date_end                  DateTime                     @db.Date
   file_path                 String?                      @db.VarChar(250)
+  expiring_notification_sent Boolean                     @default(false)
 
   created_by                String                       @db.VarChar(50)
   created_on                DateTime                     @db.DateTime(0)
