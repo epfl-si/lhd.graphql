@@ -15,6 +15,15 @@ export async function expireDispensation (tx, disp, userInfo) {
 	});
 }
 
+export async function setDispensationNotified (tx, disp) {
+	return await tx.dispensation.update({
+		where: { id_dispensation: disp.id_dispensation },
+		data: {
+			expiring_notification_sent: true
+		}
+	});
+}
+
 export async function getDispensation (prisma, id) {
 	return await prisma.dispensation.findUnique({
 		where: { id_dispensation: id },
@@ -38,7 +47,8 @@ export async function getExpiringDispensations (prisma) {
 				gte: new Date(),           // greater than or equal to now (not expired yet)
 				lte: thirtyDaysFromNow     // less than or equal to 30 days from now
 			},
-			status: 'Active'
+			status: 'Active',
+			expiring_notification_sent: false
 		},
 		include: {
 			subject: true,

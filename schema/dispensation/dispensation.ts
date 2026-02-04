@@ -373,6 +373,7 @@ export const DispensationMutations = extendType({
             where: { id_dispensation: disp.id_dispensation },
             data: {
               renewals: ren,
+              expiring_notification_sent: disp.expiring_notification_sent && ren > disp.renewals ? false : disp.expiring_notification_sent,
               id_dispensation_subject: subject.id_dispensation_subject,
               subject_other: args.subject_other,
               description: decodeURIComponent(args.description),
