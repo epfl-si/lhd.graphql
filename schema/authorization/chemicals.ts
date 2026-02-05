@@ -3,7 +3,7 @@ import {IDObfuscator} from "../../utils/IDObfuscator";
 import {auth_chem} from "nexus-prisma";
 import {mutationStatusType} from "../statuses";
 import {sendEmailsForChemical} from "../../utils/Email/Mailer";
-import {createChemical, getChemicalWithPagination} from "../../model/chemicals";
+import {createChemical, getChemicals} from "../../model/chemicals";
 
 export const ChemicalStruct = objectType({
 	name: auth_chem.$name,
@@ -65,7 +65,7 @@ export const ChemicalsWithPaginationQuery = extendType({
 			async resolve(parent, args, context) {
 				const queryArray = args.search.split("&");
 				const dictionary = queryArray.map(query => query.split("="));
-				return await getChemicalWithPagination(context.prisma, dictionary, args.take, args.skip);
+				return await getChemicals(context.prisma, dictionary, args.take, args.skip);
 			}
 		});
 	},

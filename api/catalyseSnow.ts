@@ -20,7 +20,7 @@ import {
 	getTheAuthorization,
 	updateAuthorization
 } from "../model/authorization";
-import {createChemical, getChemicalWithPagination} from "../model/chemicals";
+import {createChemical, getChemicals} from "../model/chemicals";
 import {getRoomsWithPagination} from "../model/rooms";
 import {getParentUnit, getUnitByName} from "../model/units";
 import {getToken} from "./lib/restAuthentication";
@@ -301,7 +301,7 @@ export function makeRESTAPI() {
 				}
 			}),
 		async (req: Request<GetChemParams>, res) => {
-			const resultNew = await getChemicalWithPagination(req.prisma, [], 0, 0);
+			const resultNew = await getChemicals(req.prisma);
 			const all = resultNew.chemicals.map(chem => {
 				return {
 					cas_auth_chem: chem.cas_auth_chem,

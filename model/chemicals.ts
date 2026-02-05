@@ -14,7 +14,7 @@ export async function createChemical(args, {prisma, user}) {
 	await sendEmailsForChemical(prisma, user.username);
 }
 
-export async function getChemicalWithPagination(prisma, whereConditionsDict, take, skip) {
+export async function getChemicals(prisma, whereConditionsDict = [], take = 0, skip = 0) {
 	const whereCondition = [];
 	if (whereConditionsDict.length == 0) {
 		whereCondition.push({ cas_auth_chem: { contains: '' }})
