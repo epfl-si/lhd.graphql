@@ -9,7 +9,7 @@ type TestInjections = {
 };
 
 /**
- * Creates and returns a Prisma client instance scoped to a specific user,
+ * Create and return a Prisma client instance scoped to a specific user,
  * with optional query logging and automatic mutation auditing.
  *
  * This function wraps the base Prisma client using `$extends` to intercept
