@@ -406,10 +406,7 @@ export function makeRESTAPI() {
 				}
 			}),
 		async (req: Request<GetProfsAndCosecsParams>, res) => {
-			const args = {
-				search: req.params.unit,
-			};
-			const resultNew = await getUnitByName(req.prisma, args);
+			const resultNew = await getUnitByName(req.prisma, req.params.unit);
 			const unitMap: { [unit: string]: {unit: string, id_unit: number, sciper: string[], sciper_cosec: string[], rooms: string[] }; } = {};
 			resultNew.forEach(unit => {
 				const unitName = unit.name.split(' (')[0];

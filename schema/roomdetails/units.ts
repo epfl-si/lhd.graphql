@@ -397,7 +397,7 @@ export const UnitFullTextQuery = extendType({
 			},
 			authorize: (parent, args, context) => context.user.canListUnits,
 			async resolve(parent, args, context) {
-				return await getUnitByName(context.prisma, args);
+				return await getUnitByName(context.prisma, args.search);
 			}
 		})
 	},

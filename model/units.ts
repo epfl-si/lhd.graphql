@@ -48,13 +48,13 @@ export async function deleteUnitCascade(tx, context, u:Unit) {
 	});
 }
 
-export async function getUnitByName(prisma, args) {
+export async function getUnitByName(prisma, unitName: string) {
 	return await prisma.Unit.findMany({
 		where: {
 			OR: [
-				{ name: { contains: args.search }},
-				{ institute : { name: { contains: args.search } }},
-				{ institute : { school: { name: { contains: args.search } } }},
+				{ name: { contains: unitName }},
+				{ institute : { name: { contains: unitName } }},
+				{ institute : { school: { name: { contains: unitName } } }},
 			]
 		},
 		include: { unit_has_cosec: { include: { cosec: true } }, subunpro: { include: { person: true } }, institute: { include: { school: true } }, unit_has_room: { include: true } },
