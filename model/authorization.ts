@@ -1,5 +1,6 @@
 import {NotFoundError} from "../utils/errors";
 import {ensurePerson} from "./persons";
+import {AuthorizationChanges} from "../utils/Types";
 
 export async function createAuthorization(prisma, auth, unitId, newHolders) {
 	await ensurePerson(prisma, newHolders);
@@ -139,7 +140,7 @@ export async function getTheAuthorization(prisma, authNumber: string, type: stri
 	}
 }
 
-async function setAuthorizationRelations(tx, id_authorization: number, changes) {
+async function setAuthorizationRelations(tx, id_authorization: number, changes: AuthorizationChanges) {
 	for ( const holder of changes.holders || []) {
 		if ( holder.status === 'New' ) {
 			let p = await tx.Person.findUnique({where: {sciper: holder.sciper}});
