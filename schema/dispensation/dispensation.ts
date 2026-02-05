@@ -336,7 +336,7 @@ export const DispensationMutations = extendType({
               file_path: getFilePath(args, disp.id_dispensation)
             }
           });
-          await changeForDispensation(tx, args, disp);
+          await setDispensationRelations(tx, disp.id_dispensation, args);
           return disp;
         });
         const dispCreated = await context.prisma.dispensation.findUnique({
@@ -389,7 +389,7 @@ export const DispensationMutations = extendType({
               modified_on: new Date()
             }
           });
-          await changeForDispensation(tx, args, dispensation);
+          await setDispensationRelations(tx, dispensation.id_dispensation, args);
         });
         const dispUpdated = await context.prisma.dispensation.findUnique({
           where: { id_dispensation: disp.id_dispensation },
@@ -445,20 +445,20 @@ function getFilePath (args, id) {
   return filePath;
 }
 
-async function changeForDispensation(tx, changes, dispensation) {
+async function setDispensationRelations(tx, id_dispensation: number, changes) {
   for ( const holder of changes.holders || []) {
     const p = await tx.Person.findUnique({where: {sciper: holder.sciper}});
     if ( holder.status === 'New' ) {
       await tx.dispensation_has_holder.create({
         data: {
           id_person: Number(p.id_person),
-          id_dispensation: Number(dispensation.id_dispensation)
+          id_dispensation: id_dispensation
         }
       });
     } else if ( holder.status === 'Deleted' ) {
       await tx.dispensation_has_holder.deleteMany({
         where: {
-          id_dispensation: dispensation.id_dispensation,
+          id_dispensation: id_dispensation,
           id_person: p.id_person
         }
       });
@@ -477,7 +477,7 @@ async function changeForDispensation(tx, changes, dispensation) {
       await tx.dispensation_has_room.create({
         data: {
           id_lab: Number(r.id),
-          id_dispensation: Number(dispensation.id_dispensation)
+          id_dispensation: id_dispensation
         }
       });
     } else if ( room.status === 'Deleted' ) {
@@ -485,7 +485,7 @@ async function changeForDispensation(tx, changes, dispensation) {
       if ( p ) {
         await tx.dispensation_has_room.deleteMany({
           where: {
-            id_dispensation: dispensation.id_dispensation,
+            id_dispensation: id_dispensation,
             id_lab: p.id
           }
         });
@@ -500,13 +500,13 @@ async function changeForDispensation(tx, changes, dispensation) {
       await tx.dispensation_has_unit.create({
         data: {
           id_unit: Number(u.id),
-          id_dispensation: Number(dispensation.id_dispensation)
+          id_dispensation: id_dispensation
         }
       });
     } else if ( unit.status === 'Deleted' && u) {
       await tx.dispensation_has_unit.deleteMany({
         where: {
-          id_dispensation: dispensation.id_dispensation,
+          id_dispensation: id_dispensation,
           id_unit: u.id
         }
       });
@@ -517,14 +517,14 @@ async function changeForDispensation(tx, changes, dispensation) {
     if ( ticket.status === 'New' ) {
       await tx.dispensation_has_ticket.create({
         data: {
-          id_dispensation: Number(dispensation.id_dispensation),
+          id_dispensation: id_dispensation,
           ticket_number: ticket.name
         }
       });
     } else if ( ticket.status === 'Deleted' ) {
       await tx.dispensation_has_ticket.deleteMany({
         where: {
-          id_dispensation: dispensation.id_dispensation,
+          id_dispensation: id_dispensation,
           ticket_number: ticket.name
         }
       });
