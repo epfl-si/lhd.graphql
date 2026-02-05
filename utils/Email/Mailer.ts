@@ -168,7 +168,8 @@ export async function sendEmailForDispensation(modifiedByName: string,
 
 	const holders = dispensation.dispensation_has_holder.map(dhr => dhr.holder.email);
 	const profs = dispensation.dispensation_has_unit.flatMap(dhu => dhu.unit.subunpro).map(pers => pers.person.email);
-	const cc = [modifiedByEmail, process.env.DISPENSATION_CC, profs];
+	const cosecs = dispensation.dispensation_has_unit.flatMap(dhu => dhu.unit.unit_has_cosec).map(pers => pers.cosec.email);
+	const cc = [modifiedByEmail, process.env.DISPENSATION_CC, profs, cosecs];
 	await mailer.sendMail({
 		from: `"LHD" <${process.env.SMTP_USER}>`,
 		to: process.env.ENVIRONMENT === 'prod' ? holders : modifiedByEmail,
