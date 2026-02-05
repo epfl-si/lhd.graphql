@@ -219,15 +219,19 @@ export async function deleteRoom(tx, context, r:Room) {
 }
 
 /**
- * Get rooms for BCH 6 that have at least one unit attached
+ * Get rooms with details that are relevant for the AxS API.
+ *
+ * Rooms are joined (via Prisma) with units, Professors and COSECs.
+ * Rooms that are not assigned to a unit, as well as business-specific
+ * special cases in some buildings, are filtered out.
  * @param prisma
- * @param args
+ * @param roomName
  */
-export async function getRoomByNameForAxs(prisma, args) {
+export async function getRoomByNameForAxs(prisma, roomName: string) {
 	return await prisma.Room.findFirst({
 		where: {
 			AND: [
-				{ name: { contains: args.room }},
+				{ name: { contains: roomName }},
 				{
 					NOT: {
 						AND: [
