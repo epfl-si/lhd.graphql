@@ -155,7 +155,7 @@ export async function sendEmailForDispensation(modifiedByName: string,
 			break;
 	}
 	const body = template.body.replaceAll("{{modifiedByName}}", modifiedByName)
-		.replaceAll("{{dispNumber}}", dispensation.dispensation)
+		.replaceAll("{{dispNumber}}", `DISP-${dispensation.id_dispensation}`)
 		.replaceAll("{{subject}}", dispensation.subject.subject)
 		.replaceAll("{{dateStart}}", (dispensation.date_start).toLocaleDateString("en-GB"))
 		.replaceAll("{{dateEnd}}", (dispensation.date_end).toLocaleDateString("en-GB"))
@@ -174,7 +174,7 @@ export async function sendEmailForDispensation(modifiedByName: string,
 		from: `"LHD" <${process.env.SMTP_USER}>`,
 		to: process.env.ENVIRONMENT === 'prod' ? holders : modifiedByEmail,
 		cc: process.env.ENVIRONMENT === 'prod' ? cc : modifiedByEmail,
-		subject: template.subject.replaceAll("{{dispNumber}}", dispensation.dispensation),
+		subject: template.subject.replaceAll("{{dispNumber}}", `DISP-${dispensation.id_dispensation}`),
 		html: process.env.ENVIRONMENT === 'prod' ? body : `${logRecipients(holders, cc, [] )}\n${body}`
 	});
 }
