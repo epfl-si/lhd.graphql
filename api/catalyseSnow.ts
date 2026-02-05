@@ -16,7 +16,7 @@ import {Request} from "express";
 import {errorHandler} from "./lib/errorHandler";
 import {
 	createAuthorization,
-	getAuthorizationsWithPagination,
+	getAuthorizations,
 	getTheAuthorization,
 	updateAuthorization
 } from "../model/authorization";
@@ -149,13 +149,7 @@ export function makeRESTAPI() {
 				const sciper = (req.query.sciper as string);
 				const cas = (req.query.cas as string).split(',');
 
-				const argsCheck = {
-					take: 0,
-					skip: 0,
-					search: `Holder=${sciper}`,
-					type: "Chemical"
-				}
-				const result = await getAuthorizationsWithPagination(req.prisma, argsCheck);
+				const result = await getAuthorizations(req.prisma, "Chemical", [["Holder", sciper]]);
 				const casResult = result.authorizations
 					.filter(auth => auth.expiration_date > new Date())
 					.flatMap(auth => auth.authorization_has_chemical)
@@ -332,13 +326,7 @@ export function makeRESTAPI() {
 				}
 			}),
 		async (req: Request<AuthCheckParams>, res) => {
-			const argsCheck = {
-				take: 0,
-				skip: 0,
-				search: `Holder=${req.params.sciper}`,
-				type: "Chemical"
-			}
-			const result = await getAuthorizationsWithPagination(req.prisma, argsCheck);
+			const result = await getAuthorizations(req.prisma, "Chemical", [["Holder", req.params.sciper]]);
 			const casResult = result.authorizations
 				.filter(auth => auth.expiration_date > new Date())
 				.flatMap(auth => auth.authorization_has_chemical)

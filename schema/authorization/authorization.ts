@@ -7,7 +7,7 @@ import {PersonStruct} from "../global/people";
 import {ChemicalStruct} from "./chemicals";
 import {getUnitToString, UnitStruct} from "../roomdetails/units";
 import {RadiationStruct} from "./radiation";
-import {createAuthorization, getAuthorizationsWithPagination, updateAuthorization} from "../../model/authorization";
+import {createAuthorization, getAuthorizations, updateAuthorization} from "../../model/authorization";
 import {HolderMutationType, OthersMutationType} from "../../utils/MutationTypes";
 import {ensurePerson} from "../../model/persons";
 
@@ -131,7 +131,9 @@ export const AuthorizationsWithPaginationQuery = extendType({
 			},
 			authorize: (parent, args, context) => context.user.canListAuthorizations,
 			async resolve(parent, args, context) {
-				return await getAuthorizationsWithPagination(context.prisma, args);
+				const queryArray = args.search.split("&");
+				const dictionary = queryArray.map(query => query.split("="));
+				return await getAuthorizations(context.prisma, args.type, dictionary, args.take, args.skip);
 			}
 		});
 	},

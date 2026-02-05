@@ -54,13 +54,11 @@ export async function updateAuthorization(prisma, args, auth, tx = undefined) {
 	}
 }
 
-export async function getAuthorizationsWithPagination(prisma, args) {
-	const queryArray = args.search.split("&");
-	const dictionary = queryArray.map(query => query.split("="));
+export async function getAuthorizations(prisma, type: string, conditions: any[], take = 0, skip = 0) {
 	const whereCondition = [];
-	whereCondition.push({ type: args.type})
-	if (dictionary.length > 0) {
-		dictionary.forEach(query => {
+	whereCondition.push({ type: type})
+	if (conditions.length > 0) {
+		conditions.forEach(query => {
 			const value = decodeURIComponent(query[1]);
 			if (query[0] === 'Unit') {
 				whereCondition.push({ unit: { is: {name: {contains: value}} }})
@@ -111,7 +109,7 @@ export async function getAuthorizationsWithPagination(prisma, args) {
 		]
 	});
 
-	const authorizations = args.take == 0 ? authorizationList : authorizationList.slice(args.skip, args.skip + args.take);
+	const authorizations = take == 0 ? authorizationList : authorizationList.slice(skip, skip + take);
 	const totalCount = authorizationList.length;
 
 	return { authorizations, totalCount };
