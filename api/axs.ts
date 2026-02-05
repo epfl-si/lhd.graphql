@@ -110,12 +110,10 @@ export function makeRESTAxsAPI() {
 }
 
 async function getAxpBioRecipients (bio) {
-	const bioScipers = [];
-	if (bio.length > 0) {
-		const members = await getGroupMembersFromApi(process.env.AXP_BIO_SIGNATURES_GROUP);
-		bioScipers.push(...members.members.map(m => m.id));
-	}
-	return bioScipers;
+	if (!bio.length) return [];
+
+	const members = await getGroupMembersFromApi(process.env.AXP_BIO_SIGNATURES_GROUP);
+	return members.members.map(m => m.id);
 }
 
 function restAxsAuthenticate(req: Request, res, next) {
