@@ -10,7 +10,6 @@ CREATE TABLE `dispensation_subject` (
 -- CreateTable
 CREATE TABLE `dispensation` (
     `id_dispensation` INTEGER NOT NULL AUTO_INCREMENT,
-    `dispensation` VARCHAR(50) NOT NULL,
     `renewals` INTEGER NOT NULL,
     `id_dispensation_subject` INTEGER NOT NULL,
     `subject_other` VARCHAR(60) NOT NULL,
@@ -25,7 +24,6 @@ CREATE TABLE `dispensation` (
     `modified_by` VARCHAR(50) NOT NULL,
     `modified_on` DATETIME(0) NOT NULL,
 
-    UNIQUE INDEX `dispensation`(`dispensation`),
     PRIMARY KEY (`id_dispensation`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 

@@ -22,7 +22,6 @@ of "Flammable Gas", "Gas", "Inert Gas" and "Oxydising Gas") and more - LHD
 operators may create new kinds of dispensations from an “other, please specify”
 UI.`,
   definition(t) {
-    t.field(dispensation.dispensation);
     t.field(dispensation.renewals);
     t.field(dispensation.subject_other);
     t.field(dispensation.expiring_notification_sent);
@@ -36,6 +35,13 @@ UI.`,
     t.field(dispensation.created_on);
     t.field(dispensation.modified_by);
     t.field(dispensation.modified_on);
+
+    t.field('dispensation', {
+      type: "String",
+      resolve: async (parent, _, context) => {
+        return `DISP-${parent.id_dispensation}`;
+      }
+    });
 
     t.field('subject', {
       type: "String",
@@ -107,7 +113,6 @@ UI.`,
 export function getDispensationToString(parent) {
   return {
     id: parent.id_dispensation,
-    dispensation: parent.dispensation,
     renewals: parent.renewals,
     id_dispensation_subject: parent.id_dispensation_subject,
     subject_other: parent.subject_other,
@@ -155,48 +160,50 @@ export const DispensationsWithPaginationQuery = extendType({
         const queryArray = args.search.split("&");
         const dictionary = queryArray.map(query => query.split("="));
         const whereCondition = [];
-        if (dictionary.length == 0) {
-          whereCondition.push({ dispensation: { contains: '' }})
-        } else {
-          dictionary.forEach(query => {
-            const value = decodeURIComponent(query[1]);
-            if (query[0] === 'Dispensation') {
-              whereCondition.push({ dispensation: { contains: value }})
-            } else if (query[0] === 'Status') {
-              const matchedStatus = findDispensationStatus(value);
-              if (matchedStatus) whereCondition.push({ status: matchedStatus })
-            } else if (query[0] === 'Room') {
-              whereCondition.push({ dispensation_has_room: { some: {room: {is: {name: {contains: value}}}} }})
-            } else if (query[0] === 'Unit') {
-              whereCondition.push({
-                OR: [
-                  { dispensation_has_unit: { some: {unit: {is: {name: {contains: value}}}} }},
-                  { dispensation_has_unit: { some: {unit: {is: {institute: {is: {name: {contains: value}}}}}} }},
-                  { dispensation_has_unit: { some: {unit: {is: {institute: {is: {school: {is: {name: {contains: value}}}}}}}} }}
-                ]
-              })
-            } else if (query[0] === 'Holder') {
-              whereCondition.push({
-                dispensation_has_holder: {
-                  some: {
-                    holder: {
-                      OR: [
-                        { name: { contains: value } },
-                        { surname: { contains: value } },
-                        { email: { contains: value } },
-                        { sciper: parseInt(value) },
-                      ],
-                    },
-                  },
-                }
-              })
-            } else if (query[0] === 'Subject') {
-              whereCondition.push({ subject: {is: {subject: {contains: value}}}})
-            } else if (query[0] === 'Ticket') {
-              whereCondition.push({ dispensation_has_ticket: { some: {ticket_number: {contains: value}} }})
+        dictionary.forEach(query => {
+          const value = decodeURIComponent(query[1]);
+          if (query[0] === 'Dispensation') {
+            const disp = value.split('-');
+            const dispNumber = Number(disp.length > 1 ? disp[1] : disp[0]);
+            if (!isNaN(dispNumber)) {
+              whereCondition.push({id_dispensation: Number(dispNumber)})
+            } else {
+              whereCondition.push({id_dispensation: -1})
             }
-          })
-        }
+          } else if (query[0] === 'Status') {
+            const matchedStatus = findDispensationStatus(value);
+            if (matchedStatus) whereCondition.push({ status: matchedStatus })
+          } else if (query[0] === 'Room') {
+            whereCondition.push({ dispensation_has_room: { some: {room: {is: {name: {contains: value}}}} }})
+          } else if (query[0] === 'Unit') {
+            whereCondition.push({
+              OR: [
+                { dispensation_has_unit: { some: {unit: {is: {name: {contains: value}}}} }},
+                { dispensation_has_unit: { some: {unit: {is: {institute: {is: {name: {contains: value}}}}}} }},
+                { dispensation_has_unit: { some: {unit: {is: {institute: {is: {school: {is: {name: {contains: value}}}}}}}} }}
+              ]
+            })
+          } else if (query[0] === 'Holder') {
+            whereCondition.push({
+              dispensation_has_holder: {
+                some: {
+                  holder: {
+                    OR: [
+                      { name: { contains: value } },
+                      { surname: { contains: value } },
+                      { email: { contains: value } },
+                      { sciper: parseInt(value) },
+                    ],
+                  },
+                },
+              }
+            })
+          } else if (query[0] === 'Subject') {
+            whereCondition.push({ subject: {is: {subject: {contains: value}}}})
+          } else if (query[0] === 'Ticket') {
+            whereCondition.push({ dispensation_has_ticket: { some: {ticket_number: {contains: value}} }})
+          }
+        });
 
         const dispensationList = await context.prisma.dispensation.findMany({
           where: {
@@ -263,7 +270,6 @@ export const DispensationsByRoom = extendType({
 
 const newDispensationType = {
   id: stringArg(),
-  dispensation: stringArg(),
   renewals: intArg(),
   subject: stringArg(),
   subject_other: stringArg(),
@@ -310,7 +316,6 @@ export const DispensationMutations = extendType({
         const dispensation = await context.prisma.$transaction(async (tx) => {
           const disp = await tx.dispensation.create({
             data: {
-              dispensation: `DISP-TEMP`,
               renewals: 0,
               id_dispensation_subject: subject.id_dispensation_subject,
               subject_other: args.subject_other,
@@ -328,7 +333,6 @@ export const DispensationMutations = extendType({
           await tx.dispensation.update({
             where: { id_dispensation: disp.id_dispensation },
             data: {
-              dispensation: `DISP-${disp.id_dispensation}`,
               file_path: getFilePath(args, disp.id_dispensation)
             }
           });

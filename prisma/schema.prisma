@@ -1028,7 +1028,6 @@ model dispensation_subject {
 
 model dispensation {
   id_dispensation           Int                          @id @default(autoincrement())
-  dispensation              String                       @unique(map: "dispensation") @db.VarChar(50)
   renewals                  Int
   id_dispensation_subject   Int
   subject_other             String                       @db.VarChar(60)
