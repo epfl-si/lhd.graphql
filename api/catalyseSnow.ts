@@ -21,7 +21,7 @@ import {
 	updateAuthorization
 } from "../model/authorization";
 import {createChemical, getChemicals} from "../model/chemicals";
-import {getRoomsWithPagination} from "../model/rooms";
+import {getRooms} from "../model/rooms";
 import {getParentUnit, getUnitByName} from "../model/units";
 import {getToken} from "./lib/restAuthentication";
 import {setReqPrismaMiddleware} from "./lib/rest";
@@ -99,12 +99,7 @@ export function makeRESTAPI() {
 
 				const reqParts = request.split("-");
 				const requestNumber = `${reqParts[0]}-${reqParts[1]}`;
-				const argsRenew = {
-					search: requestNumber,
-					type: "Chemical"
-				}
-
-				const auth = await getTheAuthorization(req.prisma, argsRenew);
+				const auth = await getTheAuthorization(req.prisma, requestNumber, "Chemical");
 				const argsUpdate = {
 					expiration_date: (new Date(expirationDate)).toLocaleDateString("en-GB"),
 					status: "Active",
@@ -235,12 +230,7 @@ export function makeRESTAPI() {
 		async (req: Request<AuthRenewParams>, res) => {
 			const reqParts = req.params.req.split("-");
 			const requestNumber = `${reqParts[0]}-${reqParts[1]}`;
-			const argsRenew = {
-				search: requestNumber,
-				type: "Chemical"
-			}
-
-			const auth = await getTheAuthorization(req.prisma, argsRenew);
+			const auth = await getTheAuthorization(req.prisma, requestNumber, "Chemical");
 			const argsUpdate = {
 				expiration_date: (new Date(req.params.date)).toLocaleDateString("en-GB"),
 				status: "Active",
@@ -362,10 +352,7 @@ export function makeRESTAPI() {
 			const conditions = [];
 			if (req.params.unit) conditions.push(['Unit', req.params.unit]);
 			if (req.params.room) conditions.push(['Room', req.params.room]);
-			const args = {
-				take: 0
-			};
-			const resultNew = await getRoomsWithPagination(req.prisma, args, conditions);
+			const resultNew = await getRooms(req.prisma, conditions);
 			for ( let i = 0; i<resultNew.rooms.length; i++) {
 				for ( let j = 0; j<resultNew.rooms[i].unit_has_room.length; j++) {
 					resultNew.rooms[i].unit_has_room[j].realID = resultNew.rooms[i].unit_has_room[j].id_unit;

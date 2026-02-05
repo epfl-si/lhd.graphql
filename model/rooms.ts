@@ -1,6 +1,6 @@
 import {Room} from "nexus-prisma";
 
-export async function getRoomsWithPagination(prisma, args, dictionary) {
+export async function getRooms(prisma, dictionary, take = 0, skip = 0) {
 	const whereCondition = [];
 	whereCondition.push({ isDeleted: false });
 	dictionary.forEach(query => {
@@ -82,7 +82,7 @@ export async function getRoomsWithPagination(prisma, args, dictionary) {
 		]
 	});
 
-	const rooms = args.take == 0 ? roomsList : roomsList.slice(args.skip, args.skip + args.take);
+	const rooms = take == 0 ? roomsList : roomsList.slice(skip, skip + take);
 	const totalCount = roomsList.length;
 
 	return { rooms, totalCount };

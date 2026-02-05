@@ -1,13 +1,13 @@
 import {sendEmailsForChemical} from "../utils/Email/Mailer";
 
-export async function createChemical(args, {prisma, user}) {
+export async function createChemical(chemical, {prisma, user}) {
 	await prisma.$transaction(async (tx) => {
 
 		await tx.auth_chem.create({
 			data: {
-				cas_auth_chem: args.cas_auth_chem,
-				auth_chem_en: args.auth_chem_en,
-				flag_auth_chem: args.flag_auth_chem
+				cas_auth_chem: chemical.cas_auth_chem,
+				auth_chem_en: chemical.auth_chem_en,
+				flag_auth_chem: chemical.flag_auth_chem
 			}
 		});
 	});

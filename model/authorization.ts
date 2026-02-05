@@ -1,30 +1,30 @@
 import {NotFoundError} from "../utils/errors";
 import {ensurePerson} from "./persons";
 
-export async function createAuthorization(prisma, args, unitId, newHolders) {
+export async function createAuthorization(prisma, auth, unitId, newHolders) {
 	await ensurePerson(prisma, newHolders);
 	return await prisma.$transaction(async (tx) => {
-		const date = args.creation_date ?? (new Date()).toLocaleDateString("en-GB");
+		const date = auth.creation_date ?? (new Date()).toLocaleDateString("en-GB");
 		const [dayCrea, monthCrea, yearCrea] = date.split("/").map(Number);
-		const [day, month, year] = args.expiration_date.split("/").map(Number);
+		const [day, month, year] = auth.expiration_date.split("/").map(Number);
 		const authorization = await tx.authorization.create({
 			data: {
-				authorization: args.authorization,
-				status: args.status,
+				authorization: auth.authorization,
+				status: auth.status,
 				creation_date: new Date(yearCrea, monthCrea - 1, dayCrea, 12),
 				expiration_date: new Date(year, month - 1, day, 12),
 				id_unit: unitId,
 				renewals: 0,
-				type: args.type,
-				authority: args.authority
+				type: auth.type,
+				authority: auth.authority
 			}
 		});
 
-		await changeForAuthorization(tx, args, authorization);
+		await changeForAuthorization(tx, auth, authorization);
 	});
 }
 
-export async function updateAuthorization(prisma, args, auth, tx = undefined) {
+export async function updateAuthorization(prisma, newData, oldAuth, tx = undefined) {
 	if (tx) {
 		await doUpdateAuthorization(tx);
 	} else {
@@ -32,25 +32,25 @@ export async function updateAuthorization(prisma, args, auth, tx = undefined) {
 	}
 
 	async function doUpdateAuthorization (tx) {
-		const [day, month, year] = args.expiration_date.split("/").map(Number);
+		const [day, month, year] = newData.expiration_date.split("/").map(Number);
 		const newExpDate = new Date(year, month - 1, day, 12);
-		const ren = args.renewals ?? (newExpDate > auth.expiration_date ? (auth.renewals + 1) : auth.renewals);
+		const ren = newData.renewals ?? (newExpDate > oldAuth.expiration_date ? (oldAuth.renewals + 1) : oldAuth.renewals);
 		const data = {
-			status: args.status,
+			status: newData.status,
 			expiration_date: newExpDate,
-			authority: args.authority ?? auth.authority,
+			authority: newData.authority ?? oldAuth.authority,
 			renewals: ren
 		}
-		if (args.id_unit) {
-			data['id_unit'] = args.id_unit;
+		if (newData.id_unit) {
+			data['id_unit'] = newData.id_unit;
 		}
 
 		const updatedAuthorization = await tx.authorization.update(
-			{ where: { id_authorization: auth.id_authorization },
+			{ where: { id_authorization: oldAuth.id_authorization },
 				data: data
 			});
 
-		await changeForAuthorization(tx, args, updatedAuthorization);
+		await changeForAuthorization(tx, newData, updatedAuthorization);
 	}
 }
 
@@ -115,10 +115,10 @@ export async function getAuthorizations(prisma, type: string, conditions: any[],
 	return { authorizations, totalCount };
 }
 
-export async function getTheAuthorization(prisma, args) {
+export async function getTheAuthorization(prisma, authNumber: string, type: string) {
 	const whereCondition = [];
-	whereCondition.push({ type: args.type})
-	whereCondition.push({ authorization: args.search })
+	whereCondition.push({ type: type})
+	whereCondition.push({ authorization: authNumber })
 
 	const authorizationList = await prisma.authorization.findMany({
 		where: {
@@ -131,9 +131,9 @@ export async function getTheAuthorization(prisma, args) {
 		]
 	});
 	if (authorizationList.length === 0) {
-		throw new Error(`No authorization found: ${JSON.stringify(args)}`);
+		throw new Error(`No ${type} authorization found for ${authNumber}`);
 	} else if (authorizationList.length > 1) {
-		throw new Error(`More than one authorization found: ${authorizationList.map(auth => auth.authorization).join(', ')} for these args: ${JSON.stringify(args)}`);
+		throw new Error(`More than one ${type} authorization found: ${authorizationList.map(auth => auth.authorization).join(', ')} for ${authNumber}`);
 	} else {
 		return authorizationList[0];
 	}

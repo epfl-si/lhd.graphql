@@ -14,7 +14,7 @@ import {IDObfuscator} from "../../utils/IDObfuscator";
 import {getDoorPlugFromApi, getRoomsFromApi} from "../../utils/CallAPI";
 import {HazardsAdditionalInfoStruct} from "../hazards/hazardsAdditionalInfo";
 import {LabHazardChildStruct} from "../hazards/labHazardChild";
-import {deleteRoom, getRoomsWithPagination} from "../../model/rooms";
+import {deleteRoom, getRooms} from "../../model/rooms";
 
 const debug = debug_('lhd:rooms');
 
@@ -249,7 +249,7 @@ export const RoomsWithPaginationQuery = extendType({
 			async resolve(parent, args, context) {
 				const queryArray = args.search.split("&");
 				const dictionary = queryArray.map(query => query.split("="));
-				return await getRoomsWithPagination(context.prisma, args, dictionary);
+				return await getRooms(context.prisma, dictionary, args.take, args.skip);
 			}
 		});
 	},
