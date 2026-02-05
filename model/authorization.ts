@@ -20,7 +20,7 @@ export async function createAuthorization(prisma, auth, unitId, newHolders) {
 			}
 		});
 
-		await changeForAuthorization(tx, auth, authorization);
+		await setAuthorizationRelations(tx, Number(authorization.id_authorization), auth);
 	});
 }
 
@@ -50,7 +50,7 @@ export async function updateAuthorization(prisma, newData, oldAuth, tx = undefin
 				data: data
 			});
 
-		await changeForAuthorization(tx, newData, updatedAuthorization);
+		await setAuthorizationRelations(tx, Number(updatedAuthorization.id_authorization), newData);
 	}
 }
 
@@ -139,14 +139,14 @@ export async function getTheAuthorization(prisma, authNumber: string, type: stri
 	}
 }
 
-async function changeForAuthorization(tx, changes, authorization) {
+async function setAuthorizationRelations(tx, id_authorization: number, changes) {
 	for ( const holder of changes.holders || []) {
 		if ( holder.status === 'New' ) {
 			let p = await tx.Person.findUnique({where: {sciper: holder.sciper}});
 
 			const relation = {
 				id_person: Number(p.id_person),
-				id_authorization: Number(authorization.id_authorization)
+				id_authorization: id_authorization
 			};
 			await tx.authorization_has_holder.create({
 				data: relation
@@ -155,7 +155,7 @@ async function changeForAuthorization(tx, changes, authorization) {
 			let p = await tx.Person.findUnique({where: {sciper: holder.sciper}});
 			if ( p ) {
 				const whereCondition = {
-					id_authorization: authorization.id_authorization,
+					id_authorization: id_authorization,
 					id_person: p.id_person
 				};
 				await tx.authorization_has_holder.deleteMany({
@@ -176,7 +176,7 @@ async function changeForAuthorization(tx, changes, authorization) {
 			if ( !r ) throw new Error(`Authorization not created: room not found`);
 			const relation = {
 				id_lab: Number(r.id),
-				id_authorization: Number(authorization.id_authorization)
+				id_authorization: id_authorization
 			};
 			await tx.authorization_has_room.create({
 				data: relation
@@ -185,7 +185,7 @@ async function changeForAuthorization(tx, changes, authorization) {
 			let p = await tx.Room.findFirst({where: {name: room.name}});
 			if ( p ) {
 				const whereCondition = {
-					id_authorization: authorization.id_authorization,
+					id_authorization: id_authorization,
 					id_lab: p.id
 				};
 				await tx.authorization_has_room.deleteMany({
@@ -198,7 +198,7 @@ async function changeForAuthorization(tx, changes, authorization) {
 	for ( const source of changes.radiations || []) {
 		if ( source.status === 'New' ) {
 			const relation = {
-				id_authorization: Number(authorization.id_authorization),
+				id_authorization: id_authorization,
 				source: source.name
 			};
 			await tx.authorization_has_radiation.create({
@@ -206,7 +206,7 @@ async function changeForAuthorization(tx, changes, authorization) {
 			});
 		} else if ( source.status === 'Deleted' ) {
 			const whereCondition = {
-				id_authorization: authorization.id_authorization,
+				id_authorization: id_authorization,
 				source: source.name
 			};
 			await tx.authorization_has_radiation.deleteMany({
@@ -225,7 +225,7 @@ async function changeForAuthorization(tx, changes, authorization) {
 
 			const relation = {
 				id_chemical: Number(p.id_auth_chem),
-				id_authorization: Number(authorization.id_authorization)
+				id_authorization: id_authorization
 			};
 			await tx.authorization_has_chemical.create({
 				data: relation
@@ -234,7 +234,7 @@ async function changeForAuthorization(tx, changes, authorization) {
 			let p = await tx.auth_chem.findUnique({where: {cas_auth_chem: cas.name}});
 			if (p) {
 				const whereCondition = {
-					id_authorization: authorization.id_authorization,
+					id_authorization: id_authorization,
 					id_chemical: p.id_auth_chem
 				};
 				await tx.authorization_has_chemical.deleteMany({
