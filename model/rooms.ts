@@ -222,8 +222,7 @@ export async function deleteRoom(tx, context, r:Room) {
  * Get rooms with details that are relevant for the AxS API.
  *
  * Rooms are joined (via Prisma) with units, Professors and COSECs.
- * Rooms that are not assigned to a unit, as well as business-specific
- * special cases in some buildings, are filtered out.
+ * Rooms that are not assigned to a unit are filtered out.
  * @param prisma
  * @param roomName
  */
@@ -232,14 +231,6 @@ export async function getRoomByNameForAxs(prisma, roomName: string) {
 		where: {
 			AND: [
 				{ name: { contains: roomName }},
-				{
-					NOT: {
-						AND: [
-							{building: 'BCH'},
-							{floor: '6'}
-						]
-					}
-				},
 				{ unit_has_room: { some: { }}} // At least one unit is available for this room
 			]
 		},
