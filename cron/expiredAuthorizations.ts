@@ -1,7 +1,7 @@
 import {getPrismaForUser} from "../libs/auditablePrisma";
 import {configFromDotEnv} from "../libs/config";
 import {sendEmailForAuthorization} from "../utils/Email/Mailer";
-import {expireAuthorization, getExpiredAuthorizations} from "../model/authorization";
+import {expireAuthorization, getExpiringAuthorizations} from "../model/authorization";
 import {expiredAuthorization} from "../utils/Email/EmailTemplates";
 
 const cronUser = {
@@ -20,7 +20,7 @@ const prisma = getPrismaForUser(configFromDotEnv(), cronUser);
  * the related holders.
  */
 async function expireAndNotifyAuthorizations () {
-	const expiredAuths =  await getExpiredAuthorizations(prisma);
+	const expiredAuths =  await getExpiringAuthorizations(prisma, 0);
 	for (const auth of expiredAuths) {
 		await prisma.$transaction(async (tx) => {
 			const updated = await expireAuthorization(tx, auth);

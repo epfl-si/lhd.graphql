@@ -1,9 +1,3 @@
-export async function getExpiredDispensations (prisma) {
-	return await prisma.dispensation.findMany({
-		where: { date_end: { lt: new Date() }, status: 'Active' }
-	});
-}
-
 export async function expireDispensation (tx, disp, userInfo) {
 	return await tx.dispensation.update({
 		where: { id_dispensation: disp.id_dispensation },
@@ -37,19 +31,22 @@ export async function getDispensation (prisma, id) {
 	});
 }
 
-export async function getExpiringDispensations (prisma) {
-	const thirtyDaysFromNow = new Date();
-	thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+export async function getExpiringDispensations (prisma, expiringInDays: number = 30) {
+	const expirationDay = new Date();
+	expirationDay.setDate(expirationDay.getDate() + expiringInDays);
 
-	return await prisma.dispensation.findMany({
-		where: {
-			date_end: {
-				gte: new Date(),           // greater than or equal to now (not expired yet)
-				lte: thirtyDaysFromNow     // less than or equal to 30 days from now
-			},
-			status: 'Active',
-			expiring_notification_sent: false
+	const conditions = {
+		date_end: {
+			lt: expirationDay     // less than `expiringInDays` from now
 		},
+		status: 'Active'
+	};
+
+	if (expiringInDays !== 0) {
+		conditions['expiring_notification_sent'] = false;
+	}
+	return await prisma.dispensation.findMany({
+		where: conditions,
 		include: {
 			subject: true,
 			dispensation_has_room : { include: { room: true } },

@@ -246,12 +246,6 @@ async function setAuthorizationRelations(tx, id_authorization: number, changes: 
 	}
 }
 
-export async function getExpiredAuthorizations (prisma) {
-	return await prisma.authorization.findMany({
-		where: { expiration_date: { lt: new Date() }, status: 'Active' }
-	});
-}
-
 export async function expireAuthorization (tx, auth) {
 	return await tx.authorization.update({
 		where: { id_authorization: auth.id_authorization },
@@ -261,18 +255,19 @@ export async function expireAuthorization (tx, auth) {
 	});
 }
 
-export async function getExpiringAuthorizations (prisma) {
-	const thirtyDaysFromNow = new Date();
-	thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+export async function getExpiringAuthorizations (prisma, expiringInDays: number = 30) {
+	const expirationDay = new Date();
+	expirationDay.setDate(expirationDay.getDate() + expiringInDays);
+
+	const conditions = {
+		expiration_date: {
+			lt: expirationDay     // less than `expiringInDays` from now
+		},
+		status: 'Active'
+	};
 
 	return await prisma.authorization.findMany({
-		where: {
-			expiration_date: {
-				gte: new Date(),           // greater than or equal to now (not expired yet)
-				lte: thirtyDaysFromNow     // less than or equal to 30 days from now
-			},
-			status: 'Active'
-		}
+		where: conditions
 	});
 }
 
