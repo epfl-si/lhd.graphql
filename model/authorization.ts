@@ -40,7 +40,8 @@ export async function updateAuthorization(prisma, newData, oldAuth, tx = undefin
 			status: newData.status,
 			expiration_date: newExpDate,
 			authority: newData.authority ?? oldAuth.authority,
-			renewals: ren
+			renewals: ren,
+			expiring_notification_sent: oldAuth.expiring_notification_sent && ren > oldAuth.renewals ? false : oldAuth.expiring_notification_sent
 		}
 		if (newData.id_unit) {
 			data['id_unit'] = newData.id_unit;
@@ -255,6 +256,15 @@ export async function expireAuthorization (tx, auth) {
 	});
 }
 
+export async function setAuthorizationNotified (tx, auth) {
+	return await tx.authorization.update({
+		where: { id_authorization: auth.id_authorization },
+		data: {
+			expiring_notification_sent: true
+		}
+	});
+}
+
 export async function getExpiringAuthorizations (prisma, expiringInDays: number = 30) {
 	const expirationDay = new Date();
 	expirationDay.setDate(expirationDay.getDate() + expiringInDays);
@@ -265,6 +275,10 @@ export async function getExpiringAuthorizations (prisma, expiringInDays: number 
 		},
 		status: 'Active'
 	};
+
+	if (expiringInDays !== 0) {
+		conditions['expiring_notification_sent'] = false;
+	}
 
 	return await prisma.authorization.findMany({
 		where: conditions

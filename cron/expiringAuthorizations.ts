@@ -1,7 +1,7 @@
 import {getPrismaForUser} from "../libs/auditablePrisma";
 import {configFromDotEnv} from "../libs/config";
 import {sendEmailForAuthorization} from "../utils/Email/Mailer";
-import {getExpiringAuthorizations} from "../model/authorization";
+import {getExpiringAuthorizations, setAuthorizationNotified} from "../model/authorization";
 import {expiringAuthorization} from "../utils/Email/EmailTemplates";
 
 const cronUser = {
@@ -20,9 +20,15 @@ const prisma = getPrismaForUser(configFromDotEnv(), cronUser);
  * For each expiring authorization, notifies the related holders.
  */
 async function notifyExpiringAuthorizations () {
-	const expiringDisps =  await getExpiringAuthorizations(prisma);
-	for (const disp of expiringDisps) {
-		await sendEmailForAuthorization(disp.modified_by, cronUser.userEmail, disp, expiringAuthorization);
+	const expiringAuths =  await getExpiringAuthorizations(prisma);
+	for (const auth of expiringAuths) {
+		await prisma.$transaction(async (tx) => {
+			await sendEmailForAuthorization(auth.modified_by, cronUser.userEmail, auth, expiringAuthorization);
+			await setAuthorizationNotified(tx, auth);
+		},{
+			maxWait: 10000, // Max time (ms) to wait for a transaction slot (default: 2000)
+			timeout: 30000, // Max time (ms) the transaction can run (default: 5000)
+		});
 	}
 }
 

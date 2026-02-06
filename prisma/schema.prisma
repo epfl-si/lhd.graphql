@@ -941,6 +941,7 @@ model authorization {
   creation_date               DateTime      @db.Date
   type                        String
   authority                   String?
+  expiring_notification_sent  Boolean       @default(false)
 
   unit                        Unit?     @relation(fields: [id_unit], references: [id], onUpdate: Restrict, map: "authorization_unit_ibfk_1")
   authorization_has_room      authorization_has_room[]
