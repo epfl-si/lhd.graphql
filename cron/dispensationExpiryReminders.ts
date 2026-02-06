@@ -12,11 +12,12 @@ const cronUser = {
 const prisma = getPrismaForUser(configFromDotEnv(), cronUser);
 
 /**
- * Checks for all expiring dispensations
- * (where `date_end` is greater than or equal to now (not expired yet) but less than or equal to 30 days from now
- * and the status is still `Active`).
+ * Check for all expiring dispensations
  *
- * For each expiring dispensation, notifies the related holders.
+ * Where “expiring” is defined as being still `Active`, but with an
+ * expiration date either already past, or no later than 30 days from now.
+ *
+ * For each expiring dispensation, notify the related holders.
  */
 async function notifyExpiringDispensations () {
 	const expiringDisps =  await getExpiringDispensations(prisma);
