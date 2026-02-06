@@ -67,8 +67,7 @@ export async function getAuthorizations(prisma, type: string, conditions: any[],
 			} else if (query[0] === 'Authorization') {
 				whereCondition.push({ authorization: { contains: value }})
 			} else if (query[0] === 'Status') {
-				const matchedStatus = findAuthorizationStatus(value);
-				if (matchedStatus) whereCondition.push({ status: matchedStatus })
+				whereCondition.push({ status: value })
 			} else if (query[0] === 'Room') {
 				whereCondition.push({ authorization_has_room: { some: {room: {is: {name: {contains: value}}}} }})
 			} else if (query[0] === 'Holder') {
@@ -283,12 +282,4 @@ export async function getExpiringAuthorizations (prisma, expiringInDays: number 
 	return await prisma.authorization.findMany({
 		where: conditions
 	});
-}
-
-function findAuthorizationStatus(input) {
-	const validStatuses = ['Active', 'Expired'];
-
-	return validStatuses.find(
-		status => status.toLowerCase().indexOf(input.trim().toLowerCase()) > -1
-	);
 }

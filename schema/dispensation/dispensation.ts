@@ -171,8 +171,7 @@ export const DispensationsWithPaginationQuery = extendType({
               whereCondition.push({id_dispensation: -1})
             }
           } else if (query[0] === 'Status') {
-            const matchedStatus = findDispensationStatus(value);
-            if (matchedStatus) whereCondition.push({ status: matchedStatus })
+            whereCondition.push({ status: value })
           } else if (query[0] === 'Room') {
             whereCondition.push({ dispensation_has_room: { some: {room: {is: {name: {contains: value}}}} }})
           } else if (query[0] === 'Unit') {
@@ -530,12 +529,4 @@ async function setDispensationRelations(tx, id_dispensation: number, changes) {
       });
     }
   }
-}
-
-function findDispensationStatus(input) {
-  const validStatuses = ['Draft', 'Active', 'Expired', 'Cancelled'];
-
-  return validStatuses.find(
-    status => status.toLowerCase().indexOf(input.trim().toLowerCase()) > -1
-  );
 }
