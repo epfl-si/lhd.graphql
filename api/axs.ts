@@ -38,7 +38,7 @@ export function makeRESTAxsAPI() {
 			const bioLevel = getHazardLevel(roomResult.lab_has_hazards, 'Biological');
 			const laserLevel = getHazardLevel(roomResult.lab_has_hazards, 'Laser');
 
-			const bioScipers = await getAxpBioRecipients(bioLevel.bio);
+			const bioScipers = await getAxsBioRecipients(bioLevel.bio);
 
 			res.json({ lhd_room: {
 					room: roomResult.name,
@@ -105,7 +105,7 @@ export function makeRESTAxsAPI() {
 	return app;
 }
 
-async function getAxpBioRecipients (bio) {
+async function getAxsBioRecipients (bio) {
 	if (!bio.length) return [];
 
 	const members = await getGroupMembersFromApi(process.env.AXP_BIO_SIGNATURES_GROUP);
