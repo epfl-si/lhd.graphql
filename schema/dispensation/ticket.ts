@@ -1,10 +1,10 @@
 import {objectType} from "nexus";
-import {dispensation_has_ticket} from "nexus-prisma";
+import {DispensationHasTicket} from "nexus-prisma";
 
 export const TicketStruct = objectType({
-	name: dispensation_has_ticket.$name,
+	name: DispensationHasTicket.$name,
 	description: `Ticket dispensation entity.`,
 	definition(t) {
-		t.field(dispensation_has_ticket.ticket_number);
+		t.field(DispensationHasTicket.ticket_number);
 	},
 });

@@ -1,5 +1,5 @@
 export async function expireDispensation (tx, disp, userInfo) {
-	return await tx.dispensation.update({
+	return await tx.Dispensation.update({
 		where: { id_dispensation: disp.id_dispensation },
 		data: {
 			status: 'Expired',
@@ -10,7 +10,7 @@ export async function expireDispensation (tx, disp, userInfo) {
 }
 
 export async function setDispensationNotified (tx, disp) {
-	return await tx.dispensation.update({
+	return await tx.Dispensation.update({
 		where: { id_dispensation: disp.id_dispensation },
 		data: {
 			expiring_notification_sent: true
@@ -19,7 +19,7 @@ export async function setDispensationNotified (tx, disp) {
 }
 
 export async function getDispensation (prisma, id) {
-	return await prisma.dispensation.findUnique({
+	return await prisma.Dispensation.findUnique({
 		where: { id_dispensation: id },
 		include: {
 			subject: true,
@@ -45,7 +45,7 @@ export async function getExpiringDispensations (prisma, expiringInDays: number =
 	if (expiringInDays !== 0) {
 		conditions['expiring_notification_sent'] = false;
 	}
-	return await prisma.dispensation.findMany({
+	return await prisma.Dispensation.findMany({
 		where: conditions,
 		include: {
 			subject: true,

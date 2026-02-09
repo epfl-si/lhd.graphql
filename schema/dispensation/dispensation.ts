@@ -1,5 +1,5 @@
 import {extendType, intArg, list, objectType, stringArg} from 'nexus';
-import {dispensation} from 'nexus-prisma';
+import {Dispensation} from 'nexus-prisma';
 import {RoomStruct} from "../global/rooms";
 import {PersonStruct} from "../global/people";
 import {ID, IDObfuscator} from "../../utils/IDObfuscator";
@@ -13,7 +13,7 @@ import {sendEmailForDispensation,} from "../../utils/Email/Mailer";
 import {UnitStruct} from "../roomdetails/units";
 
 export const DispensationStruct = objectType({
-  name: dispensation.$name,
+  name: Dispensation.$name,
   description: `A manually-managed record for a permitted, hazardous activity.
 Examples of eligible activities include using / procuring chemicals ("subject"
 is "Chemical substances"), storing waste ("subject" is "Chemical waste"),
@@ -22,19 +22,19 @@ of "Flammable Gas", "Gas", "Inert Gas" and "Oxydising Gas") and more - LHD
 operators may create new kinds of dispensations from an “other, please specify”
 UI.`,
   definition(t) {
-    t.field(dispensation.renewals);
-    t.field(dispensation.subject_other);
-    t.field(dispensation.expiring_notification_sent);
-    t.field(dispensation.description);
-    t.field(dispensation.comment);
-    t.field(dispensation.status);
-    t.field(dispensation.date_start);
-    t.field(dispensation.date_end);
-    t.field(dispensation.file_path);
-    t.field(dispensation.created_by);
-    t.field(dispensation.created_on);
-    t.field(dispensation.modified_by);
-    t.field(dispensation.modified_on);
+    t.field(Dispensation.renewals);
+    t.field(Dispensation.subject_other);
+    t.field(Dispensation.expiring_notification_sent);
+    t.field(Dispensation.description);
+    t.field(Dispensation.comment);
+    t.field(Dispensation.status);
+    t.field(Dispensation.date_start);
+    t.field(Dispensation.date_end);
+    t.field(Dispensation.file_path);
+    t.field(Dispensation.created_by);
+    t.field(Dispensation.created_on);
+    t.field(Dispensation.modified_by);
+    t.field(Dispensation.modified_on);
 
     t.field('dispensation', {
       type: "String",
@@ -46,7 +46,7 @@ UI.`,
     t.field('subject', {
       type: "String",
       resolve: async (parent, _, context) => {
-        const subject = await context.prisma.dispensation_subject.findUnique({
+        const subject = await context.prisma.DispensationSubject.findUnique({
           where: { id_dispensation_subject: parent.id_dispensation_subject }
         });
         return subject ? subject.subject : null;
@@ -56,7 +56,7 @@ UI.`,
     t.nonNull.list.nonNull.field('dispensation_rooms', {
       type: RoomStruct,
       resolve: async (parent, _, context) => {
-        const dispensationsAndRooms = await context.prisma.dispensation_has_room.findMany({
+        const dispensationsAndRooms = await context.prisma.DispensationHasRoom.findMany({
           where: { id_dispensation: parent.id_dispensation }
         });
         const roomIDs = new Set(dispensationsAndRooms.map((dispensationAndRoom) => dispensationAndRoom.id_lab));
@@ -69,7 +69,7 @@ UI.`,
     t.nonNull.list.nonNull.field('dispensation_holders', {
       type: PersonStruct,
       resolve: async (parent, _, context) => {
-        const dispensationsAndPeople = await context.prisma.dispensation_has_holder.findMany({
+        const dispensationsAndPeople = await context.prisma.DispensationHasHolder.findMany({
           where: { id_dispensation: parent.id_dispensation }
         });
         const peopleIDs = new Set(dispensationsAndPeople.map((dispensationAndPerson) => dispensationAndPerson.id_person));
@@ -82,7 +82,7 @@ UI.`,
     t.nonNull.list.nonNull.field('dispensation_units', {
       type: UnitStruct,
       resolve: async (parent, _, context) => {
-        const dispensationsAndUnits = await context.prisma.dispensation_has_unit.findMany({
+        const dispensationsAndUnits = await context.prisma.DispensationHasUnit.findMany({
           where: { id_dispensation: parent.id_dispensation }
         });
         const unitIDs = new Set(dispensationsAndUnits.map((dispensationsAndUnit) => dispensationsAndUnit.id_unit));
@@ -95,7 +95,7 @@ UI.`,
     t.nonNull.list.nonNull.field('dispensation_tickets', {
       type: TicketStruct,
       resolve: async (parent, _, context) => {
-        return await context.prisma.dispensation_has_ticket.findMany({
+        return await context.prisma.DispensationHasTicket.findMany({
           where: { id_dispensation: parent.id_dispensation }
         });
       },
@@ -140,7 +140,7 @@ export const DispensationQuery = extendType({
 export const DispensationsWithPaginationStruct = objectType({
   name: 'DispensationsWithPagination',
   definition(t) {
-    t.nonNull.list.nonNull.field('dispensations', { type: 'dispensation' });
+    t.nonNull.list.nonNull.field('dispensations', { type: 'Dispensation' });
     t.int('totalCount');
   },
 });
@@ -204,7 +204,7 @@ export const DispensationsWithPaginationQuery = extendType({
           }
         });
 
-        const dispensationList = await context.prisma.dispensation.findMany({
+        const dispensationList = await context.prisma.Dispensation.findMany({
           where: {
             AND: whereCondition
           },
@@ -228,7 +228,7 @@ export const DispensationsByRoom = extendType({
   type: 'Query',
   definition(t) {
     t.field("dispensationsByRoom", {
-      type: list('dispensation'),
+      type: list('Dispensation'),
       args: {
         skip: intArg({ default: 0 }),
         take: intArg({ default: 20 }),
@@ -242,7 +242,7 @@ export const DispensationsByRoom = extendType({
           IDObfuscator.checkId(id);
           IDObfuscator.checkSalt(id)
           const idDeobfuscated = IDObfuscator.deobfuscateId(id);
-          return await context.prisma.dispensation.findMany({
+          return await context.prisma.Dispensation.findMany({
             where: {
               dispensation_has_room: {
                 some: {
@@ -289,8 +289,8 @@ const newDispensationType = {
   tickets: list(StringMutationType),
 };
 
-export const DispensationStatus = mutationStatusType({
-  name: "DispensationStatus",
+export const DispensationMutationStatus = mutationStatusType({
+  name: "DispensationMutationStatus",
   definition(t) {
     t.string('name', { description: `A string representation of the dispensation mutation.`});
   }
@@ -302,18 +302,18 @@ export const DispensationMutations = extendType({
     t.nonNull.field('addDispensation', {
       description: `Add a new dispensation`,
       args: newDispensationType,
-      type: "DispensationStatus",
+      type: "DispensationMutationStatus",
       authorize: (parent, args, context) => context.user.canEditDispensations,
       async resolve(root, args, context) {
         const userInfo = await getUserInfoFromAPI(context.user.username);
-        const subject = await context.prisma.dispensation_subject.findUnique({where: {subject: args.subject}});
+        const subject = await context.prisma.DispensationSubject.findUnique({where: {subject: args.subject}});
         const newHolders = args.holders.filter(holder => holder.status === 'New');
         await ensurePerson(context.prisma, newHolders);
         const date = args.date_start ?? (new Date()).toLocaleDateString("en-GB");
         const [dayCrea, monthCrea, yearCrea] = date.split("/").map(Number);
         const [day, month, year] = args.date_end.split("/").map(Number);
         const dispensation = await context.prisma.$transaction(async (tx) => {
-          const disp = await tx.dispensation.create({
+          const disp = await tx.Dispensation.create({
             data: {
               renewals: 0,
               id_dispensation_subject: subject.id_dispensation_subject,
@@ -329,7 +329,7 @@ export const DispensationMutations = extendType({
               modified_on: new Date()
             }
           });
-          await tx.dispensation.update({
+          await tx.Dispensation.update({
             where: { id_dispensation: disp.id_dispensation },
             data: {
               file_path: getFilePath(args, disp.id_dispensation)
@@ -338,7 +338,7 @@ export const DispensationMutations = extendType({
           await setDispensationRelations(tx, disp.id_dispensation, args);
           return disp;
         });
-        const dispCreated = await context.prisma.dispensation.findUnique({
+        const dispCreated = await context.prisma.Dispensation.findUnique({
           where: { id_dispensation: dispensation.id_dispensation },
           include: {
             subject: true,
@@ -357,14 +357,14 @@ export const DispensationMutations = extendType({
     t.nonNull.field('updateDispensation', {
       description: `Update dispensation details.`,
       args: newDispensationType,
-      type: "DispensationStatus",
+      type: "DispensationMutationStatus",
       authorize: (parent, args, context) => context.user.canEditDispensations,
       async resolve(root, args, context) {
         const userInfo = await getUserInfoFromAPI(context.user.username);
         const disp = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
-          'dispensation', 'id_dispensation',
+          'Dispensation', 'id_dispensation',
           context.prisma, 'Dispensation', getDispensationToString);
-        const subject = await context.prisma.dispensation_subject.findUnique({where: {subject: args.subject}});
+        const subject = await context.prisma.DispensationSubject.findUnique({where: {subject: args.subject}});
         const newHolders = args.holders.filter(holder => holder.status === 'New');
         await ensurePerson(context.prisma, newHolders);
         const [day, month, year] = args.date_end.split("/").map(Number);
@@ -372,7 +372,7 @@ export const DispensationMutations = extendType({
         disp.date_end.setHours(12, 0, 0, 0);
         const ren = disp.date_end < newDateEnd ? (disp.renewals + 1) : disp.renewals;
         await context.prisma.$transaction(async (tx) => {
-          const dispensation = await tx.dispensation.update({
+          const dispensation = await tx.Dispensation.update({
             where: { id_dispensation: disp.id_dispensation },
             data: {
               renewals: ren,
@@ -390,7 +390,7 @@ export const DispensationMutations = extendType({
           });
           await setDispensationRelations(tx, dispensation.id_dispensation, args);
         });
-        const dispUpdated = await context.prisma.dispensation.findUnique({
+        const dispUpdated = await context.prisma.Dispensation.findUnique({
           where: { id_dispensation: disp.id_dispensation },
           include: {
             subject: true,
@@ -417,18 +417,18 @@ export const DispensationMutations = extendType({
     t.nonNull.field('deleteDispensation', {
       description: `Delete dispensation details.`,
       args: newDispensationType,
-      type: "DispensationStatus",
+      type: "DispensationMutationStatus",
       authorize: (parent, args, context) => context.user.canEditDispensations,
       async resolve(root, args, context) {
         const disp = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
-          'dispensation', 'id_dispensation',
+          'Dispensation', 'id_dispensation',
           context.prisma, 'Dispensation', getDispensationToString);
         await context.prisma.$transaction(async (tx) => {
-          await tx.dispensation_has_room.deleteMany({ where: { id_dispensation: disp.id_dispensation }});
-          await tx.dispensation_has_holder.deleteMany({ where: { id_dispensation: disp.id_dispensation }});
-          await tx.dispensation_has_ticket.deleteMany({ where: { id_dispensation: disp.id_dispensation }});
-          await tx.dispensation_has_unit.deleteMany({ where: { id_dispensation: disp.id_dispensation }});
-          await tx.dispensation.delete({ where: { id_dispensation: disp.id_dispensation }});
+          await tx.DispensationHasRoom.deleteMany({ where: { id_dispensation: disp.id_dispensation }});
+          await tx.DispensationHasHolder.deleteMany({ where: { id_dispensation: disp.id_dispensation }});
+          await tx.DispensationHasTicket.deleteMany({ where: { id_dispensation: disp.id_dispensation }});
+          await tx.DispensationHasUnit.deleteMany({ where: { id_dispensation: disp.id_dispensation }});
+          await tx.Dispensation.delete({ where: { id_dispensation: disp.id_dispensation }});
         });
         return mutationStatusType.success();
       }
@@ -448,14 +448,14 @@ async function setDispensationRelations(tx, id_dispensation: number, changes) {
   for ( const holder of changes.holders || []) {
     const p = await tx.Person.findUnique({where: {sciper: holder.sciper}});
     if ( holder.status === 'New' ) {
-      await tx.dispensation_has_holder.create({
+      await tx.DispensationHasHolder.create({
         data: {
           id_person: Number(p.id_person),
           id_dispensation: id_dispensation
         }
       });
     } else if ( holder.status === 'Deleted' ) {
-      await tx.dispensation_has_holder.deleteMany({
+      await tx.DispensationHasHolder.deleteMany({
         where: {
           id_dispensation: id_dispensation,
           id_person: p.id_person
@@ -473,7 +473,7 @@ async function setDispensationRelations(tx, id_dispensation: number, changes) {
         r = await tx.Room.findUnique({where: {id: room.id, isDeleted: false}})
       }
       if ( !r ) throw new Error(`Dispensation not created: room not found`);
-      await tx.dispensation_has_room.create({
+      await tx.DispensationHasRoom.create({
         data: {
           id_lab: Number(r.id),
           id_dispensation: id_dispensation
@@ -482,7 +482,7 @@ async function setDispensationRelations(tx, id_dispensation: number, changes) {
     } else if ( room.status === 'Deleted' ) {
       let p = await tx.Room.findFirst({where: {name: room.name}});
       if ( p ) {
-        await tx.dispensation_has_room.deleteMany({
+        await tx.DispensationHasRoom.deleteMany({
           where: {
             id_dispensation: id_dispensation,
             id_lab: p.id
@@ -496,14 +496,14 @@ async function setDispensationRelations(tx, id_dispensation: number, changes) {
     const u = await tx.Unit.findFirst({where: {name: unit.name}});
     if ( unit.status === 'New' ) {
       if ( !u ) throw new Error(`Dispensation not created: unit not found`);
-      await tx.dispensation_has_unit.create({
+      await tx.DispensationHasUnit.create({
         data: {
           id_unit: Number(u.id),
           id_dispensation: id_dispensation
         }
       });
     } else if ( unit.status === 'Deleted' && u) {
-      await tx.dispensation_has_unit.deleteMany({
+      await tx.DispensationHasUnit.deleteMany({
         where: {
           id_dispensation: id_dispensation,
           id_unit: u.id
@@ -514,14 +514,14 @@ async function setDispensationRelations(tx, id_dispensation: number, changes) {
 
   for ( const ticket of changes.tickets || []) {
     if ( ticket.status === 'New' ) {
-      await tx.dispensation_has_ticket.create({
+      await tx.DispensationHasTicket.create({
         data: {
           id_dispensation: id_dispensation,
           ticket_number: ticket.name
         }
       });
     } else if ( ticket.status === 'Deleted' ) {
-      await tx.dispensation_has_ticket.deleteMany({
+      await tx.DispensationHasTicket.deleteMany({
         where: {
           id_dispensation: id_dispensation,
           ticket_number: ticket.name

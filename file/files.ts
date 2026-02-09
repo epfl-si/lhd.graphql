@@ -146,8 +146,8 @@ export function makeRESTFilesAPI() {
 			const id: ID = {salt: req.params.salt, eph_id: req.params.eph_id};
 			IDObfuscator.checkId(id);
 			const info = await IDObfuscator.getObjectByObfuscatedId(id,
-				'dispensation', 'id_dispensation',
-				req.prisma, 'dispensation', getDispensationToString);
+				'Dispensation', 'id_dispensation',
+				req.prisma, 'Dispensation', getDispensationToString);
 			sendFileResponse(info.file_path, res);
 		});
 

@@ -1,12 +1,12 @@
 import {extendType, objectType} from 'nexus';
-import {dispensation_subject} from 'nexus-prisma';
+import {DispensationSubject} from 'nexus-prisma';
 
 export const SubjectStruct = objectType({
-	name: dispensation_subject.$name,
+	name: DispensationSubject.$name,
 	description: `The list of dispensation subjects.`,
 
 	definition(t) {
-		t.nonNull.field(dispensation_subject.subject);
+		t.nonNull.field(DispensationSubject.subject);
 	},
 });
 

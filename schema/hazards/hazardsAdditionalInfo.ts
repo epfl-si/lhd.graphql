@@ -25,7 +25,7 @@ export const HazardsAdditionalInfoStruct = objectType({
 		t.nonNull.list.nonNull.field('hazardsAdditionalInfoHasTag', {
 			type: HazardsAdditionalInfoHasTagStruct,
 			resolve: async (parent, _, context) => {
-				return await context.prisma.hazards_additional_info_has_tag.findMany({
+				return await context.prisma.HazardsAdditionalInfoHasTag.findMany({
 					where: { id_lab_has_hazards_additional_info: parent.id_lab_has_hazards_additional_info }
 				});
 			},

@@ -103,8 +103,8 @@ async function groupByModifiedOn(prisma, data) {
 		const diffs = await Promise.all(Object.entries(entry.diff).map(
 			async ([field, change]) => {
 				if (field === 'id_dispensation_subject') {
-					const oldSubject = change["before"] ? await prisma.dispensation_subject.findUnique({where: {id_dispensation_subject: Number(change["before"]) }}) : '';
-					const newSubject = change["after"] ? await prisma.dispensation_subject.findUnique({where: {id_dispensation_subject: Number(change["after"]) }}) : '';
+					const oldSubject = change["before"] ? await prisma.DispensationSubject.findUnique({where: {id_dispensation_subject: Number(change["before"]) }}) : '';
+					const newSubject = change["after"] ? await prisma.DispensationSubject.findUnique({where: {id_dispensation_subject: Number(change["after"]) }}) : '';
 					return {
 						field,
 						before: oldSubject ? `${oldSubject.subject}` : '',

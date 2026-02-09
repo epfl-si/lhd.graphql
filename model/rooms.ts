@@ -153,11 +153,11 @@ export async function deleteRoom(tx, context, r:Room) {
 		}
 	}
 
-	const disps = await context.prisma.dispensation_has_room.findMany({
+	const disps = await context.prisma.DispensationHasRoom.findMany({
 		where: { id_lab: r.id }
 	});
 	for ( const a of disps ) {
-		const disp = await context.prisma.dispensation_has_room.findMany({
+		const disp = await context.prisma.DispensationHasRoom.findMany({
 			where: {
 				AND: [
 					{ id_dispensation: a.id_dispensation },
@@ -169,7 +169,7 @@ export async function deleteRoom(tx, context, r:Room) {
 		if (disp.length == 1) { // If the current room is the only one still active
 			const date = (new Date()).toLocaleDateString("en-GB");
 			const [dayCrea, monthCrea, yearCrea] = date.split("/").map(Number);
-			await tx.dispensation.update(
+			await tx.Dispensation.update(
 				{ where: { id_dispensation: a.id_dispensation },
 					data: {
 						status: 'Expired',

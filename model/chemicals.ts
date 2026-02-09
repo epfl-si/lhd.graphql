@@ -14,21 +14,26 @@ export async function createChemical(chemical, {prisma, user}) {
 	await sendEmailsForChemical(prisma, user.username);
 }
 
-export async function getChemicals(prisma, whereConditionsDict = [], take = 0, skip = 0) {
+export async function getChemicals(prisma, opts?: Partial<{
+	whereName: string;
+	whereStatus: boolean;
+	whereCAS: string;
+	take: number;
+	skip: number;
+}>) {
+	const { whereName, whereStatus, whereCAS, take, skip } = opts || {};
 	const whereCondition = [];
-	if (whereConditionsDict.length == 0) {
+	if (whereCAS) {
+		whereCondition.push({ cas_auth_chem: { contains: whereCAS }})
+	}
+	if (whereName) {
+		whereCondition.push({ auth_chem_en : { contains: whereName }})
+	}
+	if (whereStatus !== undefined) {
+		whereCondition.push({ flag_auth_chem : whereStatus })
+	}
+	if (! whereCondition) {
 		whereCondition.push({ cas_auth_chem: { contains: '' }})
-	} else {
-		whereConditionsDict.forEach(query => {
-			const value = decodeURIComponent(query[1]);
-			if (query[0] === 'CAS') {
-				whereCondition.push({ cas_auth_chem: { contains: value }})
-			} else if (query[0] === 'Name') {
-				whereCondition.push({ auth_chem_en : { contains: value }})
-			} else if (query[0] === 'Status') {
-				whereCondition.push({ flag_auth_chem : 'active'.indexOf(value.toLowerCase()) > -1 })
-			}
-		})
 	}
 
 	const chemicalList = await prisma.auth_chem.findMany({
@@ -42,7 +47,7 @@ export async function getChemicals(prisma, whereConditionsDict = [], take = 0, s
 		]
 	});
 
-	const chemicals = take == 0 ? chemicalList : chemicalList.slice(skip, skip + take);
+	const chemicals = take == 0 || !take ? chemicalList : chemicalList.slice(skip, skip + take);
 	const totalCount = chemicalList.length;
 
 	return { chemicals, totalCount };

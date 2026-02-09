@@ -1,12 +1,12 @@
 import {extendType, objectType} from 'nexus';
-import {tag} from 'nexus-prisma';
+import {Tag} from 'nexus-prisma';
 
 export const TagStruct = objectType({
-	name: tag.$name,
+	name: Tag.$name,
 	description: `The list of tags for hazards in rooms.`,
 
 	definition(t) {
-		t.nonNull.field(tag.tag_name);
+		t.nonNull.field(Tag.tag_name);
 	},
 });
 

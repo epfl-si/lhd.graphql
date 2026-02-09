@@ -1,21 +1,21 @@
 import {extendType, objectType, stringArg} from 'nexus';
-import {hazards_additional_info_has_tag} from 'nexus-prisma';
+import {HazardsAdditionalInfoHasTag} from 'nexus-prisma';
 import {TagStruct} from "./tag";
 import {IDObfuscator} from "../../utils/IDObfuscator";
 import {mutationStatusType} from "../statuses";
 import {getLabHasHazardsAdditionalInfoToString} from "./hazardsAdditionalInfo";
 
 export const HazardsAdditionalInfoHasTagStruct = objectType({
-	name: hazards_additional_info_has_tag.$name,
+	name: HazardsAdditionalInfoHasTag.$name,
 	description: `The list of tags and comments for hazards in rooms.`,
 
 	definition(t) {
-		t.field(hazards_additional_info_has_tag.comment);
+		t.field(HazardsAdditionalInfoHasTag.comment);
 
 		t.nonNull.field('tag', {
 			type: TagStruct,
 			resolve: async (parent, _, context) => {
-				return await context.prisma.tag.findUnique({
+				return await context.prisma.Tag.findUnique({
 					where: { id_tag: parent.id_tag }
 				});
 			},
@@ -84,8 +84,8 @@ export const HazardsAdditionalInfoHasTagMutations = extendType({
 					const additionalInfo = await IDObfuscator.ensureDBObjectIsTheSame(args.additionalInfoId,
 						'lab_has_hazards_additional_info', 'id_lab_has_hazards_additional_info',
 						tx, 'Additional Info', getLabHasHazardsAdditionalInfoToString);
-					const tag = await tx.tag.findUnique({ where: { tag_name: args.tag }});
-					await tx.hazards_additional_info_has_tag.create(
+					const tag = await tx.Tag.findUnique({ where: { tag_name: args.tag }});
+					await tx.HazardsAdditionalInfoHasTag.create(
 						{ data: {
 								id_tag: tag.id_tag,
 								id_lab_has_hazards_additional_info: additionalInfo.id_lab_has_hazards_additional_info,
@@ -104,10 +104,10 @@ export const HazardsAdditionalInfoHasTagMutations = extendType({
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					const tag = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
-						'hazards_additional_info_has_tag', 'id_hazards_additional_info_has_tag',
+						'HazardsAdditionalInfoHasTag', 'id_hazards_additional_info_has_tag',
 						tx, 'Additional Info', getHazardAdditionalInfoHasTagToString);
 
-					await tx.hazards_additional_info_has_tag.update(
+					await tx.HazardsAdditionalInfoHasTag.update(
 						{ where: { id_hazards_additional_info_has_tag: tag.id_hazards_additional_info_has_tag },
 							data: {
 								comment: args.comment
@@ -125,10 +125,10 @@ export const HazardsAdditionalInfoHasTagMutations = extendType({
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					const tag = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
-						'hazards_additional_info_has_tag', 'id_hazards_additional_info_has_tag',
+						'HazardsAdditionalInfoHasTag', 'id_hazards_additional_info_has_tag',
 						tx, 'Additional Info', getHazardAdditionalInfoHasTagToString);
 
-					await tx.hazards_additional_info_has_tag.delete(
+					await tx.HazardsAdditionalInfoHasTag.delete(
 						{ where: { id_hazards_additional_info_has_tag: tag.id_hazards_additional_info_has_tag }
 						});
 					return mutationStatusType.success();
