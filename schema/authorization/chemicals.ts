@@ -4,6 +4,8 @@ import {auth_chem} from "nexus-prisma";
 import {mutationStatusType} from "../statuses";
 import {sendEmailsForChemical} from "../../utils/Email/Mailer";
 import {createChemical, getChemicals} from "../../model/chemicals";
+import {sanitizeSearchString} from "../../libs/searchStrings";
+import {casRegexp, chemicalNameRegexp} from "../../api/lib/lhdValidators";
 
 export const ChemicalStruct = objectType({
 	name: auth_chem.$name,
@@ -63,9 +65,21 @@ export const ChemicalsWithPaginationQuery = extendType({
 			},
 			authorize: (parent, args, context) => context.user.canListChemicals,
 			async resolve(parent, args, context) {
-				const queryArray = args.search.split("&");
-				const dictionary = queryArray.map(query => query.split("="));
-				return await getChemicals(context.prisma, dictionary, args.take, args.skip);
+				const opts: Partial<{
+					whereName: string;
+					whereStatus: boolean;
+					whereCAS: string;
+					take: number;
+					skip: number;
+				}> = {
+					take: args.take, skip: args.skip,
+					...sanitizeSearchString(args.search, {
+						CAS: {rename: "whereCAS", validate: casRegexp},
+						Name: {rename: "whereName", validate: chemicalNameRegexp},
+						Status: {rename: "whereStatus", validate: (value) => 'active'.indexOf(value.toLowerCase()) > -1}
+					})
+				};
+				return await getChemicals(context.prisma, opts);
 			}
 		});
 	},
