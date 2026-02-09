@@ -941,7 +941,7 @@ model authorization {
   creation_date               DateTime      @db.Date
   type                        String
   authority                   String?
-  expiring_notification_sent  Boolean       @default(false)
+  date_expiry_notified        DateTime?     @db.Date
 
   unit                        Unit?     @relation(fields: [id_unit], references: [id], onUpdate: Restrict, map: "authorization_unit_ibfk_1")
   authorization_has_room      authorization_has_room[]
@@ -1046,7 +1046,7 @@ model Dispensation {
   date_start                DateTime                     @db.Date
   date_end                  DateTime                     @db.Date
   file_path                 String?                      @db.VarChar(250)
-  expiring_notification_sent Boolean                     @default(false)
+  date_expiry_notified      DateTime?                    @db.Date
 
   created_by                String                       @db.VarChar(50)
   created_on                DateTime                     @db.DateTime(0)

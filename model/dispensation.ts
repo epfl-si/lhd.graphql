@@ -13,7 +13,7 @@ export async function setDispensationNotified (tx, disp) {
 	return await tx.Dispensation.update({
 		where: { id_dispensation: disp.id_dispensation },
 		data: {
-			expiring_notification_sent: true
+			date_expiry_notified: new Date()
 		}
 	});
 }
@@ -43,7 +43,7 @@ export async function getExpiringDispensations (prisma, expiringInDays: number =
 	};
 
 	if (expiringInDays !== 0) {
-		conditions['expiring_notification_sent'] = false;
+		conditions['date_expiry_notified'] = null;
 	}
 	return await prisma.Dispensation.findMany({
 		where: conditions,

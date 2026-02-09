@@ -22,7 +22,7 @@ export const AuthorizationStruct = objectType({
 		t.field(authorization.type);
 		t.field(authorization.creation_date);
 		t.field(authorization.authority);
-		t.field(authorization.expiring_notification_sent);
+		t.field(authorization.date_expiry_notified);
 
 		t.nonNull.list.nonNull.field('authorization_rooms', {
 			type: RoomStruct,
@@ -94,7 +94,7 @@ export function getAuthorizationToString(parent) {
 	return {
 		id: parent.id_authorization,
 		authorization: parent.authorization,
-		expiring_notification_sent: parent.expiring_notification_sent,
+		date_expiry_notified: parent.date_expiry_notified,
 		id_unit: parent.id_unit,
 		expiration_date: parent.expiration_date,
 		status: parent.status,

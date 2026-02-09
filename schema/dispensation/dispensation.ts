@@ -25,7 +25,7 @@ UI.`,
   definition(t) {
     t.field(Dispensation.renewals);
     t.field(Dispensation.subject_other);
-    t.field(Dispensation.expiring_notification_sent);
+    t.field(Dispensation.date_expiry_notified);
     t.field(Dispensation.description);
     t.field(Dispensation.comment);
     t.field(Dispensation.status);
@@ -117,7 +117,7 @@ export function getDispensationToString(parent) {
     renewals: parent.renewals,
     id_dispensation_subject: parent.id_dispensation_subject,
     subject_other: parent.subject_other,
-    expiring_notification_sent: parent.expiring_notification_sent,
+    date_expiry_notified: parent.date_expiry_notified,
     description: parent.description,
     comment: parent.comment,
     status: parent.status,
@@ -377,7 +377,7 @@ export const DispensationMutations = extendType({
             where: { id_dispensation: disp.id_dispensation },
             data: {
               renewals: ren,
-              expiring_notification_sent: disp.expiring_notification_sent && ren > disp.renewals ? false : disp.expiring_notification_sent,
+              date_expiry_notified: disp.date_expiry_notified && ren > disp.renewals ? null : disp.date_expiry_notified,
               id_dispensation_subject: subject.id_dispensation_subject,
               subject_other: args.subject_other,
               description: decodeURIComponent(args.description),

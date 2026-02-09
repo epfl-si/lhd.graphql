@@ -1,2 +1,2 @@
 -- AlterTable
-ALTER TABLE `authorization` ADD COLUMN `expiring_notification_sent` BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE `authorization` ADD COLUMN `date_expiry_notified` DATE NULL;
