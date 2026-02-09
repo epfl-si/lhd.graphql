@@ -4,7 +4,6 @@ import * as express from "express";
 import {Request} from "express";
 import {errorHandler} from "./lib/errorHandler";
 import {auditAPI, setReqPrismaMiddleware} from "./lib/rest";
-import {getToken} from "./lib/restAuthentication";
 import {getRoomByNameForAxs} from "../model/rooms";
 import {getHazardLevel} from "../utils/hazardsParser";
 import {getGroupMembersFromApi} from "../utils/CallAPI";
@@ -117,7 +116,7 @@ function restAxsAuthenticate(req: Request, res, next) {
 	const allowedIPs = process.env.AXS_ALLOWED_IPS.split(",").map(ip => ip.trim());
 	const clientIP = req.headers["x-forwarded-for"] as string || req.socket.remoteAddress;
 
-	const token = getToken(req, 'app');
+	const token = req.query.app;
 
 	if (!allowedIPs.includes(clientIP) || token !== process.env.AXS_TOKEN) {
 		return res.status(403).send("Unauthorized");
