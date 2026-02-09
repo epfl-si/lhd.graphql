@@ -244,7 +244,7 @@ export function makeRESTAPI() {
 		}
 	);
 
-	/* Will replace /auth_chem endpoint*/
+	/* Will replace /auth_chem endpoint */
 	app.post<{cas: string, en: string, auth: boolean, fr?: string}>("/add_chem",
 		checkAPICall(
 			{
