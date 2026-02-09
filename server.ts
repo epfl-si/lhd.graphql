@@ -54,8 +54,8 @@ export async function makeServer(
 
 	app.get('/graphiql', async (req, res) => {
 		let html =  await fs.readFile('developer/graphiql.html', 'utf8')
-		html = html.replace("server.OIDC_BASE_URL", process.env.OIDC_BASE_URL)
-		html = html.replace("server.REACT_CLIENT_ID", process.env.REACT_CLIENT_ID)
+		html = html.replace("@@OIDC_BASE_URL@@", process.env.OIDC_BASE_URL)
+		html = html.replace("@@REACT_CLIENT_ID@@", process.env.REACT_CLIENT_ID)
 		res.send(html)
 	})
 
