@@ -1,4 +1,4 @@
-import {getNow} from "../libs/date";
+import {getFormattedDate, getNow} from "../libs/date";
 import {getBearerToken} from "../libs/authentication";
 import {checkAPICall} from "./lib/checkedAPICalls";
 import {
@@ -75,7 +75,7 @@ export function makeRESTAPI() {
 				const args = {
 					id_unit: idUnit,
 					authorization: request,
-					expiration_date: (new Date(expirationDate)).toLocaleDateString("en-GB"),
+					expiration_date: getFormattedDate(new Date(expirationDate)),
 					status: "Active",
 					type: "Chemical",
 					cas: cas.map(c => {
@@ -101,7 +101,7 @@ export function makeRESTAPI() {
 				const requestNumber = `${reqParts[0]}-${reqParts[1]}`;
 				const auth = await getTheAuthorization(req.prisma, requestNumber, "Chemical");
 				const argsUpdate = {
-					expiration_date: (new Date(expirationDate)).toLocaleDateString("en-GB"),
+					expiration_date: getFormattedDate(new Date(expirationDate)),
 					status: "Active",
 					renewals: parseInt(reqParts[2])
 				};
@@ -198,7 +198,7 @@ export function makeRESTAPI() {
 			const args = {
 				id_unit: req.params.id_unit,
 				authorization: req.params.req,
-				expiration_date: req.params.date.toLocaleDateString("en-GB"),
+				expiration_date: getFormattedDate(req.params.date),
 				status: "Active",
 				type: "Chemical",
 				cas: req.params.cas.map(c => {
@@ -235,7 +235,7 @@ export function makeRESTAPI() {
 			const requestNumber = `${reqParts[0]}-${reqParts[1]}`;
 			const auth = await getTheAuthorization(req.prisma, requestNumber, "Chemical");
 			const argsUpdate = {
-				expiration_date: (new Date(req.params.date)).toLocaleDateString("en-GB"),
+				expiration_date: getFormattedDate(new Date(req.params.date)),
 				status: "Active",
 				renewals: parseInt(reqParts[2])
 			};

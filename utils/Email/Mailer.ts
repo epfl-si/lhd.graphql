@@ -11,6 +11,7 @@ import {
 } from "./EmailTemplates";
 import {getUserInfoFromAPI} from "../CallAPI";
 import {getHazardLevel} from "../hazardsParser";
+import {getFormattedDate} from "../../libs/date";
 
 export const mailer = nodemailer.createTransport({
 	host: process.env.SMTP_HOST,
@@ -31,7 +32,7 @@ async function sendEmailCAE(modifiedByName: string,
 	const template = hazardsCae;
 
 	const body = template.body.replaceAll("{{modifiedByName}}", modifiedByName)
-		.replaceAll("{{modifiedOn}}", (new Date()).toLocaleDateString("en-GB"))
+		.replaceAll("{{modifiedOn}}", getFormattedDate(new Date()))
 		.replaceAll("{{room}}", room)
 		.replaceAll("{{action.fr}}", action['fr'])
 		.replaceAll("{{action.en}}", action['en'])
@@ -56,7 +57,7 @@ async function sendEmailCosec(modifiedByName: string,
 	const template = hazardsCosec;
 
 	const body = template.body.replaceAll("{{modifiedByName}}", modifiedByName)
-		.replaceAll("{{modifiedOn}}", (new Date()).toLocaleDateString("en-GB"))
+		.replaceAll("{{modifiedOn}}", getFormattedDate(new Date()))
 		.replaceAll("{{room}}", room)
 		.replaceAll("{{action.fr}}", action['fr'])
 		.replaceAll("{{action.en}}", action['en'])
@@ -118,7 +119,7 @@ export async function sendEmailsForChemical(prisma, user: string) {
 			to: process.env.ENVIRONMENT === 'prod' ? process.env.CATALYSE_EMAIL : userInfo.userEmail,
 			subject: template.subject,
 			html: process.env.ENVIRONMENT === 'prod' ? template.body : `${logRecipients([process.env.CATALYSE_EMAIL], [], [])}\n${template.body}`,
-			attachments: [{raw: ["Content-Type: text/csv; charset=utf-8", `Content-Disposition: attachment; filename="chemicals-${getFormattedDate()}.csv"`, "", csv].join("\r\n"),}]
+			attachments: [{raw: ["Content-Type: text/csv; charset=utf-8", `Content-Disposition: attachment; filename="chemicals-${getFormattedDate(new Date(), '')}.csv"`, "", csv].join("\r\n"),}]
 		});
 	}
 }
@@ -157,8 +158,8 @@ export async function sendEmailForDispensation(modifiedByName: string,
 	const body = template.body.replaceAll("{{modifiedByName}}", modifiedByName)
 		.replaceAll("{{dispNumber}}", `DISP-${dispensation.id_dispensation}`)
 		.replaceAll("{{subject}}", dispensation.subject.subject)
-		.replaceAll("{{dateStart}}", (dispensation.date_start).toLocaleDateString("en-GB"))
-		.replaceAll("{{dateEnd}}", (dispensation.date_end).toLocaleDateString("en-GB"))
+		.replaceAll("{{dateStart}}", getFormattedDate(dispensation.date_start))
+		.replaceAll("{{dateEnd}}", getFormattedDate(dispensation.date_end))
 		.replaceAll("{{requirements}}", dispensation.description)
 		.replaceAll("{{comments}}", dispensation.comment)
 		.replaceAll("{{status}}", dispensation.status)
@@ -193,14 +194,4 @@ export async function sendEmailForAuthorization(modifiedByName: string,
 		subject: template.subject.replaceAll("{{authNumber}}", authorization.authorization),
 		html: process.env.ENVIRONMENT === 'prod' ? body : `${logRecipients(holders, [modifiedByEmail], [] )}\n${body}`
 	});
-}
-
-function getFormattedDate() {
-	const date = new Date();
-
-	const day = String(date.getDate()).padStart(2, '0');
-	const month = String(date.getMonth() + 1).padStart(2, '0');
-	const year = String(date.getFullYear()).slice(-2); // Get last 2 digits
-
-	return `${day}${month}${year}`;
 }

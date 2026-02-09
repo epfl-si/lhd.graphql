@@ -1,4 +1,5 @@
 import {Room} from "nexus-prisma";
+import {getFormattedDate} from "../libs/date";
 
 export async function getRooms(prisma, dictionary, take = 0, skip = 0) {
 	const whereCondition = [];
@@ -141,7 +142,7 @@ export async function deleteRoom(tx, context, r:Room) {
 			}
 		});
 		if (authChem.length == 1) {
-			const date = (new Date()).toLocaleDateString("en-GB");
+			const date = getFormattedDate(new Date());
 			const [dayCrea, monthCrea, yearCrea] = date.split("/").map(Number);
 			await tx.authorization.update(
 				{ where: { id_authorization: a.id_authorization },
@@ -167,7 +168,7 @@ export async function deleteRoom(tx, context, r:Room) {
 			}
 		});
 		if (disp.length == 1) { // If the current room is the only one still active
-			const date = (new Date()).toLocaleDateString("en-GB");
+			const date = getFormattedDate(new Date());
 			const [dayCrea, monthCrea, yearCrea] = date.split("/").map(Number);
 			await tx.Dispensation.update(
 				{ where: { id_dispensation: a.id_dispensation },

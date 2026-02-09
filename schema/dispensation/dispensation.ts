@@ -11,6 +11,7 @@ import {TicketStruct} from "./ticket";
 import {saveBase64File} from "../../utils/File";
 import {sendEmailForDispensation,} from "../../utils/Email/Mailer";
 import {UnitStruct} from "../roomdetails/units";
+import {getFormattedDate} from "../../libs/date";
 
 export const DispensationStruct = objectType({
   name: Dispensation.$name,
@@ -309,7 +310,7 @@ export const DispensationMutations = extendType({
         const subject = await context.prisma.DispensationSubject.findUnique({where: {subject: args.subject}});
         const newHolders = args.holders.filter(holder => holder.status === 'New');
         await ensurePerson(context.prisma, newHolders);
-        const date = args.date_start ?? (new Date()).toLocaleDateString("en-GB");
+        const date = args.date_start ?? getFormattedDate(new Date());
         const [dayCrea, monthCrea, yearCrea] = date.split("/").map(Number);
         const [day, month, year] = args.date_end.split("/").map(Number);
         const dispensation = await context.prisma.$transaction(async (tx) => {
