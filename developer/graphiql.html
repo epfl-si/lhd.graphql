@@ -130,9 +130,10 @@
                 login();
             }
         });
-        
-        host = "server.OIDC_BASE_URL";
-        client = "server.REACT_CLIENT_ID";
+
+        // Substituted by the `/graphiql` Express handler
+        host = "@@OIDC_BASE_URL@@";
+        client = "@@REACT_CLIENT_ID@@";
         scope = "openid profile email " + client + "/.default";
         oidc = new window.Appauth.OpenIDConnect({
             debug: true,
