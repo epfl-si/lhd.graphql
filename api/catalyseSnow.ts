@@ -88,8 +88,7 @@ export function makeRESTAPI() {
 							return {id: parseInt(r), status: "New"};
 						}),
 				}
-				const newHolders = args.holders.filter(holder => holder.status === 'New');
-				await createAuthorization(req.prisma, args, args.id_unit, newHolders);
+				await createAuthorization(req.prisma, args, args.id_unit, args.holders);
 				res.json({Message: "Ok"});
 				break;
 			case "auth_renew":
@@ -212,8 +211,7 @@ export function makeRESTAPI() {
 					return {id: r, status: "New"};
 				}),
 			}
-			const newHolders = args.holders.filter(holder => holder.status === 'New');
-			await createAuthorization(req.prisma, args, args.id_unit, newHolders);
+			await createAuthorization(req.prisma, args, args.id_unit, args.holders);
 			res.json({Message: "Ok"});
 		}
 	);
