@@ -16,7 +16,7 @@ export const SubjectQuery = extendType({
 		t.crud.dispensationSubjects({	filtering: true, ordering: true,
 			authorize: (parent, args, context) => context.user.canListDispensations,
 			resolve: async (root, args, context, info, originalResolve) => {
-				// Call the original resolver if user is authorized
+				// After user authorization, is he's authorized, call the original resolve
 				return originalResolve(root, args, context, info);
 			} });
 	},

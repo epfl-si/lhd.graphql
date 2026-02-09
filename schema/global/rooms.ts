@@ -220,7 +220,7 @@ export const RoomQuery = extendType({
 		t.crud.rooms({ filtering: true,
 			authorize: (parent, args, context) => context.user.canListRooms,
 			resolve: async (root, args, context, info, originalResolve) => {
-				// Call the original resolver if user is authorized
+				// After user authorization, is he's authorized, call the original resolve
 				return originalResolve(root, args, context, info);
 			}
 		});
@@ -261,7 +261,7 @@ export const RoomKindQuery = extendType({
 		t.crud.roomKinds({ filtering: true,
 			authorize: (parent, args, context) => context.user.canListRooms,
 			resolve: async (root, args, context, info, originalResolve) => {
-				// Call the original resolver if user is authorized
+				// After user authorization, is he's authorized, call the original resolve
 				return originalResolve(root, args, context, info);
 			}
 		});

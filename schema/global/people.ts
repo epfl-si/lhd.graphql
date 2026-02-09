@@ -37,7 +37,7 @@ export const PersonQuery = extendType({
     t.crud.people({ filtering: true,
 			authorize: (parent, args, context) => context.user.canListPersons,
 			resolve: async (root, args, context, info, originalResolve) => {
-				// Call the original resolver if user is authorized
+				// After user authorization, is he's authorized, call the original resolve
 				return originalResolve(root, args, context, info);
 			} });
   }
