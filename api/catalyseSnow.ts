@@ -246,6 +246,7 @@ export function makeRESTAPI() {
 
 	/* Will replace /auth_chem endpoint */
 	app.post<{cas: string, en: string, auth: boolean, fr?: string}>("/add_chem",
+		restAuthenticateBearer,
 		checkAPICall(
 			{
 				authorize: (req) => req.user.canEditChemicals,
