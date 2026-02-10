@@ -24,6 +24,7 @@ const prisma = getPrismaForUser(configFromDotEnv(), cronUser);
 async function expireAndNotifyAuthorizations () {
 	const expiredAuths =  await getExpiringAuthorizations(prisma, 0);
 	for (const auth of expiredAuths) {
+		console.log(`Expire authorization: ${auth.authorization}`);
 		await prisma.$transaction(async (tx) => {
 			const updated = await expireAuthorization(tx, auth);
 			await sendEmailForAuthorization(cronUser.userFullName, cronUser.userEmail, updated, expiredAuthorization);

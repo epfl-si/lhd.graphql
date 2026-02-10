@@ -23,6 +23,7 @@ const prisma = getPrismaForUser(configFromDotEnv(), cronUser);
 async function notifyExpiringAuthorizations () {
 	const expiringAuths =  await getExpiringAuthorizations(prisma);
 	for (const auth of expiringAuths) {
+		console.log(`Sending reminders for expiring authorization: ${auth.authorization}`);
 		await prisma.$transaction(async (tx) => {
 			await sendEmailForAuthorization(auth.modified_by, cronUser.userEmail, auth, expiringAuthorization);
 			await setAuthorizationNotified(tx, auth);

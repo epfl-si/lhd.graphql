@@ -22,6 +22,7 @@ const prisma = getPrismaForUser(configFromDotEnv(), cronUser);
 async function notifyExpiringDispensations () {
 	const expiringDisps =  await getExpiringDispensations(prisma);
 	for (const disp of expiringDisps) {
+		console.log(`Sending reminder for expiring dispensation: DISP-${disp.id_dispensation}`);
 		await prisma.$transaction(async (tx) => {
 			await sendEmailForDispensation(disp.modified_by, cronUser.userEmail, disp, 'expiringDispensation');
 			await setDispensationNotified(tx, disp);
