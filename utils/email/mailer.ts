@@ -86,11 +86,27 @@ export async function sendEmailsForHazards(
 	if ( process.env.HAZARD_TYPES_TO_EMAIL_AFTER_UPDATE.includes(args.category) ) {
 		const newRoom = await prisma.Room.findFirst(
 			{
-				where: {name: args.room},
+				where: { name: args.room },
 				include: {
-					lab_has_hazards: true
+					lab_has_hazards: true,
+					lab_has_hazards_additional_info: {
+						include: {
+							hazards_additional_info_has_tag: {
+								include: {
+									tag: true,
+								},
+							},
+							hazard_category: true
+						},
+					},
 				}
 			});
+
+		if (newRoom.lab_has_hazards_additional_info
+			.find(info => info.hazard_category.hazard_category_name === args.category)
+			.hazards_additional_info_has_tag
+			.find(t => t.tag.tag_name === 'Exception AxS'))
+			return;
 		const oldValues = getHazardLevel(oldRoom.lab_has_hazards, args.category);
 		const newValues = getHazardLevel(newRoom.lab_has_hazards, args.category);
 		const created = (oldValues.laser.length == 0 && newValues.laser.length > 0) || (oldValues.bio.length == 0 && newValues.bio.length > 0);
