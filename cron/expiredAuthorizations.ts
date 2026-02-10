@@ -1,8 +1,8 @@
-import {getPrismaForUser} from "../libs/auditablePrisma";
-import {configFromDotEnv} from "../libs/config";
-import {sendEmailForAuthorization} from "../utils/Email/Mailer";
+import {getPrismaForUser} from "../utils/auditablePrisma";
+import {configFromDotEnv} from "../utils/config";
+import {sendEmailForAuthorization} from "../utils/email/mailer";
 import {expireAuthorization, getExpiringAuthorizations} from "../model/authorization";
-import {expiredAuthorization} from "../utils/Email/EmailTemplates";
+import {expiredAuthorization} from "../utils/email/EmailTemplates";
 
 const cronUser = {
 	username: 'LHD-cron',

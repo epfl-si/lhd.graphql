@@ -1,5 +1,5 @@
 import {Person} from "@prisma/client";
-import {getUsersFromApi} from "../utils/CallAPI";
+import {getUsersFromApi} from "../utils/callAPI";
 
 export async function findOrCreatePerson(tx, sciperId, firstName, lastName, email): Promise<Person> {
 	let p = await tx.Person.findUnique({ where: { sciper: sciperId }});

@@ -1,5 +1,5 @@
-import {getFormattedDate, getNow} from "../libs/date";
-import {getBearerToken} from "../libs/authentication";
+import {getFormattedDate, getNow} from "../utils/date";
+import {getBearerToken} from "../utils/authentication";
 import {checkAPICall} from "./lib/checkedAPICalls";
 import {
 	chemicalNameRegexp,

@@ -9,9 +9,9 @@ import {
 	logRecipients, modifiedDispensation, newDispensation,
 	renewDispensation
 } from "./EmailTemplates";
-import {getUserInfoFromAPI} from "../CallAPI";
+import {getUserInfoFromAPI} from "../callAPI";
 import {getHazardLevel} from "../hazardsParser";
-import {getFormattedDate} from "../../libs/date";
+import {getFormattedDate} from "../date";
 
 export const mailer = nodemailer.createTransport({
 	host: process.env.SMTP_HOST,

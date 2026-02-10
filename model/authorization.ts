@@ -1,7 +1,7 @@
 import {NotFoundError} from "../utils/errors";
 import {ensurePerson} from "./persons";
-import {AuthorizationChanges} from "../utils/Types";
-import {getFormattedDate} from "../libs/date";
+import {AuthorizationChanges} from "../utils/changeTypes";
+import {getFormattedDate} from "../utils/date";
 
 export async function createAuthorization(prisma, auth, unitId, newHolders) {
 	await ensurePerson(prisma, newHolders);

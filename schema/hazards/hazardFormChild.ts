@@ -1,7 +1,6 @@
 import {extendType, objectType, stringArg} from 'nexus';
 import {mutationStatusType} from "../statuses";
 import {ID, IDObfuscator} from "../../utils/IDObfuscator";
-import {getSHA256} from "../../utils/HashingTools";
 import {hazard_form_child} from "nexus-prisma";
 
 export const HazardFormChildStruct = objectType({

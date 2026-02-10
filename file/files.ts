@@ -1,12 +1,12 @@
 import * as express from "express";
 import {Request} from "express";
 import {errorHandler} from "../api/lib/errorHandler";
-import {authenticateFromBearerToken} from "../libs/authentication";
+import {authenticateFromBearerToken} from "../utils/authentication";
 import {checkAPICall} from "../api/lib/checkedAPICalls";
 import {fileNameRegexp, obfuscatedIdValidators} from "../api/lib/lhdValidators";
 import {ID, IDObfuscator} from "../utils/IDObfuscator";
 import {getBioOrgToString} from "../schema/bio/bioorg";
-import {getReportFilesByUnit, sendFileResponse} from "../utils/File";
+import {getReportFilesByUnit, sendFileResponse} from "../utils/fileUtilities";
 import {getUnitToString} from "../schema/roomdetails/units";
 import {getLabHasHazardsAdditionalInfoToString} from "../schema/hazards/hazardsAdditionalInfo";
 import {getLabHasHazardChildToString} from "../schema/hazards/labHazardChild";

@@ -1,5 +1,5 @@
 import {Room} from "nexus-prisma";
-import {getFormattedDate} from "../libs/date";
+import {getFormattedDate} from "../utils/date";
 
 export async function getRooms(prisma, dictionary, take = 0, skip = 0) {
 	const whereCondition = [];

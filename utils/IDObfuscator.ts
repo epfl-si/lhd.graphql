@@ -1,4 +1,4 @@
-import {decrypt, encrypt, generateSalt, getSHA256} from "./HashingTools";
+import {decrypt, encrypt, generateSalt, getSHA256} from "./hashingTools";
 
 export class Data {
 	id: number;

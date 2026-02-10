@@ -3,7 +3,6 @@ import {hazard_form} from 'nexus-prisma';
 import {HazardCategoryStruct} from "./hazardCategory";
 import {mutationStatusType} from "../statuses";
 import {IDObfuscator} from "../../utils/IDObfuscator";
-import {getSHA256} from "../../utils/HashingTools";
 import {HazardFormChildStruct} from "./hazardFormChild";
 
 export const HazardFormStruct = objectType({

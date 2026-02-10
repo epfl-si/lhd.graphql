@@ -1,7 +1,7 @@
 import {extendType, list, objectType, stringArg} from 'nexus';
 import {mutation_logs} from 'nexus-prisma';
 import {IDObfuscator} from "../../utils/IDObfuscator";
-import {diffObjects} from "../../utils/JsonUtils";
+import {diffObjects} from "../../utils/jsonUtils";
 
 export const MutationLogsStruct = objectType({
 	name: mutation_logs.$name,

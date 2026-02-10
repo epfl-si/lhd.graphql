@@ -1,4 +1,4 @@
-import {sendEmailsForChemical} from "../utils/Email/Mailer";
+import {sendEmailsForChemical} from "../utils/email/mailer";
 
 export async function createChemical(chemical, {prisma, user}) {
 	await prisma.$transaction(async (tx) => {

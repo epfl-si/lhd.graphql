@@ -4,14 +4,14 @@ import {RoomStruct} from "../global/rooms";
 import {PersonStruct} from "../global/people";
 import {ID, IDObfuscator} from "../../utils/IDObfuscator";
 import {mutationStatusType} from "../statuses";
-import {HolderMutationType, OthersMutationType, StringMutationType} from "../../utils/MutationTypes";
-import {getUserInfoFromAPI} from "../../utils/CallAPI";
+import {HolderMutationType, OthersMutationType, StringMutationType} from "../../utils/mutationTypes";
+import {getUserInfoFromAPI} from "../../utils/callAPI";
 import {ensurePerson} from "../../model/persons";
 import {TicketStruct} from "./ticket";
-import {saveBase64File} from "../../utils/File";
-import {sendEmailForDispensation,} from "../../utils/Email/Mailer";
+import {saveBase64File} from "../../utils/fileUtilities";
+import {sendEmailForDispensation,} from "../../utils/email/mailer";
 import {UnitStruct} from "../roomdetails/units";
-import {getFormattedDate} from "../../libs/date";
+import {getFormattedDate} from "../../utils/date";
 
 export const DispensationStruct = objectType({
   name: Dispensation.$name,

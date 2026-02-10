@@ -2,9 +2,9 @@ import {booleanArg, extendType, intArg, objectType, stringArg} from "nexus";
 import {IDObfuscator} from "../../utils/IDObfuscator";
 import {auth_chem} from "nexus-prisma";
 import {mutationStatusType} from "../statuses";
-import {sendEmailsForChemical} from "../../utils/Email/Mailer";
+import {sendEmailsForChemical} from "../../utils/email/mailer";
 import {createChemical, getChemicals} from "../../model/chemicals";
-import {sanitizeSearchString} from "../../libs/searchStrings";
+import {sanitizeSearchString} from "../../utils/searchStrings";
 import {casRegexp, chemicalNameRegexp} from "../../api/lib/lhdValidators";
 
 export const ChemicalStruct = objectType({

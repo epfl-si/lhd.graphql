@@ -8,7 +8,7 @@ import {ChemicalStruct} from "./chemicals";
 import {getUnitToString, UnitStruct} from "../roomdetails/units";
 import {RadiationStruct} from "./radiation";
 import {createAuthorization, getAuthorizations, updateAuthorization} from "../../model/authorization";
-import {HolderMutationType, OthersMutationType} from "../../utils/MutationTypes";
+import {HolderMutationType, OthersMutationType} from "../../utils/mutationTypes";
 import {ensurePerson} from "../../model/persons";
 
 export const AuthorizationStruct = objectType({

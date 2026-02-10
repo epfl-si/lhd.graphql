@@ -11,7 +11,7 @@ import {UnitMutationType, UnitStruct} from "../roomdetails/units";
 import {mutationStatusType} from "../statuses";
 import {LabHazardStruct} from "../hazards/labHazard";
 import {IDObfuscator} from "../../utils/IDObfuscator";
-import {getDoorPlugFromApi, getRoomsFromApi} from "../../utils/CallAPI";
+import {getDoorPlugFromApi, getRoomsFromApi} from "../../utils/callAPI";
 import {HazardsAdditionalInfoStruct} from "../hazards/hazardsAdditionalInfo";
 import {LabHazardChildStruct} from "../hazards/labHazardChild";
 import {deleteRoom, getRooms} from "../../model/rooms";

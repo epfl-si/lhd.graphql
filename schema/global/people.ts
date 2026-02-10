@@ -1,6 +1,6 @@
 import { objectType, extendType, stringArg, booleanArg, list, unionType } from 'nexus';
 import { Person } from 'nexus-prisma';
-import {getUsersFromApi} from "../../utils/CallAPI";
+import {getUsersFromApi} from "../../utils/callAPI";
 
 export const PersonStruct = objectType({
 	name: Person.$name,

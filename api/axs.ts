@@ -6,7 +6,7 @@ import {errorHandler} from "./lib/errorHandler";
 import {auditAPI, setReqPrismaMiddleware} from "./lib/rest";
 import {getRoomByNameForAxs} from "../model/rooms";
 import {getHazardLevel} from "../utils/hazardsParser";
-import {getGroupMembersFromApi} from "../utils/CallAPI";
+import {getGroupMembersFromApi} from "../utils/callAPI";
 
 export function makeRESTAxsAPI() {
 	const app = express();

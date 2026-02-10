@@ -6,9 +6,9 @@ import {IDObfuscator, submission} from "../../utils/IDObfuscator";
 import {LabHazardChildStruct, updateHazardFormChild} from "./labHazardChild";
 import {RoomStruct} from "../global/rooms";
 import * as dotenv from "dotenv";
-import {saveBase64File} from "../../utils/File";
-import {sendEmailsForHazards} from "../../utils/Email/Mailer";
-import {getUserInfoFromAPI} from "../../utils/CallAPI";
+import {saveBase64File} from "../../utils/fileUtilities";
+import {sendEmailsForHazards} from "../../utils/email/mailer";
+import {getUserInfoFromAPI} from "../../utils/callAPI";
 
 dotenv.config();
 const HAZARD_DOCUMENT_FOLDER = process.env.HAZARD_DOCUMENT_FOLDER;

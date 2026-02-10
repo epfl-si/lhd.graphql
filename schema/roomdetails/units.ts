@@ -5,10 +5,10 @@ import {PersonStruct} from "../global/people";
 import {Person} from "@prisma/client";
 import {mutationStatusType} from "../statuses";
 import {IDObfuscator} from "../../utils/IDObfuscator";
-import {getUnitsFromApi} from "../../utils/CallAPI";
+import {getUnitsFromApi} from "../../utils/callAPI";
 import {findOrCreatePerson} from "../../model/persons";
 import {deleteUnitCascade, getUnitByName} from "../../model/units";
-import {getReportFilesByUnit} from "../../utils/File";
+import {getReportFilesByUnit} from "../../utils/fileUtilities";
 
 export const UnitStruct = objectType({
 	name: Unit.$name,

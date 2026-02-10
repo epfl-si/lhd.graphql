@@ -1,7 +1,7 @@
-import {getPrismaForUser} from "../libs/auditablePrisma";
-import {configFromDotEnv} from "../libs/config";
+import {getPrismaForUser} from "../utils/auditablePrisma";
+import {configFromDotEnv} from "../utils/config";
 import {getExpiringDispensations, setDispensationNotified} from "../model/dispensation";
-import {sendEmailForDispensation} from "../utils/Email/Mailer";
+import {sendEmailForDispensation} from "../utils/email/mailer";
 
 const cronUser = {
 	username: 'LHD-cron',

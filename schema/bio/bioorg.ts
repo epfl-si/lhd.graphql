@@ -1,10 +1,10 @@
 import {extendType, intArg, objectType, stringArg} from 'nexus';
 import {bio_org} from 'nexus-prisma';
-import {saveBase64File} from "../../utils/File";
+import {saveBase64File} from "../../utils/fileUtilities";
 import {mutationStatusType} from "../statuses";
 import {IDObfuscator} from "../../utils/IDObfuscator";
 import {updateBioOrg} from "../hazards/labHazardChild";
-import {getUserInfoFromAPI} from "../../utils/CallAPI";
+import {getUserInfoFromAPI} from "../../utils/callAPI";
 
 export const BioOrgStruct = objectType({
 	name: bio_org.$name,
