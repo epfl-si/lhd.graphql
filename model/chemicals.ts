@@ -15,22 +15,22 @@ export async function createChemical(chemical, {prisma, user}) {
 }
 
 export async function getChemicals(prisma, opts?: Partial<{
-	whereName: string;
-	whereStatus: boolean;
-	whereCAS: string;
+	name: string;
+	status: boolean;
+	cas: string;
 	take: number;
 	skip: number;
 }>) {
-	const { whereName, whereStatus, whereCAS, take, skip } = opts || {};
+	const { name, status, cas, take, skip } = opts || {};
 	const whereCondition = [];
-	if (whereCAS) {
-		whereCondition.push({ cas_auth_chem: { contains: whereCAS }})
+	if (cas) {
+		whereCondition.push({ cas_auth_chem: { contains: cas }})
 	}
-	if (whereName) {
-		whereCondition.push({ auth_chem_en : { contains: whereName }})
+	if (name) {
+		whereCondition.push({ auth_chem_en : { contains: name }})
 	}
-	if (whereStatus !== undefined) {
-		whereCondition.push({ flag_auth_chem : whereStatus })
+	if (status !== undefined) {
+		whereCondition.push({ flag_auth_chem : status })
 	}
 	if (! whereCondition) {
 		whereCondition.push({ cas_auth_chem: { contains: '' }})
