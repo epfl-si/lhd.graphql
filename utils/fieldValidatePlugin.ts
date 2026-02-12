@@ -1,0 +1,115 @@
+import type {GraphQLResolveInfo} from 'graphql'
+import {printedGenTyping, printedGenTypingImport} from 'nexus/dist/utils'
+import {ArgsValue, GetGen, MaybePromise, SourceValue} from "nexus/dist-esm/typegenTypeHelpers";
+import {plugin} from "nexus";
+
+const ValidateResolverImport = printedGenTypingImport({
+	module: 'nexus/dist/plugins/fieldValidatePlugin',
+	bindings: ['FieldValidateResolver'],
+})
+
+const fieldDefTypes = printedGenTyping({
+	optional: true,
+	name: 'validate',
+	description: `
+    Validation for an individual field. Returning "true"
+    or "Promise<true>" means the field is valid.
+    Returning "false" or "Promise<false>" will respond
+    with a "Not Validated" error for the field. 
+    Returning or throwing an error will also prevent the 
+    resolver from executing.
+  `,
+	type: 'FieldValidateResolver<TypeName, FieldName>',
+	imports: [ValidateResolverImport],
+})
+
+export type FieldValidateResolver<TypeName extends string, FieldName extends string> = (
+	root: SourceValue<TypeName>,
+	args: ArgsValue<TypeName, FieldName>,
+	context: GetGen<'context'>,
+	info: GraphQLResolveInfo
+) => MaybePromise<boolean | Error>
+
+export interface FieldValidatePluginErrorConfig {
+	error: Error
+	root: any
+	args: any
+	ctx: GetGen<'context'>
+	info: GraphQLResolveInfo
+}
+
+export interface FieldValidatePluginConfig {
+	formatError?: (authConfig: FieldValidatePluginErrorConfig) => Error
+}
+
+export const defaultFormatError = ({ error }: FieldValidatePluginErrorConfig): Error => {
+	const err: Error & { originalError?: Error } = new Error(error.message)
+	err.originalError = error
+	return err
+}
+
+export const fieldValidatePlugin = (authConfig: FieldValidatePluginConfig = {}) => {
+	const { formatError = defaultFormatError } = authConfig
+	const ensureError =
+		(root: any, args: any, ctx: GetGen<'context'>, info: GraphQLResolveInfo) => (error: Error) => {
+			const finalErr = formatError({ error, root, args, ctx, info })
+			if (finalErr instanceof Error) {
+				throw finalErr
+			}
+			throw new Error(`Non-Error value ${finalErr} returned from custom formatError in validate plugin`)
+		}
+	let hasWarned = false
+	return plugin({
+		name: 'NexusValidate',
+		description: 'The validate plugin provides validation for arguments.',
+		fieldDefTypes: fieldDefTypes,
+		onCreateFieldResolver(config) {
+			const validate = config.fieldConfig.extensions?.nexus?.config.validate
+			// If the field doesn't have a validate field, don't worry about wrapping the resolver
+			if (validate == null) {
+				console.log("WARNING: unvalidated Nexus query!")
+				return
+			}
+
+			// If they have it, but didn't explicitly specify a plugins array, warn them.
+			if (!config.schemaConfig.plugins?.find((p) => p.config.name === 'NexusValidate')) {
+				if (!hasWarned) {
+					console.warn(
+						'The GraphQL Nexus "validate" feature has been moved to a plugin, add [fieldValidatePlugin()] to your makeSchema plugin config to remove this warning.'
+					)
+					hasWarned = true
+				}
+			}
+			// The validate wrapping resolver.
+			return function (root, args, ctx, info, next) {
+				try {
+					const validatedArgs = {};
+					const errors = [];
+					for (const key in validate) {
+						if (validate[key] instanceof Function) {
+							try {
+								validatedArgs[key] = validate[key](args[key])
+							} catch (e) {
+								errors.push(e.message);
+							}
+						} else {
+							throw new Error(`Validator for ${key} should be a function`);
+						}
+					}
+					if (errors.length > 0) {
+						throw new Error(`Value not valid for: ${errors.join(', ')}`);
+					}
+
+					return next(root, validatedArgs, ctx, info);
+				} catch ( err ) {
+					ensureError(root, args, ctx, info)(err);
+				}
+			}
+		},
+	})
+}
+
+export const acceptInteger = (i) => {
+	if (typeof(i) !== 'number') throw new Error(`Bad type: ${typeof(i)}, expected number`);
+	return i;
+}
