@@ -6,6 +6,7 @@ import {sendEmailsForChemical} from "../../utils/email/mailer";
 import {createChemical, getChemicals} from "../../model/chemicals";
 import {sanitizeSearchString} from "../../utils/searchStrings";
 import {casRegexp, chemicalNameRegexp} from "../../api/lib/lhdValidators";
+import {acceptInteger} from "../../utils/fieldValidatePlugin";
 
 export const ChemicalStruct = objectType({
 	name: auth_chem.$name,
@@ -64,22 +65,21 @@ export const ChemicalsWithPaginationQuery = extendType({
 				search: stringArg()
 			},
 			authorize: (parent, args, context) => context.user.canListChemicals,
+			validate: {
+				take: acceptInteger,
+				skip: acceptInteger,
+				search: (s) => sanitizeSearchString(s, {
+					CAS: {rename: 'cas', validate: casRegexp},
+					Name: {rename: 'name', validate: chemicalNameRegexp},
+					Status: {rename: 'status', validate: (value) => {
+						const keyword = ['active', 'archived'].find(status => status.includes(value.toLowerCase()));
+						if (keyword === undefined) throw new Error("Neither active nor archived");
+						return keyword === 'active';
+					}}
+				})
+			},
 			async resolve(parent, args, context) {
-				const opts: Partial<{
-					whereName: string;
-					whereStatus: boolean;
-					whereCAS: string;
-					take: number;
-					skip: number;
-				}> = {
-					take: args.take, skip: args.skip,
-					...sanitizeSearchString(args.search, {
-						CAS: {rename: "whereCAS", validate: casRegexp},
-						Name: {rename: "whereName", validate: chemicalNameRegexp},
-						Status: {rename: "whereStatus", validate: (value) => 'active'.indexOf(value.toLowerCase()) > -1}
-					})
-				};
-				return await getChemicals(context.prisma, opts);
+				return await getChemicals(context.prisma, {skip: args.skip, take: args.take, ...(args.search as any)});
 			}
 		});
 	},
