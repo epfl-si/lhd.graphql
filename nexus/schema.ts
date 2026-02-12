@@ -87,6 +87,7 @@ import * as hazardAdditionalInfoHasTagType from '../schema/hazards/hazardAdditio
 import * as mutationType from '../utils/mutationTypes'
 import * as subjectType from '../schema/dispensation/subject'
 import * as ticketTypes from '../schema/dispensation/ticket'
+import {fieldValidatePlugin} from "../utils/fieldValidatePlugin";
 
 
 const types = [
@@ -132,6 +133,7 @@ export const schema = makeSchema({
 		// Note: this plugin also outputs a typegen (but doesn't let us choose where)
 		NexusPrismaCRUDPlugin({ shouldGenerateArtifacts }),
 		fieldAuthorizePlugin(),
+		fieldValidatePlugin(),
 	],
 	sourceTypes: {
 		modules: [
