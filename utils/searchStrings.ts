@@ -27,6 +27,7 @@ export function sanitizeSearchString (searchString: string, spec: {[k: string]: 
 	const dictionary = queryArray.map(query => query.split("="));
 
 	const ret = {};
+	const errors = [];
 
 	dictionary.forEach(query => {
 		const key = query[0];
@@ -34,8 +35,23 @@ export function sanitizeSearchString (searchString: string, spec: {[k: string]: 
 
 		const value = decodeURIComponent(query[1]);
 		const validator = spec[key].validate;
-		ret[spec[key].rename ?? key] = validator instanceof RegExp ? value.match(validator)[0] : validator(value);
+		const renamedKey = spec[key].rename ?? key;
+		if (validator instanceof RegExp) {
+			const matched = value.match(validator)
+			if (matched) {
+				ret[renamedKey] = matched[0];
+			} else {
+				errors.push(key);
+			}
+		} else if (validator instanceof Function) {
+			try {
+				ret[renamedKey] = validator(value);
+			} catch (e) {
+				errors.push(key);
+			}
+		}
 	})
+	if (errors.length) throw new Error(errors.join(', '));
 
 	return ret;
 }
