@@ -92,8 +92,26 @@ export const fieldValidatePlugin = (authConfig: FieldValidatePluginConfig = {}) 
 							} catch (e) {
 								errors.push(e.message);
 							}
+						} else if (validate[key] instanceof RegExp) {
+							try {
+								validatedArgs[key] = acceptRegexp(args[key], validate[key]);
+							} catch (e) {
+								errors.push(e.message);
+							}
+						} else if (isStringArray(validate[key])) {
+							try {
+								validatedArgs[key] = acceptSubtringInList(args[key], validate[key]);
+							} catch (e) {
+								errors.push(e.message);
+							}
+						} else if (isCustomEnumerator(validate[key])) {
+							try {
+								validatedArgs[key] = acceptEnum(args[key], validate[key].enum);
+							} catch (e) {
+								errors.push(e.message);
+							}
 						} else {
-							throw new Error(`Validator for ${key} should be a function`);
+							throw new Error(`Validator for ${key} not valid`);
 						}
 					}
 					if (errors.length > 0) {
@@ -112,4 +130,43 @@ export const fieldValidatePlugin = (authConfig: FieldValidatePluginConfig = {}) 
 export const acceptInteger = (i) => {
 	if (typeof(i) !== 'number') throw new Error(`Bad type: ${typeof(i)}, expected number`);
 	return i;
+}
+
+export const acceptBoolean = (i) => {
+	if (typeof(i) !== 'boolean') throw new Error(`Bad type: ${typeof(i)}, expected boolean`);
+	return i;
+}
+
+export const acceptRegexp = (i: string, regex: RegExp) => {
+	if (!regex.test(i)) throw new Error(`Bad format for ${i}`);
+	return i;
+}
+
+export const acceptSubtringInList = (i: string, availableItems: string[]) => {
+	const keyword = availableItems
+		.find(status => status.toLowerCase().includes(i.toLowerCase()));
+	if (keyword === undefined) throw new Error(`Not in ${availableItems.join(', ')}`);
+	return keyword;
+}
+
+export const acceptEnum = (i: string, availableItems: string[]) => {
+	if (!availableItems.includes(i)) throw new Error(`Not in ${availableItems.join(', ')}`);
+	return i;
+}
+
+const isCustomEnumerator = (value) => {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		"enum" in value &&
+		Array.isArray((value as any).enum) &&
+		(value as any).enum.every(item => typeof item === 'string')
+	)
+}
+
+const isStringArray = (value) => {
+	return (
+		Array.isArray(value as any) &&
+		(value as any).every(item => typeof item === 'string')
+	)
 }
