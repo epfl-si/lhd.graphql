@@ -147,7 +147,7 @@ export function makeRESTAPI() {
 				const sciper = (req.query.sciper as string);
 				const cas = (req.query.cas as string).split(',');
 
-				const result = await getAuthorizations(req.prisma, "Chemical", [["Holder", sciper]]);
+				const result = await getAuthorizations(req.prisma, "Chemical", {holder: sciper});
 				const casResult = result.authorizations
 					.filter(auth => auth.expiration_date > new Date())
 					.flatMap(auth => auth.authorization_has_chemical)
@@ -319,7 +319,7 @@ export function makeRESTAPI() {
 				}
 			}),
 		async (req, res) => {
-			const result = await getAuthorizations(req.prisma, "Chemical", [["Holder", req.params.sciper]]);
+			const result = await getAuthorizations(req.prisma, "Chemical", {holder: req.params.sciper});
 			const casResult = result.authorizations
 				.filter(auth => auth.expiration_date > new Date())
 				.flatMap(auth => auth.authorization_has_chemical)

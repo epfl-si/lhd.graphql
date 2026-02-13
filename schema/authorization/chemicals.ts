@@ -5,8 +5,12 @@ import {mutationStatusType} from "../statuses";
 import {sendEmailsForChemical} from "../../utils/email/mailer";
 import {createChemical, getChemicals} from "../../model/chemicals";
 import {sanitizeSearchString} from "../../utils/searchStrings";
-import {casRegexp, chemicalNameRegexp} from "../../api/lib/lhdValidators";
-import {acceptInteger} from "../../utils/fieldValidatePlugin";
+import {casRegexp, chemicalNameRegexp, validateId} from "../../api/lib/lhdValidators";
+import {
+	acceptBoolean,
+	acceptInteger,
+	acceptSubtringInList
+} from "../../utils/fieldValidatePlugin";
 
 export const ChemicalStruct = objectType({
 	name: auth_chem.$name,
@@ -72,8 +76,7 @@ export const ChemicalsWithPaginationQuery = extendType({
 					CAS: {rename: 'cas', validate: casRegexp},
 					Name: {rename: 'name', validate: chemicalNameRegexp},
 					Status: {rename: 'status', validate: (value) => {
-						const keyword = ['active', 'archived'].find(status => status.includes(value.toLowerCase()));
-						if (keyword === undefined) throw new Error("Neither active nor archived");
+						const keyword = acceptSubtringInList(value, ['active', 'archived']);
 						return keyword === 'active';
 					}}
 				})
@@ -107,6 +110,11 @@ export const ChemicalMutations = extendType({
 			args: newChemicalType,
 			type: "ChemicalStatus",
 			authorize: (parent, args, context) => context.user.canEditChemicals,
+			validate: {
+				cas_auth_chem: casRegexp,
+				auth_chem_en: chemicalNameRegexp,
+				flag_auth_chem: acceptBoolean
+			},
 			async resolve(root, args, context) {
 				await createChemical(args, context);
 				return mutationStatusType.success();
@@ -117,6 +125,12 @@ export const ChemicalMutations = extendType({
 			args: newChemicalType,
 			type: "ChemicalStatus",
 			authorize: (parent, args, context) => context.user.canEditChemicals,
+			validate: {
+				id: validateId,
+				cas_auth_chem: casRegexp,
+				auth_chem_en: chemicalNameRegexp,
+				flag_auth_chem: acceptBoolean
+			},
 			async resolve(root, args, context) {
 				await context.prisma.$transaction(async (tx) => {
 					const chem = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
@@ -141,11 +155,14 @@ export const ChemicalMutations = extendType({
 			args: newChemicalType,
 			type: "ChemicalStatus",
 			authorize: (parent, args, context) => context.user.canEditChemicals,
+			validate: {
+				id: validateId
+			},
 			async resolve(root, args, context) {
 				await context.prisma.$transaction(async (tx) => {
 					const chem = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
 						'auth_chem', 'id_auth_chem',
-						tx, args.cas_auth_chem, getChemicalToString);
+						tx, 'Chemical', getChemicalToString);
 
 					await tx.auth_chem_log.deleteMany({ where: { id_auth_chem: chem.id_auth_chem }});
 					await tx.auth_rchem.deleteMany({ where: { id_auth_chem: chem.id_auth_chem }});

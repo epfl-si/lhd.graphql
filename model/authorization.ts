@@ -57,46 +57,56 @@ export async function updateAuthorization(prisma, newData, oldAuth, tx = undefin
 	}
 }
 
-export async function getAuthorizations(prisma, type: string, conditions: any[], take = 0, skip = 0) {
+export async function getAuthorizations(prisma, type: string, conditions?: Partial<{
+	unit: string,
+	authorization: string,
+	status: string,
+	room: string,
+	holder: string,
+	cas: string,
+	source: string
+}>, take = 0, skip = 0) {
+	const { unit, authorization, status, room, holder, cas, source } = conditions || {};
 	const whereCondition = [];
-	whereCondition.push({ type: type})
-	if (conditions.length > 0) {
-		conditions.forEach(query => {
-			const value = decodeURIComponent(query[1]);
-			if (query[0] === 'Unit') {
-				whereCondition.push({ unit: { is: {name: {contains: value}} }})
-			} else if (query[0] === 'Authorization') {
-				whereCondition.push({ authorization: { contains: value }})
-			} else if (query[0] === 'Status') {
-				whereCondition.push({ status: value })
-			} else if (query[0] === 'Room') {
-				whereCondition.push({ authorization_has_room: { some: {room: {is: {name: {contains: value}}}} }})
-			} else if (query[0] === 'Holder') {
-				whereCondition.push({
-					authorization_has_holder: {
-						some: {
-							holder: {
-								OR: [
-									{ name: { contains: value } },
-									{ surname: { contains: value } },
-									{ email: { contains: value } },
-									{ sciper: parseInt(value) },
-								],
-							},
-						},
-					}
-				})
-			} else if (query[0] === 'CAS') {
-				whereCondition.push({ authorization_has_chemical: { some: {chemical: {
-								OR: [
-									{ cas_auth_chem: { contains: value } },
-									{ auth_chem_en: { contains: value } }
-								],
-							}} }})
-			} else if (query[0] === 'Source') {
-				whereCondition.push({ authorization_has_radiation: { some: {source: {contains: value}} }})
+	whereCondition.push({ type: type});
+	if (unit) {
+		whereCondition.push({ unit: { is: {name: {contains: unit}} }})
+	}
+	if (authorization) {
+		whereCondition.push({ authorization: { contains: authorization }})
+	}
+	if (status) {
+		whereCondition.push({ status: status })
+	}
+	if (room) {
+		whereCondition.push({ authorization_has_room: { some: {room: {is: {name: {contains: room}}}} }})
+	}
+	if (holder) {
+		whereCondition.push({
+			authorization_has_holder: {
+				some: {
+					holder: {
+						OR: [
+							{ name: { contains: holder } },
+							{ surname: { contains: holder } },
+							{ email: { contains: holder } },
+							{ sciper: parseInt(holder) },
+						],
+					},
+				},
 			}
 		})
+	}
+	if (cas) {
+		whereCondition.push({ authorization_has_chemical: { some: {chemical: {
+						OR: [
+							{ cas_auth_chem: { contains: cas } },
+							{ auth_chem_en: { contains: cas } }
+						],
+					}} }})
+	}
+	if (source) {
+		whereCondition.push({ authorization_has_radiation: { some: {source: {contains: source}} }})
 	}
 
 	const authorizationList = await prisma.authorization.findMany({
