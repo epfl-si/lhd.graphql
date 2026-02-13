@@ -10,6 +10,10 @@ import {RadiationStruct} from "./radiation";
 import {createAuthorization, getAuthorizations, updateAuthorization} from "../../model/authorization";
 import {HolderMutationType, OthersMutationType} from "../../utils/mutationTypes";
 import {ensurePerson} from "../../model/persons";
+import {acceptInteger, acceptSubtringInList} from "../../utils/fieldValidatePlugin";
+import {sanitizeSearchString} from "../../utils/searchStrings";
+import {alphanumericRegexp, casRegexp, chemicalNameRegexp} from "../../api/lib/lhdValidators";
+import {authorization_status} from "@prisma/client";
 
 export const AuthorizationStruct = objectType({
 	name: authorization.$name,
@@ -131,10 +135,22 @@ export const AuthorizationsWithPaginationQuery = extendType({
 				type: stringArg()
 			},
 			authorize: (parent, args, context) => context.user.canListAuthorizations,
+			validate: {
+				take: acceptInteger,
+				skip: acceptInteger,
+				type: {enum: ['Chemical', 'IonisingRadiation']},
+				search: (s) => sanitizeSearchString(s, {
+					Unit: {rename: 'unit', validate: alphanumericRegexp},
+					Authorization: {rename: 'authorization', validate: chemicalNameRegexp},
+					Status: {rename: 'status', validate: (value) => acceptSubtringInList(value, Object.values(authorization_status))},
+					Room: {rename: 'room', validate: alphanumericRegexp},
+					Holder: {rename: 'holder', validate: alphanumericRegexp},
+					CAS: {rename: 'cas', validate: casRegexp},
+					Source: {rename: 'source', validate: alphanumericRegexp},
+				})
+			},
 			async resolve(parent, args, context) {
-				const queryArray = args.search.split("&");
-				const dictionary = queryArray.map(query => query.split("="));
-				return await getAuthorizations(context.prisma, args.type, dictionary, args.take, args.skip);
+				return await getAuthorizations(context.prisma, args.type, {...args.search as any}, args.take, args.skip);
 			}
 		});
 	},
