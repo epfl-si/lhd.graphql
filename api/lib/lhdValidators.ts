@@ -1,13 +1,15 @@
 import {ValidationError} from "./checkedAPICalls";
+import {IDObfuscator} from "../../utils/IDObfuscator";
 
 export const chemicalNameRegexp = new RegExp("[A-Za-z0-9\\/()*+\"%&='?\\[\\]\\{\\},\\- ]+");
-export const casRegexp = new RegExp("[0-9][0-9-/]*[0-9]");
+export const casRegexp = new RegExp(/^[0-9][0-9-/]*[0-9]$/);
 export const reqRegexp = new RegExp("[A-Z][a-zA-Z0-9.]*-[a-zA-Z0-9.]*");
 export const reqRenewRegexp = new RegExp("[A-Z][a-zA-Z0-9.]*-[a-zA-Z0-9.]*-[0-9]*");
 export const unitNameRegexp = new RegExp("[A-Z][A-Z-]*[A-Z]");
 export const roomNameRegexp = new RegExp("[A-Z][A-Z0-9-. ]*[A-Z0-9]");
 export const authRegexp = new RegExp("yes|no|1|0");
 export const fileNameRegexp = new RegExp(/^[\p{L}\p{N} _\-\(\)\.]+\.[A-Za-z0-9]+$/u);
+export const alphanumericRegexp = new RegExp("[a-zA-Z0-9-. ]*");
 
 export const saltRegexp = new RegExp("[a-f0-9]+");
 export const ephIdRegexp = new RegExp("[a-zA-Z0-9/+=]+");
@@ -31,4 +33,11 @@ export function validateEphId (p) {
 	if (!ephIdRegexp.test(decodedEphId))
 		throw new ValidationError(`Failed Regex match`);
 	return decodedEphId;
+}
+
+export function validateId (i: string) {
+	const id = IDObfuscator.getId(i);
+	IDObfuscator.checkId(id);
+	IDObfuscator.checkSalt(id);
+	return i;
 }
