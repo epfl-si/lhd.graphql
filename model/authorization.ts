@@ -1,20 +1,16 @@
 import {NotFoundError} from "../utils/errors";
 import {ensurePerson} from "./persons";
 import {AuthorizationChanges} from "../utils/changeTypes";
-import {getFormattedDate} from "../utils/date";
 
 export async function createAuthorization(prisma, auth, unitId, newHolders) {
 	await ensurePerson(prisma, newHolders);
 	return await prisma.$transaction(async (tx) => {
-		const date = auth.creation_date ?? getFormattedDate(new Date());
-		const [dayCrea, monthCrea, yearCrea] = date.split("/").map(Number);
-		const [day, month, year] = auth.expiration_date.split("/").map(Number);
 		const authorization = await tx.authorization.create({
 			data: {
 				authorization: auth.authorization,
 				status: auth.status,
-				creation_date: new Date(yearCrea, monthCrea - 1, dayCrea, 12),
-				expiration_date: new Date(year, month - 1, day, 12),
+				creation_date: auth.creation_date,
+				expiration_date: auth.expiration_date,
 				id_unit: unitId,
 				renewals: 0,
 				type: auth.type,
@@ -34,12 +30,10 @@ export async function updateAuthorization(prisma, newData, oldAuth, tx = undefin
 	}
 
 	async function doUpdateAuthorization (tx) {
-		const [day, month, year] = newData.expiration_date.split("/").map(Number);
-		const newExpDate = new Date(year, month - 1, day, 12);
-		const ren = newData.renewals ?? (newExpDate > oldAuth.expiration_date ? (oldAuth.renewals + 1) : oldAuth.renewals);
+		const ren = newData.renewals ?? (newData.expiration_date > oldAuth.expiration_date ? (oldAuth.renewals + 1) : oldAuth.renewals);
 		const data = {
 			status: newData.status,
-			expiration_date: newExpDate,
+			expiration_date: newData.expiration_date,
 			authority: newData.authority ?? oldAuth.authority,
 			renewals: ren,
 			date_expiry_notified: oldAuth.date_expiry_notified && ren > oldAuth.renewals ? null : oldAuth.date_expiry_notified

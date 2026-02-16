@@ -10,9 +10,14 @@ import {RadiationStruct} from "./radiation";
 import {createAuthorization, getAuthorizations, updateAuthorization} from "../../model/authorization";
 import {HolderMutationType, OthersMutationType} from "../../utils/mutationTypes";
 import {ensurePerson} from "../../model/persons";
-import {acceptInteger, acceptSubtringInList} from "../../utils/fieldValidatePlugin";
-import {sanitizeSearchString} from "../../utils/searchStrings";
-import {alphanumericRegexp, casRegexp, chemicalNameRegexp} from "../../api/lib/lhdValidators";
+import {acceptDateString, acceptInteger, acceptSubstringInList} from "../../utils/fieldValidatePlugin";
+import {
+	sanitizeCasMutationTypes,
+	sanitizeHolderMutationTypes,
+	sanitizeMutationTypes,
+	sanitizeSearchString
+} from "../../utils/searchStrings";
+import {alphanumericRegexp, casRegexp, chemicalNameRegexp, reqRegexp, validateId} from "../../api/lib/lhdValidators";
 import {authorization_status} from "@prisma/client";
 
 export const AuthorizationStruct = objectType({
@@ -142,7 +147,7 @@ export const AuthorizationsWithPaginationQuery = extendType({
 				search: (s) => sanitizeSearchString(s, {
 					Unit: {rename: 'unit', validate: alphanumericRegexp},
 					Authorization: {rename: 'authorization', validate: chemicalNameRegexp},
-					Status: {rename: 'status', validate: (value) => acceptSubtringInList(value, Object.values(authorization_status))},
+					Status: {rename: 'status', validate: (value) => acceptSubstringInList(value, Object.values(authorization_status))},
 					Room: {rename: 'room', validate: alphanumericRegexp},
 					Holder: {rename: 'holder', validate: alphanumericRegexp},
 					CAS: {rename: 'cas', validate: casRegexp},
@@ -168,6 +173,12 @@ export const AuthorizationsByRoom = extendType({
 				type: stringArg()
 			},
 			authorize: (parent, args, context) => context.user.canListAuthorizations,
+			validate: {
+				take: acceptInteger,
+				skip: acceptInteger,
+				type: {enum: ['Chemical', 'IonisingRadiation']},
+				roomId: validateId
+			},
 			async resolve(parent, args, context) {
 				if (args.roomId) {
 					const id: ID = JSON.parse(args.roomId);
@@ -235,6 +246,19 @@ export const AuthorizationMutations = extendType({
 			args: newAuthorizationType,
 			type: "AuthorizationStatus",
 			authorize: (parent, args, context) => context.user.canEditAuthorizations,
+			validate: {
+				authorization: reqRegexp,
+				id_unit: validateId,
+				creation_date: acceptDateString,
+				expiration_date: acceptDateString,
+				status: {enum: Object.values(authorization_status)},
+				rooms: sanitizeMutationTypes,
+				holders: sanitizeHolderMutationTypes,
+				radiations: sanitizeMutationTypes,
+				cas: sanitizeCasMutationTypes,
+				type: {enum: ['Chemical', 'IonisingRadiation']},
+				authority: alphanumericRegexp,
+			},
 			async resolve(root, args, context) {
 
 				const id = IDObfuscator.getId(args.id_unit);
@@ -252,6 +276,17 @@ export const AuthorizationMutations = extendType({
 			args: newAuthorizationType,
 			type: "AuthorizationStatus",
 			authorize: (parent, args, context) => context.user.canEditAuthorizations,
+			validate: {
+				id: validateId,
+				id_unit: validateId,
+				expiration_date: acceptDateString,
+				status: {enum: Object.values(authorization_status)},
+				rooms: sanitizeMutationTypes,
+				holders: sanitizeHolderMutationTypes,
+				radiations: sanitizeMutationTypes,
+				cas: sanitizeCasMutationTypes,
+				authority: alphanumericRegexp
+			},
 			async resolve(root, args, context) {
 				const newHolders = args.holders.filter(holder => holder.status === 'New');
 				await ensurePerson(context.prisma, newHolders);
@@ -270,9 +305,14 @@ export const AuthorizationMutations = extendType({
 		});
 		t.nonNull.field('deleteAuthorization', {
 			description: `Delete authorization details.`,
-			args: newAuthorizationType,
+			args: {
+				id: stringArg()
+			},
 			type: "AuthorizationStatus",
 			authorize: (parent, args, context) => context.user.canEditAuthorizations,
+			validate: {
+				id: validateId
+			},
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					const auth = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
