@@ -9,6 +9,7 @@ export const unitNameRegexp = new RegExp("[A-Z][A-Z-]*[A-Z]");
 export const roomNameRegexp = new RegExp("[A-Z][A-Z0-9-. ]*[A-Z0-9]");
 export const authRegexp = new RegExp("yes|no|1|0");
 export const fileNameRegexp = new RegExp(/^[\p{L}\p{N} _\-\(\)\.]+\.[A-Za-z0-9]+$/u);
+export const fileContentRegexp = new RegExp("^data:[^;]+;base64,(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$")
 export const alphanumericRegexp = new RegExp("[a-zA-Z0-9-. ]*");
 
 export const saltRegexp = new RegExp("[a-f0-9]+");
