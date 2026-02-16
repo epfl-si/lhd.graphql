@@ -9,7 +9,7 @@ import {casRegexp, chemicalNameRegexp, validateId} from "../../api/lib/lhdValida
 import {
 	acceptBoolean,
 	acceptInteger,
-	acceptSubtringInList
+	acceptSubstringInList
 } from "../../utils/fieldValidatePlugin";
 
 export const ChemicalStruct = objectType({
@@ -76,7 +76,7 @@ export const ChemicalsWithPaginationQuery = extendType({
 					CAS: {rename: 'cas', validate: casRegexp},
 					Name: {rename: 'name', validate: chemicalNameRegexp},
 					Status: {rename: 'status', validate: (value) => {
-						const keyword = acceptSubtringInList(value, ['active', 'archived']);
+						const keyword = acceptSubstringInList(value, ['active', 'archived']);
 						return keyword === 'active';
 					}}
 				})

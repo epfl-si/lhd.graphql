@@ -1,4 +1,4 @@
-import {getFormattedDate, getNow} from "../utils/date";
+import {getNow} from "../utils/date";
 import {getBearerToken} from "../utils/authentication";
 import {checkAPICall} from "./lib/checkedAPICalls";
 import {
@@ -15,12 +15,7 @@ import {
 import * as express from "express";
 import {Request} from "express";
 import {errorHandler} from "./lib/errorHandler";
-import {
-	createAuthorization,
-	getAuthorizations,
-	getTheAuthorization,
-	updateAuthorization
-} from "../model/authorization";
+import {createAuthorization, getAuthorizations, getTheAuthorization, updateAuthorization} from "../model/authorization";
 import {createChemical, getChemicals} from "../model/chemicals";
 import {getRooms} from "../model/rooms";
 import {getParentUnit, getUnitByName} from "../model/units";
@@ -54,6 +49,7 @@ export function makeRESTAPI() {
 		if (!request && method !== 'auth_chem') return res.status(400).json({ Message: "missing <req> string for request+authorisation number of the form req=AUTH_SST-AUTH_REQ" });
 		if (!req.query.date && method !== 'auth_chem') return res.status(400).json({ Message: "missing authorisation expiration <date>" });
 		const expirationDate = new Date(req.query.date as string);
+		expirationDate.setHours(12, 0, 0, 0);
 
 		switch (method) {
 			case "auth_req":
@@ -71,11 +67,15 @@ export function makeRESTAPI() {
 				if (!req.query.scipers) return res.status(400).json({ Message: "missing <scipers> list of authorisation holders" });
 				const scipers = (req.query.scipers as string).split(',');
 
+
+				const now = new Date();
+				now.setHours(12, 0, 0, 0);
 				const cas = (req.query.cas as string).split(',');
 				const args = {
 					id_unit: idUnit,
 					authorization: request,
-					expiration_date: getFormattedDate(new Date(expirationDate)),
+					creation_date: now,
+					expiration_date: expirationDate,
 					status: "Active",
 					type: "Chemical",
 					cas: cas.map(c => {
@@ -100,8 +100,10 @@ export function makeRESTAPI() {
 				const reqParts = request.split("-");
 				const requestNumber = `${reqParts[0]}-${reqParts[1]}`;
 				const auth = await getTheAuthorization(req.prisma, requestNumber, "Chemical");
+				const exp = new Date(expirationDate);
+				exp.setHours(12, 0, 0, 0);
 				const argsUpdate = {
-					expiration_date: getFormattedDate(new Date(expirationDate)),
+					expiration_date: exp,
 					status: "Active",
 					renewals: parseInt(reqParts[2])
 				};
@@ -195,10 +197,15 @@ export function makeRESTAPI() {
 				}
 			}),
 		async (req, res) => {
+			const now = new Date();
+			now.setHours(12, 0, 0, 0);
+			const exp = new Date(req.params.date);
+			exp.setHours(12, 0, 0, 0);
 			const args = {
 				id_unit: req.params.id_unit,
 				authorization: req.params.req,
-				expiration_date: getFormattedDate(req.params.date),
+				creation_date: now,
+				expiration_date: exp,
 				status: "Active",
 				type: "Chemical",
 				cas: req.params.cas.map(c => {
@@ -234,8 +241,10 @@ export function makeRESTAPI() {
 			const reqParts = req.params.req.split("-");
 			const requestNumber = `${reqParts[0]}-${reqParts[1]}`;
 			const auth = await getTheAuthorization(req.prisma, requestNumber, "Chemical");
+			const exp = new Date(req.params.date);
+			exp.setHours(12, 0, 0, 0);
 			const argsUpdate = {
-				expiration_date: getFormattedDate(new Date(req.params.date)),
+				expiration_date: exp,
 				status: "Active",
 				renewals: parseInt(reqParts[2])
 			};

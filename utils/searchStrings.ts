@@ -1,3 +1,5 @@
+import {alphanumericRegexp, casRegexp} from "../api/lib/lhdValidators";
+
 /**
  *  Split and sanitize a URL-encoded search string.
  *
@@ -54,4 +56,46 @@ export function sanitizeSearchString (searchString: string, spec: {[k: string]: 
 	if (errors.length) throw new Error(errors.join(', '));
 
 	return ret;
+}
+
+export function sanitizeMutationTypes (values: {status: string, name?: string, id?: number}[]) {
+	if (!values) return [];
+
+	values.forEach(val => {
+		if (!val.name && !val.id) {
+			throw new Error("Name and id both undefined");
+		}
+		if (val.name && !alphanumericRegexp.test(val.name)) {
+			throw new Error("Invalid name");
+		}
+		if (!["New", "Default", "Deleted"].includes(val.status)) {
+			throw new Error("Invalid status");
+		}
+	});
+	return values;
+}
+
+export function sanitizeHolderMutationTypes (values: {status: string, sciper: number}[]) {
+	if (!values) return [];
+
+	values.forEach(val => {
+		if (!["New", "Default", "Deleted"].includes(val.status)) {
+			throw new Error("Invalid status");
+		}
+	});
+	return values;
+}
+
+export function sanitizeCasMutationTypes (values: {status: string, name: string}[]) {
+	if (!values) return [];
+
+	values.forEach(val => {
+		if (val.name && !casRegexp.test(val.name)) {
+			throw new Error("Invalid cas");
+		}
+		if (!["New", "Default", "Deleted"].includes(val.status)) {
+			throw new Error("Invalid status");
+		}
+	});
+	return values;
 }

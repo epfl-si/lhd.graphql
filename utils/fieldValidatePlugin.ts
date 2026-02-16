@@ -66,7 +66,7 @@ export const fieldValidatePlugin = (authConfig: FieldValidatePluginConfig = {}) 
 		onCreateFieldResolver(config) {
 			const validate = config.fieldConfig.extensions?.nexus?.config.validate
 			// If the field doesn't have a validate field, don't worry about wrapping the resolver
-			if (validate == null) {
+			if (!validate) {
 				console.log("WARNING: unvalidated Nexus query!")
 				return
 			}
@@ -100,7 +100,7 @@ export const fieldValidatePlugin = (authConfig: FieldValidatePluginConfig = {}) 
 							}
 						} else if (isStringArray(validate[key])) {
 							try {
-								validatedArgs[key] = acceptSubtringInList(args[key], validate[key]);
+								validatedArgs[key] = acceptSubstringInList(args[key], validate[key]);
 							} catch (e) {
 								errors.push(e.message);
 							}
@@ -137,12 +137,25 @@ export const acceptBoolean = (i) => {
 	return i;
 }
 
+export const acceptDate = (i) => {
+	if (!(i instanceof Date)) throw new Error(`Bad type: ${typeof(i)}, expected Date`);
+	return i;
+}
+
+export const acceptDateString = (i) => {
+	const dateRegexp = new RegExp('^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\\d{4}$');
+	if (!dateRegexp.test(i)) throw new Error(`Bad format for ${i}`);
+
+	const [dayCrea, monthCrea, yearCrea] = i.split("/").map(Number);
+	return new Date(yearCrea, monthCrea - 1, dayCrea, 12);
+}
+
 export const acceptRegexp = (i: string, regex: RegExp) => {
 	if (!regex.test(i)) throw new Error(`Bad format for ${i}`);
 	return i;
 }
 
-export const acceptSubtringInList = (i: string, availableItems: string[]) => {
+export const acceptSubstringInList = (i: string, availableItems: string[]) => {
 	const keyword = availableItems
 		.find(status => status.toLowerCase().includes(i.toLowerCase()));
 	if (keyword === undefined) throw new Error(`Not in ${availableItems.join(', ')}`);
