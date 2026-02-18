@@ -5,6 +5,8 @@ import {mutationStatusType} from "../statuses";
 import {IDObfuscator} from "../../utils/IDObfuscator";
 import {updateBioOrg} from "../hazards/labHazardChild";
 import {getUserInfoFromAPI} from "../../utils/callAPI";
+import {alphanumericRegexp, fileContentRegexp, fileNameRegexp, validateId} from "../../api/lib/lhdValidators";
+import {acceptInteger} from "../../utils/fieldValidatePlugin";
 
 export const BioOrgStruct = objectType({
 	name: bio_org.$name,
@@ -59,6 +61,11 @@ export const OrganismsFromFullTextQuery = extendType({
 				take: intArg({ default: 20 })
 			},
 			authorize: (parent, args, context) => context.user.canListOrganisms,
+			validate: {
+				search: alphanumericRegexp,
+				skip: acceptInteger,
+				take: acceptInteger
+			},
 			async resolve(parent, args, context) {
 				const bioList =  await context.prisma.bio_org.findMany({
 					where: { organism: { contains: args.search } },
@@ -101,6 +108,12 @@ export const OrganismMutations = extendType({
 			args: newOrganismType,
 			type: "OrganismStatus",
 			authorize: (parent, args, context) => context.user.canEditOrganisms,
+			validate: {
+				organismName: alphanumericRegexp,
+				risk: acceptInteger,
+				fileContent: fileContentRegexp,
+				fileName: fileNameRegexp
+			},
 			async resolve(root, args, context) {
 				const userInfo = await getUserInfoFromAPI(context.user.username);
 				return await context.prisma.$transaction(async (tx) => {
@@ -135,6 +148,13 @@ export const OrganismMutations = extendType({
 			args: newOrganismType,
 			type: "OrganismStatus",
 			authorize: (parent, args, context) => context.user.canEditOrganisms,
+			validate: {
+				id: validateId,
+				organismName: alphanumericRegexp,
+				risk: acceptInteger,
+				fileContent: fileContentRegexp,
+				fileName: fileNameRegexp
+			},
 			async resolve(root, args, context) {
 				const userInfo = await getUserInfoFromAPI(context.user.username);
 				return await context.prisma.$transaction(async (tx) => {
@@ -168,11 +188,14 @@ export const OrganismMutations = extendType({
 			args: newOrganismType,
 			type: "OrganismStatus",
 			authorize: (parent, args, context) => context.user.canEditOrganisms,
+			validate: {
+				id: validateId
+			},
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					const org = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
 						'bio_org', 'id_bio_org',
-						tx, args.organismName, getBioOrgToString);
+						tx, 'Organism', getBioOrgToString);
 
 					await tx.bio_org_lab.deleteMany({ where: { id_bio_org: org.id_bio_org }});
 					await tx.bio_org.delete({ where: { id_bio_org: org.id_bio_org }});

@@ -2,6 +2,8 @@ import {extendType, list, objectType, stringArg} from 'nexus';
 import {mutation_logs} from 'nexus-prisma';
 import {IDObfuscator} from "../../utils/IDObfuscator";
 import {diffObjects} from "../../utils/jsonUtils";
+import {dbNamesRegexp, validateId} from "../../api/lib/lhdValidators";
+import {sanitizeDBNames} from "../../utils/searchStrings";
 
 export const MutationLogsStruct = objectType({
 	name: mutation_logs.$name,
@@ -62,14 +64,18 @@ export const MutationLogsByTable = extendType({
 				excludedField: stringArg()
 			},
 			authorize: (parent, args, context) => context.user.canListDispensations,
+			validate: {
+				tableName: sanitizeDBNames,
+				tableIdentifier: validateId,
+				excludedField: sanitizeDBNames
+			},
 			async resolve(parent, args, context) {
 				if (args.tableName && args.tableIdentifier) {
 					const id = IDObfuscator.getId(args.tableIdentifier);
 					const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
-					const tables = args.tableName.split(',');
 					const logs = await context.prisma.mutation_logs.findMany({
 						where: {
-							table_name: { in: tables },
+							table_name: { in: args.tableName },
 							table_id: { equals: idDeobfuscated }
 						},
 						orderBy: [{ modified_on: 'desc' }]
@@ -79,7 +85,7 @@ export const MutationLogsByTable = extendType({
 						const newValue = log.new_value !== '' ? JSON.parse(log.new_value) : {};
 						if (newValue.status !== 'Draft') {
 							const oldValue = log.old_value !== '' ? JSON.parse(log.old_value)[0] : {};
-							const diff = diffObjects(oldValue, newValue, args.excludedField);
+							const diff = diffObjects(oldValue, newValue, [...args.excludedField]);
 							if ( Object.keys(diff).length > 0 ) {
 								res.push({
 									modified_on: log.modified_on,

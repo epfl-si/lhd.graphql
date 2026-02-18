@@ -2,6 +2,9 @@ import {extendType, objectType, stringArg} from 'nexus';
 import {mutationStatusType} from "../statuses";
 import {ID, IDObfuscator} from "../../utils/IDObfuscator";
 import {hazard_form_child} from "nexus-prisma";
+import {validate} from "graphql/validation";
+import {hazardCategoryNameRegexp, hazardFormVersionRegexp, validateId} from "../../api/lib/lhdValidators";
+import {acceptJson} from "../../utils/fieldValidatePlugin";
 
 export const HazardFormChildStruct = objectType({
 	name: hazard_form_child.$name,
@@ -73,46 +76,42 @@ export const HazardFormChildMutations = extendType({
 			args: hazardFormChildChangesType,
 			type: "HazardFormChildStatus",
 			authorize: (parent, args, context) => context.user.isAdmin,
+			validate: {
+				form: acceptJson,
+				version: hazardFormVersionRegexp,
+				hazard_form_child_name: hazardCategoryNameRegexp,
+				category: hazardCategoryNameRegexp
+			},
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
-					if (!args.id) {
-						throw new Error(`Not allowed to create a new hazard form child`);
+					const category = await tx.hazard_category.findFirst({where: {hazard_category_name: args.category}});
+					if (!category) {
+						throw new Error(`Category ${args.category} not found`);
 					}
-					const id: ID = JSON.parse(args.id);
-					IDObfuscator.checkId(id);
-					let form = undefined;
-					if (id.eph_id === 'NewHazardFormChild') {
-						const category = await tx.hazard_category.findFirst({where: {hazard_category_name: args.category}});
-						if (!category) {
-							throw new Error(`Category ${args.category} not found`);
-						}
 
-						const hazardForm = await tx.hazard_form.findFirst({where: {id_hazard_category: category.id_hazard_category}});
-						if (!hazardForm) {
-							throw new Error(`Form not found for category ${args.category} not found`);
-						}
-
-						form = await tx.hazard_form_child.create(
-							{ data: {
-									form: args.form,
-									version: args.version,
-									hazard_form_child_name: args.hazard_form_child_name,
-									id_hazard_form: hazardForm.id_hazard_form
-								}
-							});
-
-						await tx.hazard_form_child_history.create(
-							{ data: {
-									form: args.form,
-									version: args.version,
-									id_hazard_form_child: form.id_hazard_form_child,
-									modified_by: context.user.username,
-									modified_on: new Date()
-								}
-							});
-					} else {
-						throw new Error(`Not allowed to create a new hazard form child`);
+					const hazardForm = await tx.hazard_form.findFirst({where: {id_hazard_category: category.id_hazard_category}});
+					if (!hazardForm) {
+						throw new Error(`Form not found for category ${args.category} not found`);
 					}
+
+					const form = await tx.hazard_form_child.create(
+						{ data: {
+								form: args.form,
+								version: args.version,
+								hazard_form_child_name: args.hazard_form_child_name,
+								id_hazard_form: hazardForm.id_hazard_form
+							}
+						});
+
+					await tx.hazard_form_child_history.create(
+						{ data: {
+								form: args.form,
+								version: args.version,
+								id_hazard_form_child: form.id_hazard_form_child,
+								modified_by: context.user.username,
+								modified_on: new Date()
+							}
+						});
 					return mutationStatusType.success();
 				});
 			}
@@ -122,6 +121,11 @@ export const HazardFormChildMutations = extendType({
 			args: hazardFormChildChangesType,
 			type: "HazardFormStatus",
 			authorize: (parent, args, context) => context.user.isAdmin,
+			validate: {
+				id: validateId,
+				form: acceptJson,
+				version: hazardFormVersionRegexp,
+			},
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					const form = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
@@ -144,6 +148,7 @@ export const HazardFormChildMutations = extendType({
 								modified_on: new Date()
 							}
 						});
+					return mutationStatusType.success();
 				});
 			}
 		});

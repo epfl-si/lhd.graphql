@@ -9,6 +9,15 @@ import * as dotenv from "dotenv";
 import {saveBase64File} from "../../utils/fileUtilities";
 import {sendEmailsForHazards} from "../../utils/email/mailer";
 import {getUserInfoFromAPI} from "../../utils/callAPI";
+import {
+	alphanumericRegexp,
+	fileContentRegexp,
+	fileNameRegexp,
+	hazardCategoryNameRegexp,
+	roomNameRegexp,
+	validateId
+} from "../../api/lib/lhdValidators";
+import {acceptJson, sanitizeObject} from "../../utils/fieldValidatePlugin";
 
 dotenv.config();
 const HAZARD_DOCUMENT_FOLDER = process.env.HAZARD_DOCUMENT_FOLDER;
@@ -96,6 +105,16 @@ export const RoomHazardMutations = extendType({
 			args: roomHazardChangesType,
 			type: "RoomHazardStatus",
 			authorize: (parent, args, context) => context.user.canEditHazards,
+			validate: {
+				room: roomNameRegexp,
+				submission: acceptJson,
+				category: hazardCategoryNameRegexp,
+				additionalInfo: (s) => sanitizeObject(s, {
+					comment: {validate: alphanumericRegexp},
+					file: {validate: fileContentRegexp},
+					fileName: {validate: fileNameRegexp}
+				})
+			},
 			async resolve(root, args, context) {
 				const userInfo = await getUserInfoFromAPI(context.user.username);
 				const roomResult = await context.prisma.$transaction(async (tx) => {
@@ -219,6 +238,9 @@ export const RoomHazardMutations = extendType({
 			},
 			type: "RoomHazardStatus",
 			authorize: (parent, args, context) => context.user.canEditHazards,
+			validate: {
+				id: validateId
+			},
 			async resolve(root, args, context) {
 				const haz = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
 					'lab_has_hazards', 'id_lab_has_hazards',

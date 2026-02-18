@@ -1,34 +1,54 @@
 import {Room} from "nexus-prisma";
 import {getFormattedDate} from "../utils/date";
+import {alphanumericRegexp, roomNameRegexp} from "../api/lib/lhdValidators";
 
-export async function getRooms(prisma, dictionary, take = 0, skip = 0) {
+export async function getRooms(prisma, dictionary?: Partial<{
+	hazard: string,
+	room: string,
+	designation: string,
+	floor: string,
+	sector: string,
+	building: string,
+	unit: string,
+	cosec: string,
+	volume: number,
+	prof: string
+}>, take = 0, skip = 0) {
+	const { hazard, room, designation, floor, sector, building, unit, cosec, volume, prof } = dictionary || {};
+
 	const whereCondition = [];
 	whereCondition.push({ isDeleted: false });
-	dictionary.forEach(query => {
-			const value = decodeURIComponent(query[1]);
-			if (query[0] === 'Room') {
-				whereCondition.push({ name: { contains: value }})
-			} else if (query[0] === 'Hazard') {
-				whereCondition.push({ lab_has_hazards : {some: {hazard_form_history: { is: {hazard_form: { is: {hazard_category: { is: {hazard_category_name: { contains: value }}}}}}}}}})
-			} else if (query[0] === 'Designation') {
-				whereCondition.push({ kind : { is: {name: { contains: value }}}})
-			} else if (query[0] === 'Floor') {
-				whereCondition.push({ floor: { contains: value }})
-			} else if (query[0] === 'Sector') {
-				whereCondition.push({ sector: { contains: value }})
-			} else if (query[0] === 'Building') {
-				whereCondition.push({ building: { contains: value }})
-			} else if (query[0] === 'Unit') {
+			if (room) {
+				whereCondition.push({ name: { contains: room }})
+			}
+			if (hazard) {
+				whereCondition.push({ lab_has_hazards : {some: {hazard_form_history: { is: {hazard_form: { is: {hazard_category: { is: {hazard_category_name: { contains: hazard }}}}}}}}}})
+			}
+			if (designation) {
+				whereCondition.push({ kind : { is: {name: { contains: designation }}}})
+			}
+			if (floor) {
+				whereCondition.push({ floor: { contains: floor }})
+			}
+			if (sector) {
+				whereCondition.push({ sector: { contains: sector }})
+			}
+			if (building) {
+				whereCondition.push({ building: { contains: building }})
+			}
+			if (unit) {
 				whereCondition.push({
 					OR: [
-						{ unit_has_room: { some: {unit: {is: {name: {contains: value}}}} }},
-						{ unit_has_room: { some: {unit: {is: {institute: {is: {name: {contains: value}}}}}} }},
-						{ unit_has_room: { some: {unit: {is: {institute: {is: {school: {is: {name: {contains: value}}}}}}}} }}
+						{ unit_has_room: { some: {unit: {is: {name: {contains: unit}}}} }},
+						{ unit_has_room: { some: {unit: {is: {institute: {is: {name: {contains: unit}}}}}} }},
+						{ unit_has_room: { some: {unit: {is: {institute: {is: {school: {is: {name: {contains: unit}}}}}}}} }}
 					]
 				})
-			} else if (query[0] === 'Volume' && !isNaN(parseFloat(value))) {
-				whereCondition.push({ vol: { gt: parseFloat(value) - 10, lt: parseFloat(value) + 10 } })
-			} else if (query[0] === 'Cosec') {
+			}
+			if (volume) {
+				whereCondition.push({ vol: { gt: volume - 10, lt: volume + 10 } })
+			}
+			if (cosec) {
 				whereCondition.push({
 					unit_has_room: {
 						some: {
@@ -37,29 +57,9 @@ export async function getRooms(prisma, dictionary, take = 0, skip = 0) {
 									some: {
 										cosec: {
 											OR: [
-												{ name: { contains: value } },
-												{ surname: { contains: value } },
-												{ email: { contains: value } },
-											],
-										},
-									},
-								},
-							},
-						},
-					},
-				})
-			} else if (query[0] === 'Prof') {
-				whereCondition.push({
-					unit_has_room: {
-						some: {
-							unit: {
-								subunpro: {
-									some: {
-										person: {
-											OR: [
-												{ name: { contains: value } },
-												{ surname: { contains: value } },
-												{ email: { contains: value } },
+												{ name: { contains: cosec } },
+												{ surname: { contains: cosec } },
+												{ email: { contains: cosec } },
 											],
 										},
 									},
@@ -69,7 +69,27 @@ export async function getRooms(prisma, dictionary, take = 0, skip = 0) {
 					},
 				})
 			}
-		})
+			if (prof) {
+				whereCondition.push({
+					unit_has_room: {
+						some: {
+							unit: {
+								subunpro: {
+									some: {
+										person: {
+											OR: [
+												{ name: { contains: prof } },
+												{ surname: { contains: prof } },
+												{ email: { contains: prof } },
+											],
+										},
+									},
+								},
+							},
+						},
+					},
+				})
+			}
 
 	const roomsList = await prisma.Room.findMany({
 		where: {

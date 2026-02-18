@@ -2,7 +2,7 @@ import {extendType, intArg, list, objectType, stringArg} from 'nexus';
 import {Dispensation} from 'nexus-prisma';
 import {RoomStruct} from "../global/rooms";
 import {PersonStruct} from "../global/people";
-import {ID, IDObfuscator} from "../../utils/IDObfuscator";
+import {IDObfuscator} from "../../utils/IDObfuscator";
 import {mutationStatusType} from "../statuses";
 import {HolderMutationType, OthersMutationType, StringMutationType} from "../../utils/mutationTypes";
 import {getUserInfoFromAPI} from "../../utils/callAPI";
@@ -12,6 +12,15 @@ import {saveBase64File} from "../../utils/fileUtilities";
 import {sendEmailForDispensation,} from "../../utils/email/mailer";
 import {UnitStruct} from "../roomdetails/units";
 import {getFormattedDate} from "../../utils/date";
+import {acceptDateString, acceptInteger, acceptSubstringInList} from "../../utils/fieldValidatePlugin";
+import {
+  sanitizeHolderMutationTypes,
+  sanitizeMutationTypes,
+  sanitizeSearchString,
+  sanitizeTicketMutationTypes
+} from "../../utils/searchStrings";
+import {alphanumericRegexp, fileContentRegexp, fileNameRegexp, validateId} from "../../api/lib/lhdValidators";
+import {DispensationStatus} from "@prisma/client";
 
 export const DispensationStruct = objectType({
   name: Dispensation.$name,
@@ -157,53 +166,68 @@ export const DispensationsWithPaginationQuery = extendType({
         search: stringArg()
       },
       authorize: (parent, args, context) => context.user.canListDispensations,
+      validate: {
+        skip: acceptInteger,
+        take: acceptInteger,
+        search: (s) => sanitizeSearchString(s, {
+          Unit: {rename: 'unit', validate: alphanumericRegexp},
+          Dispensation: {rename: 'dispensation', validate: alphanumericRegexp},
+          Status: {rename: 'status', validate: (value) => acceptSubstringInList(value, Object.values(DispensationStatus))},
+          Room: {rename: 'room', validate: alphanumericRegexp},
+          Holder: {rename: 'holder', validate: alphanumericRegexp},
+          Subject: {rename: 'subject', validate: alphanumericRegexp},
+          Ticket: {rename: 'ticket', validate: alphanumericRegexp},
+        })
+      },
       async resolve(parent, args, context) {
-        const queryArray = args.search.split("&");
-        const dictionary = queryArray.map(query => query.split("="));
+        const { unit, dispensation, status, room, holder, subject, ticket } = args.search as any || {};
         const whereCondition = [];
-        dictionary.forEach(query => {
-          const value = decodeURIComponent(query[1]);
-          if (query[0] === 'Dispensation') {
-            const disp = value.split('-');
-            const dispNumber = Number(disp.length > 1 ? disp[1] : disp[0]);
-            if (!isNaN(dispNumber)) {
-              whereCondition.push({id_dispensation: Number(dispNumber)})
-            } else {
-              whereCondition.push({id_dispensation: -1})
-            }
-          } else if (query[0] === 'Status') {
-            whereCondition.push({ status: value })
-          } else if (query[0] === 'Room') {
-            whereCondition.push({ dispensation_has_room: { some: {room: {is: {name: {contains: value}}}} }})
-          } else if (query[0] === 'Unit') {
-            whereCondition.push({
-              OR: [
-                { dispensation_has_unit: { some: {unit: {is: {name: {contains: value}}}} }},
-                { dispensation_has_unit: { some: {unit: {is: {institute: {is: {name: {contains: value}}}}}} }},
-                { dispensation_has_unit: { some: {unit: {is: {institute: {is: {school: {is: {name: {contains: value}}}}}}}} }}
-              ]
-            })
-          } else if (query[0] === 'Holder') {
-            whereCondition.push({
-              dispensation_has_holder: {
-                some: {
-                  holder: {
-                    OR: [
-                      { name: { contains: value } },
-                      { surname: { contains: value } },
-                      { email: { contains: value } },
-                      { sciper: parseInt(value) },
-                    ],
-                  },
-                },
-              }
-            })
-          } else if (query[0] === 'Subject') {
-            whereCondition.push({ subject: {is: {subject: {contains: value}}}})
-          } else if (query[0] === 'Ticket') {
-            whereCondition.push({ dispensation_has_ticket: { some: {ticket_number: {contains: value}} }})
+        if (dispensation) {
+          const disp = dispensation.split('-');
+          const dispNumber = Number(disp.length > 1 ? disp[1] : disp[0]);
+          if (!isNaN(dispNumber)) {
+            whereCondition.push({id_dispensation: Number(dispNumber)})
+          } else {
+            whereCondition.push({id_dispensation: -1})
           }
-        });
+        }
+        if (status) {
+          whereCondition.push({ status: status })
+        }
+        if (room) {
+          whereCondition.push({ dispensation_has_room: { some: {room: {is: {name: {contains: room}}}} }})
+        }
+        if (unit) {
+          whereCondition.push({
+            OR: [
+              { dispensation_has_unit: { some: {unit: {is: {name: {contains: unit}}}} }},
+              { dispensation_has_unit: { some: {unit: {is: {institute: {is: {name: {contains: unit}}}}}} }},
+              { dispensation_has_unit: { some: {unit: {is: {institute: {is: {school: {is: {name: {contains: unit}}}}}}}} }}
+            ]
+          })
+        }
+        if (holder) {
+          whereCondition.push({
+            dispensation_has_holder: {
+              some: {
+                holder: {
+                  OR: [
+                    { name: { contains: holder } },
+                    { surname: { contains: holder } },
+                    { email: { contains: holder } },
+                    { sciper: parseInt(holder) },
+                  ],
+                },
+              },
+            }
+          })
+        }
+        if (subject) {
+          whereCondition.push({ subject: {is: {subject: {contains: subject}}}})
+        }
+        if (ticket) {
+          whereCondition.push({ dispensation_has_ticket: { some: {ticket_number: {contains: ticket}} }})
+        }
 
         const dispensationList = await context.prisma.Dispensation.findMany({
           where: {
@@ -220,49 +244,6 @@ export const DispensationsWithPaginationQuery = extendType({
         const totalCount = dispensationList.length;
 
         return { dispensations, totalCount };
-      }
-    });
-  },
-});
-
-export const DispensationsByRoom = extendType({
-  type: 'Query',
-  definition(t) {
-    t.field("dispensationsByRoom", {
-      type: list('Dispensation'),
-      args: {
-        skip: intArg({ default: 0 }),
-        take: intArg({ default: 20 }),
-        roomId: stringArg(),
-        type: stringArg()
-      },
-      authorize: (parent, args, context) => context.user.canListDispensations,
-      async resolve(parent, args, context) {
-        if (args.roomId) {
-          const id: ID = JSON.parse(args.roomId);
-          IDObfuscator.checkId(id);
-          IDObfuscator.checkSalt(id)
-          const idDeobfuscated = IDObfuscator.deobfuscateId(id);
-          return await context.prisma.Dispensation.findMany({
-            where: {
-              dispensation_has_room: {
-                some: {
-                  room: {
-                    is: {
-                      id: idDeobfuscated
-                    }
-                  }
-                }
-              }
-            },
-            orderBy: [
-              {
-                dispensation: 'asc',
-              },
-            ]
-          });
-        }
-        return [];
       }
     });
   },
@@ -305,14 +286,26 @@ export const DispensationMutations = extendType({
       args: newDispensationType,
       type: "DispensationMutationStatus",
       authorize: (parent, args, context) => context.user.canEditDispensations,
+      validate: {
+        subject: alphanumericRegexp,
+        subject_other: alphanumericRegexp,
+        description: alphanumericRegexp,
+        comment: alphanumericRegexp,
+        status: {enum: Object.values(DispensationStatus)},
+        date_start: acceptDateString,
+        date_end: acceptDateString,
+        file: fileContentRegexp,
+        file_name: fileNameRegexp,
+        rooms: sanitizeMutationTypes,
+        units: sanitizeMutationTypes,
+        holders: sanitizeHolderMutationTypes,
+        tickets: sanitizeTicketMutationTypes,
+      },
       async resolve(root, args, context) {
         const userInfo = await getUserInfoFromAPI(context.user.username);
         const subject = await context.prisma.DispensationSubject.findUnique({where: {subject: args.subject}});
         const newHolders = args.holders.filter(holder => holder.status === 'New');
         await ensurePerson(context.prisma, newHolders);
-        const date = args.date_start ?? getFormattedDate(new Date());
-        const [dayCrea, monthCrea, yearCrea] = date.split("/").map(Number);
-        const [day, month, year] = args.date_end.split("/").map(Number);
         const dispensation = await context.prisma.$transaction(async (tx) => {
           const disp = await tx.Dispensation.create({
             data: {
@@ -322,8 +315,8 @@ export const DispensationMutations = extendType({
               description: decodeURIComponent(args.description),
               comment: decodeURIComponent(args.comment),
               status: args.status,
-              date_start: new Date(yearCrea, monthCrea - 1, dayCrea, 12),
-              date_end: new Date(year, month - 1, day, 12),
+              date_start: args.date_start,
+              date_end: args.date_end,
               created_by: `${userInfo.userFullName} (${userInfo.sciper})`,
               created_on: new Date(),
               modified_by: `${userInfo.userFullName} (${userInfo.sciper})`,
@@ -333,7 +326,7 @@ export const DispensationMutations = extendType({
           await tx.Dispensation.update({
             where: { id_dispensation: disp.id_dispensation },
             data: {
-              file_path: getFilePath(args, disp.id_dispensation)
+              file_path: getFilePath(args.file_name, args.file, disp.id_dispensation)
             }
           });
           await setDispensationRelations(tx, disp.id_dispensation, args);
@@ -360,6 +353,21 @@ export const DispensationMutations = extendType({
       args: newDispensationType,
       type: "DispensationMutationStatus",
       authorize: (parent, args, context) => context.user.canEditDispensations,
+      validate: {
+        id: validateId,
+        subject: alphanumericRegexp,
+        subject_other: alphanumericRegexp,
+        description: alphanumericRegexp,
+        comment: alphanumericRegexp,
+        status: {enum: Object.values(DispensationStatus)},
+        date_end: acceptDateString,
+        file: fileContentRegexp,
+        file_name: fileNameRegexp,
+        rooms: sanitizeMutationTypes,
+        units: sanitizeMutationTypes,
+        holders: sanitizeHolderMutationTypes,
+        tickets: sanitizeTicketMutationTypes,
+      },
       async resolve(root, args, context) {
         const userInfo = await getUserInfoFromAPI(context.user.username);
         const disp = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
@@ -368,10 +376,7 @@ export const DispensationMutations = extendType({
         const subject = await context.prisma.DispensationSubject.findUnique({where: {subject: args.subject}});
         const newHolders = args.holders.filter(holder => holder.status === 'New');
         await ensurePerson(context.prisma, newHolders);
-        const [day, month, year] = args.date_end.split("/").map(Number);
-        const newDateEnd = new Date(year, month - 1, day, 12);
-        disp.date_end.setHours(12, 0, 0, 0);
-        const ren = disp.date_end < newDateEnd ? (disp.renewals + 1) : disp.renewals;
+        const ren = disp.date_end < args.date_end ? (disp.renewals + 1) : disp.renewals;
         await context.prisma.$transaction(async (tx) => {
           const dispensation = await tx.Dispensation.update({
             where: { id_dispensation: disp.id_dispensation },
@@ -383,8 +388,8 @@ export const DispensationMutations = extendType({
               description: decodeURIComponent(args.description),
               comment: decodeURIComponent(args.comment),
               status: args.status,
-              date_end: newDateEnd,
-              file_path: getFilePath(args, disp.id_dispensation),
+              date_end: args.date_end,
+              file_path: getFilePath(args.file_name, args.file, disp.id_dispensation),
               modified_by: `${userInfo.userFullName} (${userInfo.sciper})`,
               modified_on: new Date()
             }
@@ -420,6 +425,9 @@ export const DispensationMutations = extendType({
       args: newDispensationType,
       type: "DispensationMutationStatus",
       authorize: (parent, args, context) => context.user.canEditDispensations,
+      validate: {
+        id: validateId
+      },
       async resolve(root, args, context) {
         const disp = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
           'Dispensation', 'id_dispensation',
@@ -437,10 +445,10 @@ export const DispensationMutations = extendType({
   }
 });
 
-function getFilePath (args, id) {
+function getFilePath (fileName, fileContent, id) {
   let filePath = '';
-  if (args.file && args.file_name) {
-    filePath = saveBase64File(args.file, process.env.DISPENSATION_DOCUMENT_FOLDER + '/' + id + '/', args.file_name)
+  if (fileContent && fileName) {
+    filePath = saveBase64File(fileContent, process.env.DISPENSATION_DOCUMENT_FOLDER + '/' + id + '/', fileName)
   }
   return filePath;
 }

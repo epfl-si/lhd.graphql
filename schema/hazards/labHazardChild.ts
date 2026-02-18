@@ -4,7 +4,21 @@ import {mutationStatusType} from "../statuses";
 import {IDObfuscator, submission} from "../../utils/IDObfuscator";
 import {HazardFormChildHistoryStruct} from "./hazardFormChildHistory";
 import {getLabHasHazardToString, LabHazardStruct} from "./labHazard";
-import {Prisma} from '@prisma/client';
+import {authorization_status, Prisma} from '@prisma/client';
+import {
+	acceptBoolean,
+	acceptInteger,
+	acceptNumberFromString,
+	acceptSubstringInList
+} from "../../utils/fieldValidatePlugin";
+import {sanitizeSearchString} from "../../utils/searchStrings";
+import {
+	alphanumericRegexp,
+	casRegexp,
+	chemicalNameRegexp, hazardCategoryNameRegexp,
+	roomNameRegexp,
+	unitNameRegexp, validateId
+} from "../../api/lib/lhdValidators";
 
 export const LabHazardChildStruct = objectType({
 	name: lab_has_hazards_child.$name,
@@ -155,45 +169,50 @@ export const HazardsWithPaginationQuery = extendType({
 				queryString: stringArg(),
 			},
 			authorize: (parent, args, context) => context.user.canListHazards,
+			validate: {
+				skip: acceptInteger,
+				take: acceptInteger,
+				search: hazardCategoryNameRegexp,
+				queryString: (s) => sanitizeSearchString(s, {
+					chemical: {rename: 'chemical.haz_en', validate: alphanumericRegexp},
+					organism: {rename: 'organism.organism', validate: alphanumericRegexp},
+					container: {rename: 'container.name', validate: alphanumericRegexp},
+					Room: {rename: 'room', validate: roomNameRegexp},
+					Cosec: {rename: 'cosec', validate: alphanumericRegexp},
+					Prof: {rename: 'prof', validate: alphanumericRegexp},
+					Unit: {rename: 'unit', validate: unitNameRegexp}
+				}, true),
+			},
 			async resolve(parent, args, context) {
 				let jsonCondition = Prisma.raw(`1=1`);
-				if (args.queryString != '') {
-					const queryStringArgs = args.queryString.split('&');
-					const sql = queryStringArgs.map(qs => {
-						const queryStringMap = qs.split('=');
+				const conditions = args.queryString as any || {};
 
-						if (queryStringMap[0] === 'chemical')
-							queryStringMap[0] = 'chemical.haz_en';
-						else if (queryStringMap[0] === 'organism')
-							queryStringMap[0] = 'organism.organism';
-						else if (queryStringMap[0] === 'container')
-							queryStringMap[0] = 'container.name';
-
-						if (queryStringMap[0] === 'Room') {
-							return Prisma.sql`l.lab_display like ${Prisma.raw(`'%${queryStringMap[1]}%'`)}`;
-						} else if (queryStringMap[0] === 'Cosec') {
-							return Prisma.sql`(cos.email_person like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} 
-							or cos.name_person like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} 
-							or cos.surname_person like ${Prisma.raw(`'%${queryStringMap[1]}%'`)})`;
-						} else if (queryStringMap[0] === 'Prof') {
-							return Prisma.sql`(prof.email_person like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} 
-							or prof.name_person like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} 
-							or prof.surname_person like ${Prisma.raw(`'%${queryStringMap[1]}%'`)})`;
-						} else if (queryStringMap[0] === 'Unit') {
-							return Prisma.sql`(u.name_unit like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} 
-							or i.name_institut like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} 
-							or f.name_faculty like ${Prisma.raw(`'%${queryStringMap[1]}%'`)})`;
-						} else {
-							return Prisma.sql`
-    (JSON_VALUE(lhhc.submission, ${Prisma.raw(`'$.data.${queryStringMap[0]}'`)}) like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} OR 
-     JSON_VALUE(lhh.submission, ${Prisma.raw(`'$.data.${queryStringMap[0]}'`)}) like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} OR
-     JSON_QUERY(lhhc.submission, ${Prisma.raw(`'$.data.${queryStringMap[0]}'`)}) like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} OR 
-     JSON_QUERY(lhh.submission, ${Prisma.raw(`'$.data.${queryStringMap[0]}'`)}) like ${Prisma.raw(`'%${queryStringMap[1]}%'`)} )`;
-						}
-					})
+				const sql = Object.keys(conditions).map(key => {
+					if (key === 'room') {
+						return Prisma.sql`l.lab_display like ${Prisma.raw(`'%${conditions[key]}%'`)}`;
+					} else if (key === 'cosec') {
+						return Prisma.sql`(cos.email_person like ${Prisma.raw(`'%${conditions[key]}%'`)} 
+						or cos.name_person like ${Prisma.raw(`'%${conditions[key]}%'`)} 
+						or cos.surname_person like ${Prisma.raw(`'%${conditions[key]}%'`)})`;
+					} else if (key === 'prof') {
+						return Prisma.sql`(prof.email_person like ${Prisma.raw(`'%${conditions[key]}%'`)} 
+						or prof.name_person like ${Prisma.raw(`'%${conditions[key]}%'`)} 
+						or prof.surname_person like ${Prisma.raw(`'%${conditions[key]}%'`)})`;
+					} else if (key === 'unit') {
+						return Prisma.sql`(u.name_unit like ${Prisma.raw(`'%${conditions[key]}%'`)} 
+						or i.name_institut like ${Prisma.raw(`'%${conditions[key]}%'`)} 
+						or f.name_faculty like ${Prisma.raw(`'%${conditions[key]}%'`)})`;
+					} else {
+						return Prisma.sql`
+	(JSON_VALUE(lhhc.submission, ${Prisma.raw(`'$.data.${key}'`)}) like ${Prisma.raw(`'%${conditions[key]}%'`)} OR 
+	 JSON_VALUE(lhh.submission, ${Prisma.raw(`'$.data.${key}'`)}) like ${Prisma.raw(`'%${conditions[key]}%'`)} OR
+	 JSON_QUERY(lhhc.submission, ${Prisma.raw(`'$.data.${key}'`)}) like ${Prisma.raw(`'%${conditions[key]}%'`)} OR 
+	 JSON_QUERY(lhh.submission, ${Prisma.raw(`'$.data.${key}'`)}) like ${Prisma.raw(`'%${conditions[key]}%'`)} )`;
+					}
+				});
+				if (sql.length > 0) {
 					jsonCondition = Prisma.sql`${Prisma.join(sql, ` AND `)}`;
 				}
-
 
 				const rawQuery = Prisma.sql`select distinct l.lab_display,
 l.id_lab,
@@ -288,6 +307,21 @@ export const HazardFetchForExportQuery = extendType({
 				search: stringArg()
 			},
 			authorize: (parent, args, context) => context.user.canListHazards,
+			validate: {
+				hazardCategory: hazardCategoryNameRegexp,
+				units: acceptBoolean,
+				cosecs: acceptBoolean,
+				profs: acceptBoolean,
+				search: (s) => sanitizeSearchString(s, {
+					Room: {rename: 'room', validate: roomNameRegexp},
+					Designation: {rename: 'designation', validate: alphanumericRegexp},
+					Floor: {rename: 'floor', validate: alphanumericRegexp},
+					Sector: {rename: 'sector', validate: alphanumericRegexp},
+					Building: {rename: 'building', validate: alphanumericRegexp},
+					Volume: {rename: 'volume', validate: acceptNumberFromString},
+					Unit: {rename: 'unit', validate: unitNameRegexp}
+				}),
+			},
 			async resolve(parent, args, context) {
 				let selectedFieldForUnits = Prisma.raw(``);
 				let selectedFieldsForCosecs = Prisma.raw(``);
@@ -296,32 +330,29 @@ export const HazardFetchForExportQuery = extendType({
 				let joinForCosecs = Prisma.raw(``);
 				let joinDForProfs = Prisma.raw(``);
 
-				const queryArray = args.search.split("&");
-				const dictionary = queryArray.map(query => query.split("="));
 				const whereCondition = [];
 				whereCondition.push(Prisma.sql`hc.hazard_category_name = ${args.hazardCategory}`)
-				if (dictionary.length > 0) {
-					dictionary.forEach(query => {
-						const value = decodeURIComponent(query[1]);
-						if (query[0] === 'Room') {
-							whereCondition.push(Prisma.sql`l.lab_display like ${'%' + value + '%'}`)
-						} else if (query[0] === 'Designation') {
-							whereCondition.push(Prisma.sql`lt.labType like ${'%' + value + '%'}`)
-						} else if (query[0] === 'Floor') {
-							whereCondition.push(Prisma.sql`l.floor like ${'%' + value + '%'}`)
-						} else if (query[0] === 'Sector') {
-							whereCondition.push(Prisma.sql`l.sector like ${'%' + value + '%'}`)
-						} else if (query[0] === 'Building') {
-							whereCondition.push(Prisma.sql`l.building like ${'%' + value + '%'}`)
-						} else if (query[0] === 'Unit') {
-							//whereCondition.push(Prisma.sql`(u.name_unit like %${'%' + value + '%'}% or i.name_institut like %${'%' + value + '%'}% or f.name_faculty like %${'%' + value + '%'}%)`)
-						} else if (query[0] === 'Volume' && !isNaN(parseFloat(value))) {
-							whereCondition.push(Prisma.sql`l.vol >= (${value} - 10) AND l.vol <= (${value} + 10)`)
-						}
-					})
-				}
+				const conditions = args.search as any || {};
 
-				if (args.units || args.search.indexOf('&Unit=') > -1) {
+				Object.keys(conditions).forEach(key => {
+						if (key === 'room') {
+							whereCondition.push(Prisma.sql`l.lab_display like ${'%' + conditions[key] + '%'}`)
+						} else if (key === 'designation') {
+							whereCondition.push(Prisma.sql`lt.labType like ${'%' + conditions[key] + '%'}`)
+						} else if (key === 'floor') {
+							whereCondition.push(Prisma.sql`l.floor like ${'%' + conditions[key] + '%'}`)
+						} else if (key === 'sector') {
+							whereCondition.push(Prisma.sql`l.sector like ${'%' + conditions[key] + '%'}`)
+						} else if (key === 'building') {
+							whereCondition.push(Prisma.sql`l.building like ${'%' + conditions[key] + '%'}`)
+						} else if (key === 'unit') {
+							//whereCondition.push(Prisma.sql`(u.name_unit like %${'%' + conditions[key] + '%'}% or i.name_institut like %${'%' + conditions[key] + '%'}% or f.name_faculty like %${'%' + conditions[key] + '%'}%)`)
+						} else if (key === 'volume' && !isNaN(parseFloat(conditions[key]))) {
+							whereCondition.push(Prisma.sql`l.vol >= (${conditions[key]} - 10) AND l.vol <= (${conditions[key]} + 10)`)
+						}
+					});
+
+				if (args.units || conditions.hasOwnProperty('unit')) {
 						selectedFieldForUnits = Prisma.sql`u.name_unit as unit,i.name_institut as institut,f.name_faculty as faculty,`;
 						joinForUnits = Prisma.sql`
 left join unit_has_room uhr on uhr.id_lab = l.id_lab
@@ -396,6 +427,9 @@ export const HazardChildMutations = extendType({
 			args: hazardChildMutationsType,
 			type: "HazardChildStatus",
 			authorize: (parent, args, context) => context.user.canEditHazards,
+			validate: {
+				id: validateId
+			},
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					const child = await IDObfuscator.ensureDBObjectIsTheSame(args.id,

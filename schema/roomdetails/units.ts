@@ -2,13 +2,27 @@ import {extendType, inputObjectType, intArg, list, objectType, stringArg} from '
 import {Unit} from 'nexus-prisma';
 import {InstituteStruct} from './institutes';
 import {PersonStruct} from "../global/people";
-import {Person} from "@prisma/client";
+import {authorization_status, Person} from "@prisma/client";
 import {mutationStatusType} from "../statuses";
 import {IDObfuscator} from "../../utils/IDObfuscator";
 import {getUnitsFromApi} from "../../utils/callAPI";
 import {findOrCreatePerson} from "../../model/persons";
 import {deleteUnitCascade, getUnitByName} from "../../model/units";
 import {getReportFilesByUnit} from "../../utils/fileUtilities";
+import {acceptInteger, acceptSubstringInList} from "../../utils/fieldValidatePlugin";
+import {
+	sanitizeMutationTypes,
+	sanitizePersonMutationTypes,
+	sanitizeRoomsNames,
+	sanitizeSearchString
+} from "../../utils/searchStrings";
+import {
+	alphanumericRegexp,
+	casRegexp,
+	chemicalNameRegexp,
+	unitNameRegexp,
+	validateId
+} from "../../api/lib/lhdValidators";
 
 export const UnitStruct = objectType({
 	name: Unit.$name,
@@ -183,7 +197,7 @@ export const UnitMutations = extendType({
 			args: unitCreationType,
 			type: "UnitStatus",
 			authorize: (parent, args, context) => context.user.canEditUnits,
-			async resolve(root, args, context) {
+			async resolve(root, args, context) {  // TODO validate
 				return await context.prisma.$transaction(async (tx) => {
 					for (const unit of args.units) {
 						if (unit.status === 'New') {
@@ -214,24 +228,29 @@ export const UnitMutations = extendType({
 									});
 								}
 
-								const responsible: Person = await findOrCreatePerson(tx, unit.responsibleId, unit.responsibleFirstName, unit.responsibleLastName, unit.responsibleEmail);
+								let responsibleID = null;
+								if (unit.responsibleId !== -1) {
+									const responsible: Person = await findOrCreatePerson(tx, unit.responsibleId, unit.responsibleFirstName, unit.responsibleLastName, unit.responsibleEmail);
+									responsibleID = responsible.id_person;
+								}
 
 								const u = await tx.Unit.create({
 									data: {
 										name: unit.name,
 										unitId: unit.unitId,
 										id_institute: institute.id,
-										responsible_id: responsible?.id_person
+										responsible_id: responsibleID
 									}
 								});
 
-								const newSubunpro = {
-									id_person: responsible.id_person,
-									id_unit: u.id
-								};
-								await tx.subunpro.create({
-									data: newSubunpro
-								});
+								if (responsibleID) {
+									await tx.subunpro.create({
+										data: {
+											id_person: responsibleID,
+											id_unit: u.id
+										}
+									});
+								}
 							}
 						}
 					}
@@ -244,6 +263,13 @@ export const UnitMutations = extendType({
 			args: unitChangesType,
 			type: "UnitStatus",
 			authorize: (parent, args, context) => context.user.canEditUnits,
+			validate: {
+				id: validateId,
+				profs: sanitizePersonMutationTypes,
+				cosecs: sanitizePersonMutationTypes,
+				subUnits: sanitizeMutationTypes,
+				unit: unitNameRegexp
+			},
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					const unit = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
@@ -331,6 +357,9 @@ export const UnitMutations = extendType({
 			args: unitDeleteType,
 			type: "UnitStatus",
 			authorize: (parent, args, context) => context.user.canEditUnits,
+			validate: {
+				id: validateId
+			},
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					const unit = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
@@ -364,6 +393,11 @@ export const UnitFullTextQuery = extendType({
 				search: stringArg(),
 			},
 			authorize: (parent, args, context) => context.user.canListUnits,
+			validate: {
+				take: acceptInteger,
+				skip: acceptInteger,
+				search: alphanumericRegexp
+			},
 			async resolve(parent, args, context) {
 				const unitList = await context.prisma.Unit.findMany({
 					where: {
@@ -396,6 +430,9 @@ export const UnitFullTextQuery = extendType({
 				search: stringArg(),
 			},
 			authorize: (parent, args, context) => context.user.canListUnits,
+			validate: {
+				search: alphanumericRegexp
+			},
 			async resolve(parent, args, context) {
 				return await getUnitByName(context.prisma, args.search);
 			}
@@ -412,15 +449,17 @@ export const UnitsForDispensationQuery = extendType({
 				rooms: stringArg(),
 			},
 			authorize: (parent, args, context) => context.user.canListUnits,
+			validate: {
+				rooms: sanitizeRoomsNames
+			},
 			async resolve(parent, args, context) {
-				const roomNames = args.rooms.split(',');
 				return await context.prisma.Unit.findMany({
 					where: {
 						unit_has_room: {
 							some: {
 								room: {
 									name: {
-										in: roomNames
+										in: args.rooms
 									}
 								}
 							}
@@ -459,6 +498,9 @@ export const UnitFromAPIQuery = extendType({
 				search: stringArg()
 			},
 			authorize: (parent, args, context) => context.user.canListUnits,
+			validate: {
+				search: alphanumericRegexp
+			},
 			async resolve(parent, args, context): Promise<any> {
 				const units = await getUnitsFromApi(args.search);
 				const unitList = [];
@@ -468,10 +510,10 @@ export const UnitFromAPIQuery = extendType({
 						name: u.name,
 						path: u.path,
 						unitId: u.id,
-						responsibleId: u.responsibleid,
-						responsibleFirstName: u.responsible.firstname,
-						responsibleLastName: u.responsible.lastname,
-						responsibleEmail: u.responsible.email
+						responsibleId: u.responsibleid !== "" ? u.responsibleid : -1,
+						responsibleFirstName: u.responsible ? u.responsible.firstname : '',
+						responsibleLastName: u.responsible ? u.responsible.lastname : '',
+						responsibleEmail: u.responsible ? u.responsible.email : ''
 
 					});
 				});
@@ -500,6 +542,9 @@ export const UnitReportFilesQuery = extendType({
 				id: stringArg()
 			},
 			authorize: (parent, args, context) => context.user.canListReportFiles,
+			validate: {
+				id: validateId
+			},
 			async resolve(parent, args, context): Promise<any> {
 				const ids = IDObfuscator.getId(args.id);
 				const reportList = [];

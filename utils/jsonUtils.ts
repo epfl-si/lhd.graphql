@@ -1,5 +1,4 @@
-export function diffObjects(obj1: any, obj2: any, excludedField: string) {
-	const excludedFieldList = excludedField.split(',');
+export function diffObjects(obj1: any, obj2: any, excludedField: string[]) {
 	const diffs = {};
 
 	const allKeys = new Set([
@@ -8,7 +7,7 @@ export function diffObjects(obj1: any, obj2: any, excludedField: string) {
 	]);
 
 	for (const key of allKeys) {
-		if (excludedFieldList.indexOf(key) == -1) {
+		if (excludedField.indexOf(key) == -1) {
 			if ( obj1[key] instanceof Date && obj2[key] instanceof Date ) {
 				if ( obj1[key].getTime() !== obj2[key].getTime() ) {
 					diffs[key] = {
