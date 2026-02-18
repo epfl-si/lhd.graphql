@@ -1,6 +1,8 @@
 import { objectType, extendType, stringArg, booleanArg, list, unionType } from 'nexus';
 import { Person } from 'nexus-prisma';
 import {getUsersFromApi} from "../../utils/callAPI";
+import {acceptBoolean} from "../../utils/fieldValidatePlugin";
+import {alphanumericRegexp} from "../../api/lib/lhdValidators";
 
 export const PersonStruct = objectType({
 	name: Person.$name,
@@ -73,6 +75,10 @@ export const PersonFullTextQuery = extendType({
 				lhdOnly: booleanArg()
 			},
 			authorize: (parent, args, context) => context.user.canListPersons,
+			validate: {
+				search: alphanumericRegexp,
+				lhdOnly: acceptBoolean
+			},
 			async resolve(parent, args, context) {
 				const lhdPeople = await context.prisma.Person.findMany({
 					where: {

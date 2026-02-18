@@ -15,6 +15,9 @@ import {getDoorPlugFromApi, getRoomsFromApi} from "../../utils/callAPI";
 import {HazardsAdditionalInfoStruct} from "../hazards/hazardsAdditionalInfo";
 import {LabHazardChildStruct} from "../hazards/labHazardChild";
 import {deleteRoom, getRooms} from "../../model/rooms";
+import {acceptBoolean, acceptInteger, acceptNumberFromString} from "../../utils/fieldValidatePlugin";
+import {sanitizeMutationTypes, sanitizeSearchString} from "../../utils/searchStrings";
+import {alphanumericRegexp, roomNameRegexp, validateId} from "../../api/lib/lhdValidators";
 
 const debug = debug_('lhd:rooms');
 
@@ -246,10 +249,24 @@ export const RoomsWithPaginationQuery = extendType({
 				search: stringArg(),
 			},
 			authorize: (parent, args, context) => context.user.canListRooms,
+			validate: {
+				take: acceptInteger,
+				skip: acceptInteger,
+				search: (s) => sanitizeSearchString(s, {
+					Hazard: {rename: 'hazard', validate: alphanumericRegexp},
+					Room: {rename: 'room', validate: alphanumericRegexp},
+					Designation: {rename: 'designation', validate: alphanumericRegexp},
+					Floor: {rename: 'floor', validate: alphanumericRegexp},
+					Sector: {rename: 'sector', validate: alphanumericRegexp},
+					Building: {rename: 'building', validate: alphanumericRegexp},
+					Unit: {rename: 'unit', validate: alphanumericRegexp},
+					Cosec: {rename: 'cosec', validate: alphanumericRegexp},
+					Volume: {rename: 'volume', validate: acceptNumberFromString},
+					Prof: {rename: 'prof', validate: alphanumericRegexp},
+				})
+			},
 			async resolve(parent, args, context) {
-				const queryArray = args.search.split("&");
-				const dictionary = queryArray.map(query => query.split("="));
-				return await getRooms(context.prisma, dictionary, args.take, args.skip);
+				return await getRooms(context.prisma, {...args.search as any}, args.take, args.skip);
 			}
 		});
 	},
@@ -314,7 +331,7 @@ export const RoomMutations = extendType({
 			description: `Create a new room.`,
 			args: roomCreationType,
 			type: "RoomStatus",
-			authorize: (parent, args, context) => context.user.canEditRooms,
+			authorize: (parent, args, context) => context.user.canEditRooms,  // TODO validate
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					for (const room of args.rooms) {
@@ -351,6 +368,14 @@ export const RoomMutations = extendType({
 			args: roomType,
 			type: "RoomStatus",
 			authorize: (parent, args, context) => context.user.canEditRooms,
+			validate: {
+				id: validateId,
+				name: roomNameRegexp,
+				kind: alphanumericRegexp,
+				vent: {enum: ['y', 'n']},
+				lab_type_is_different: acceptBoolean,
+				units: sanitizeMutationTypes
+			},
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					const room = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
@@ -397,6 +422,9 @@ export const RoomMutations = extendType({
 			args: roomDeleteType,
 			type: "RoomStatus",
 			authorize: (parent, args, context) => context.user.canEditRooms,
+			validate: {
+				id: validateId
+			},
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					const room = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
@@ -433,6 +461,9 @@ export const RoomFromAPIQuery = extendType({
 				search: stringArg()
 			},
 			authorize: (parent, args, context) => context.user.canListRooms,
+			validate: {
+				search: alphanumericRegexp
+			},
 			async resolve(parent, args, context): Promise<any> {
 				const rooms = await getRoomsFromApi(args.search);
 				const roomsList = [];
@@ -464,6 +495,10 @@ export const DoorPlugQuery = extendType({
 			type: "String",
 			args: {
 				roomName: stringArg()
+			},
+			authorize: (parent, args, context) => context.user.canListRooms,
+			validate: {
+				roomName: roomNameRegexp
 			},
 			async resolve(parent, args, context): Promise<any> {
 				const file = await getDoorPlugFromApi(args.roomName);

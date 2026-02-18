@@ -76,16 +76,14 @@ export const HazardsAdditionalInfoHasTagMutations = extendType({
 			args: hazardTagType,
 			type: "HazardTagStatus",
 			authorize: (parent, args, context) => context.user.isAdmin || context.user.canEditHazards,
+			validate: {
+				tag: {enum: ['Exception AxS']},
+				comment: alphanumericRegexp,
+				additionalInfoId: validateId
+			},
 			async resolve(root, args, context) {
 				const userInfo = await getUserInfoFromAPI(context.user.username);
 				return await context.prisma.$transaction(async (tx) => {
-					const id = IDObfuscator.getId(args.id);
-					IDObfuscator.checkId(id);
-
-					if (id.eph_id.indexOf('newTag') == -1) {
-						throw new Error(`Bad descrypted request`);
-					}
-
 					let additionalInfo;
 					if (args.additionalInfoId !== '') {
 						additionalInfo = await IDObfuscator.ensureDBObjectIsTheSame(args.additionalInfoId,
@@ -129,6 +127,10 @@ export const HazardsAdditionalInfoHasTagMutations = extendType({
 			args: hazardTagType,
 			type: "HazardFormStatus",
 			authorize: (parent, args, context) => context.user.isAdmin || context.user.canEditHazards,
+			validate: {
+				id: validateId,
+				comment: alphanumericRegexp
+			},
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					const tag = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
@@ -150,6 +152,9 @@ export const HazardsAdditionalInfoHasTagMutations = extendType({
 			args: hazardTagType,
 			type: "HazardFormStatus",
 			authorize: (parent, args, context) => context.user.canEditHazards,
+			validate: {
+				id: validateId
+			},
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					const tag = await IDObfuscator.ensureDBObjectIsTheSame(args.id,

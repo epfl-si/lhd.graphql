@@ -5,12 +5,17 @@ export const chemicalNameRegexp = new RegExp("[A-Za-z0-9\\/()*+\"%&='?\\[\\]\\{\
 export const casRegexp = new RegExp(/^[0-9][0-9-/]*[0-9]$/);
 export const reqRegexp = new RegExp("[A-Z][a-zA-Z0-9.]*-[a-zA-Z0-9.]*");
 export const reqRenewRegexp = new RegExp("[A-Z][a-zA-Z0-9.]*-[a-zA-Z0-9.]*-[0-9]*");
-export const unitNameRegexp = new RegExp("[A-Z][A-Z-]*[A-Z]");
+export const unitNameRegexp = new RegExp("[A-Za-z- ()+_]*[A-Z]");
 export const roomNameRegexp = new RegExp("[A-Z][A-Z0-9-. ]*[A-Z0-9]");
 export const authRegexp = new RegExp("yes|no|1|0");
 export const fileNameRegexp = new RegExp(/^[\p{L}\p{N} _\-\(\)\.]+\.[A-Za-z0-9]+$/u);
 export const fileContentRegexp = new RegExp("^data:[^;]+;base64,(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$")
-export const alphanumericRegexp = new RegExp("[a-zA-Z0-9-. ]*");
+export const alphanumericRegexp = new RegExp("[a-zA-Z0-9-.,'/_° ]*");
+export const dispensationTicketRegexp = new RegExp(/^SCCTI\d{7}$/);
+export const dbNamesRegexp = new RegExp(/^[a-zA-Z_]*$/);
+export const emailRegexp = new RegExp(/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/);
+export const hazardCategoryNameRegexp = new RegExp(/^[a-zA-Z_]*$/);
+export const hazardFormVersionRegexp = new RegExp(/^\d+\.\d+\.\d+$/);
 
 export const saltRegexp = new RegExp("[a-f0-9]+");
 export const ephIdRegexp = new RegExp("[a-zA-Z0-9/+=]+");

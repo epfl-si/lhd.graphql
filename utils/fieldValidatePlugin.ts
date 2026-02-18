@@ -132,6 +132,11 @@ export const acceptInteger = (i) => {
 	return i;
 }
 
+export const acceptNumberFromString = (i) => {
+	if (!i || isNaN(parseFloat(i))) throw new Error(`Bad type: ${typeof(i)}, expected number`);
+	return parseFloat(i);
+}
+
 export const acceptBoolean = (i) => {
 	if (typeof(i) !== 'boolean') throw new Error(`Bad type: ${typeof(i)}, expected boolean`);
 	return i;
@@ -182,4 +187,49 @@ const isStringArray = (value) => {
 		Array.isArray(value as any) &&
 		(value as any).every(item => typeof item === 'string')
 	)
+}
+
+export const acceptJson = (i: string) => {
+	try {
+		JSON.parse(i);
+		return i;
+	} catch (e) {
+		throw new Error(`Bad format for ${i}`);
+	}
+}
+
+export function sanitizeObject (obj: any, spec: {[k: string]: {rename ?: string, validate: RegExp | ((value: string) => any) | {enum: string[]}}}) {
+	const ret = {};
+	const errors = [];
+
+	const objKeys = Object.keys(obj);
+	objKeys.forEach(key => {
+		if (! spec[key]) return;  // key is now trusted
+
+		const validator = spec[key].validate;
+		const renamedKey = spec[key].rename ?? key;
+		if (validator instanceof RegExp) {
+			const matched = obj[key].match(validator)
+			if (matched) {
+				ret[renamedKey] = matched[0];
+			} else {
+				errors.push(key);
+			}
+		} else if (validator instanceof Function) {
+			try {
+				ret[renamedKey] = validator(obj[key]);
+			} catch (e) {
+				errors.push(key);
+			}
+		} else if (isCustomEnumerator(validator)) {
+			try {
+				ret[renamedKey] = acceptEnum(obj[key], validator[key].enum);
+			} catch (e) {
+				errors.push(key);
+			}
+		}
+	})
+	if (errors.length) throw new Error(errors.join(', '));
+
+	return ret;
 }

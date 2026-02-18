@@ -4,6 +4,8 @@ import {HazardCategoryStruct} from "./hazardCategory";
 import {mutationStatusType} from "../statuses";
 import {IDObfuscator} from "../../utils/IDObfuscator";
 import {HazardFormChildStruct} from "./hazardFormChild";
+import {hazardCategoryNameRegexp, hazardFormVersionRegexp, validateId} from "../../api/lib/lhdValidators";
+import {acceptJson} from "../../utils/fieldValidatePlugin";
 
 export const HazardFormStruct = objectType({
 	name: hazard_form.$name,
@@ -79,37 +81,25 @@ export const HazardFormMutations = extendType({
 			args: hazardFormChangesType,
 			type: "HazardFormStatus",
 			authorize: (parent, args, context) => context.user.isAdmin,
+			validate: {
+				form: acceptJson,
+				version: hazardFormVersionRegexp,
+				hazard_category_name: hazardCategoryNameRegexp
+			},
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
-					const id = IDObfuscator.getId(args.id);
-					IDObfuscator.checkId(id);
-
-					let form = undefined;
-					if (id.eph_id === 'newHazard') {
-						const category = await tx.hazard_category.create(
-							{ data: {
-									hazard_category_name: args.hazard_category_name
-								}
-							});
-						form = await tx.hazard_form.create(
-							{ data: {
-									form: args.form,
-									version: args.version,
-									id_hazard_category: category.id_hazard_category
-								}
-							});
-					} else {
-						form = await IDObfuscator.getObjectByObfuscatedId(id,
-							'hazard_form', 'id_hazard_form',
-							tx, 'Hazard', getHazardFormToString);
-						await tx.hazard_form.update(
-							{ where: { id_hazard_form: form.id_hazard_form },
-								data: {
-									form: args.form,
-									version: args.version
-								}
-							});
-					}
+					const category = await tx.hazard_category.create(
+						{ data: {
+								hazard_category_name: args.hazard_category_name
+							}
+						});
+					const form = await tx.hazard_form.create(
+						{ data: {
+								form: args.form,
+								version: args.version,
+								id_hazard_category: category.id_hazard_category
+							}
+						});
 
 					await tx.hazard_form_history.create(
 						{ data: {
@@ -129,6 +119,11 @@ export const HazardFormMutations = extendType({
 			args: hazardFormChangesType,
 			type: "HazardFormStatus",
 			authorize: (parent, args, context) => context.user.isAdmin,
+			validate: {
+				id: validateId,
+				form: acceptJson,
+				version: hazardFormVersionRegexp
+			},
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					const form = await IDObfuscator.ensureDBObjectIsTheSame(args.id,

@@ -361,10 +361,7 @@ export function makeRESTAPI() {
 				}
 			}),
 		async (req, res) => {
-			const conditions = [];
-			if (req.params.unit) conditions.push(['Unit', req.params.unit]);
-			if (req.params.room) conditions.push(['Room', req.params.room]);
-			const resultNew = await getRooms(req.prisma, conditions);
+			const resultNew = await getRooms(req.prisma, {unit: req.params.unit, room: req.params.room});
 			for ( let i = 0; i<resultNew.rooms.length; i++) {
 				for ( let j = 0; j<resultNew.rooms[i].unit_has_room.length; j++) {
 					resultNew.rooms[i].unit_has_room[j].realID = resultNew.rooms[i].unit_has_room[j].id_unit;

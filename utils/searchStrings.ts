@@ -1,4 +1,11 @@
-import {alphanumericRegexp, casRegexp} from "../api/lib/lhdValidators";
+import {
+	alphanumericRegexp,
+	casRegexp,
+	dbNamesRegexp,
+	dispensationTicketRegexp, emailRegexp, fileContentRegexp, fileNameRegexp,
+	roomNameRegexp
+} from "../api/lib/lhdValidators";
+import {acceptInteger, sanitizeObject} from "./fieldValidatePlugin";
 
 /**
  *  Split and sanitize a URL-encoded search string.
@@ -23,8 +30,9 @@ import {alphanumericRegexp, casRegexp} from "../api/lib/lhdValidators";
  *
  * @param searchString
  * @param spec The specification of how the fields should be validated, and optionally renamed.
+ * @param keepUnknownKeys Used for dynamic objects (like hazards)
  */
-export function sanitizeSearchString (searchString: string, spec: {[k: string]: {rename ?: string, validate: RegExp | ((value: string) => any)}}) {
+export function sanitizeSearchString (searchString: string, spec: {[k: string]: {rename ?: string, validate: RegExp | ((value: string) => any)}}, keepUnknownKeys: boolean = false) {
 	const queryArray = searchString.split("&");
 	const dictionary = queryArray.map(query => query.split("="));
 
@@ -33,9 +41,23 @@ export function sanitizeSearchString (searchString: string, spec: {[k: string]: 
 
 	dictionary.forEach(query => {
 		const key = query[0];
-		if (! spec[key]) return;  // key is now trusted
-
 		const value = decodeURIComponent(query[1]);
+
+		if (key === '') return;
+
+		if (! spec[key]) {
+			if (! keepUnknownKeys) return;  // key is now trusted
+			else {
+				const matched = value.match(alphanumericRegexp)
+				if (matched) {
+					ret[key] = matched[0];
+				} else {
+					errors.push(key);
+				}
+				return;
+			}
+		}
+
 		const validator = spec[key].validate;
 		const renamedKey = spec[key].rename ?? key;
 		if (validator instanceof RegExp) {
@@ -92,6 +114,58 @@ export function sanitizeCasMutationTypes (values: {status: string, name: string}
 	values.forEach(val => {
 		if (val.name && !casRegexp.test(val.name)) {
 			throw new Error("Invalid cas");
+		}
+		if (!["New", "Default", "Deleted"].includes(val.status)) {
+			throw new Error("Invalid status");
+		}
+	});
+	return values;
+}
+
+export function sanitizeTicketMutationTypes (values: {status: string, name: string}[]) {
+	if (!values) return [];
+
+	values.forEach(val => {
+		if (val.name && !dispensationTicketRegexp.test(val.name)) {
+			throw new Error("Invalid ticket number");
+		}
+		if (!["New", "Default", "Deleted"].includes(val.status)) {
+			throw new Error("Invalid status");
+		}
+	});
+	return values;
+}
+
+export function sanitizeDBNames (value: string) {
+	if (!value) return [];
+
+	const values = value.split(',');
+	values.forEach(val => {
+		if (val && !dbNamesRegexp.test(val)) {
+			throw new Error("Invalid db name");
+		}
+	});
+	return values;
+}
+
+export function sanitizeRoomsNames (value: string) {
+	if (!value) return [];
+
+	const values = value.split(',');
+	values.forEach(val => {
+		if (val && !roomNameRegexp.test(val)) {
+			throw new Error("Invalid room name");
+		}
+	});
+	return values;
+}
+
+export function sanitizePersonMutationTypes (values: {status: string, person: {sciper: number, name: string, surname: string, type?: string, email?: string}}[]) {
+	if (!values) return [];
+
+	values.forEach(val => {
+		if (val.person && val.person.email && !emailRegexp.test(val.person.email)) {
+			throw new Error("Invalid email");
 		}
 		if (!["New", "Default", "Deleted"].includes(val.status)) {
 			throw new Error("Invalid status");
