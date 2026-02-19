@@ -81,9 +81,9 @@ export async function getAuthorizations(prisma, type: string, conditions?: Parti
 				some: {
 					holder: {
 						OR: [
-							{ name: { contains: holder } },
-							{ surname: { contains: holder } },
-							{ email: { contains: holder } },
+							{ name: { contains: String(holder) } },
+							{ surname: { contains: String(holder) } },
+							{ email: { contains: String(holder) } },
 							{ sciper: parseInt(holder) },
 						],
 					},
