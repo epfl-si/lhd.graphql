@@ -198,7 +198,10 @@ export const acceptJson = (i: string) => {
 	}
 }
 
-export function sanitizeObject (obj: any, spec: {[k: string]: {rename ?: string, validate: RegExp | ((value: string) => any) | {enum: string[]}}}) {
+export function sanitizeObject (obj: any, spec: {[k: string]: {	rename ?: string,
+		validate?: RegExp | ((value: string) => any) | {enum: string[]}
+		optional?: boolean
+}}) {
 	const ret = {};
 	const errors = [];
 
@@ -208,28 +211,36 @@ export function sanitizeObject (obj: any, spec: {[k: string]: {rename ?: string,
 
 		const validator = spec[key].validate;
 		const renamedKey = spec[key].rename ?? key;
-		if (validator instanceof RegExp) {
-			const matched = obj[key].match(validator)
-			if (matched) {
-				ret[renamedKey] = matched[0];
-			} else {
-				errors.push(key);
-			}
-		} else if (validator instanceof Function) {
-			try {
-				ret[renamedKey] = validator(obj[key]);
-			} catch (e) {
-				errors.push(key);
-			}
-		} else if (isCustomEnumerator(validator)) {
-			try {
-				ret[renamedKey] = acceptEnum(obj[key], validator[key].enum);
-			} catch (e) {
-				errors.push(key);
+		if (validator) {
+			if (spec[key].optional && !obj[key]) return;  // No error, the field is undefined as it's optional
+
+			if (validator instanceof RegExp) {
+				const matched = obj[key].match(validator)
+				if (matched) {
+					ret[renamedKey] = matched[0];
+				} else {
+					errors.push(key);
+				}
+			} else if (validator instanceof Function) {
+				try {
+					ret[renamedKey] = validator(obj[key]);
+				} catch (e) {
+					errors.push(key);
+				}
+			} else if (isCustomEnumerator(validator)) {
+				try {
+					ret[renamedKey] = acceptEnum(obj[key], validator[key].enum);
+				} catch (e) {
+					errors.push(key);
+				}
 			}
 		}
 	})
 	if (errors.length) throw new Error(errors.join(', '));
 
 	return ret;
+}
+
+export function sanitizeArray (arr: any[], spec: {[k: string]: {rename ?: string, validate: RegExp | ((value: string) => any) | {enum: string[]}}}) {
+	return arr.map(item => sanitizeObject(item, spec));
 }

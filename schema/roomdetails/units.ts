@@ -2,27 +2,16 @@ import {extendType, inputObjectType, intArg, list, objectType, stringArg} from '
 import {Unit} from 'nexus-prisma';
 import {InstituteStruct} from './institutes';
 import {PersonStruct} from "../global/people";
-import {authorization_status, Person} from "@prisma/client";
+import {Person} from "@prisma/client";
 import {mutationStatusType} from "../statuses";
 import {IDObfuscator} from "../../utils/IDObfuscator";
 import {getUnitsFromApi} from "../../utils/callAPI";
 import {findOrCreatePerson} from "../../model/persons";
 import {deleteUnitCascade, getUnitByName} from "../../model/units";
 import {getReportFilesByUnit} from "../../utils/fileUtilities";
-import {acceptInteger, acceptSubstringInList} from "../../utils/fieldValidatePlugin";
-import {
-	sanitizeMutationTypes,
-	sanitizePersonMutationTypes,
-	sanitizeRoomsNames,
-	sanitizeSearchString
-} from "../../utils/searchStrings";
-import {
-	alphanumericRegexp,
-	casRegexp,
-	chemicalNameRegexp,
-	unitNameRegexp,
-	validateId
-} from "../../api/lib/lhdValidators";
+import {acceptInteger, sanitizeArray, sanitizeObject} from "../../utils/fieldValidatePlugin";
+import {sanitizeMutationTypes, sanitizeRoomsNames} from "../../utils/searchStrings";
+import {alphanumericRegexp, emailRegexp, unitNameRegexp, validateId} from "../../api/lib/lhdValidators";
 
 export const UnitStruct = objectType({
 	name: Unit.$name,
@@ -265,8 +254,26 @@ export const UnitMutations = extendType({
 			authorize: (parent, args, context) => context.user.canEditUnits,
 			validate: {
 				id: validateId,
-				profs: sanitizePersonMutationTypes,
-				cosecs: sanitizePersonMutationTypes,
+				profs: (s) => sanitizeArray(s, {
+					status: {validate: {enum: ["New", "Default", "Deleted"]}},
+					person: {validate: (s) => sanitizeObject(s, {
+							sciper: {validate: acceptInteger},
+							name: {validate: alphanumericRegexp},
+							surname: {validate: alphanumericRegexp},
+							type: {validate: alphanumericRegexp, optional: true},
+							email: {validate: emailRegexp, optional: true}
+						})}
+				}),
+				cosecs: (s) => sanitizeArray(s, {
+					status: {validate: {enum: ["New", "Default", "Deleted"]}},
+					person: {validate: (s) => sanitizeObject(s, {
+							sciper: {validate: acceptInteger},
+							name: {validate: alphanumericRegexp},
+							surname: {validate: alphanumericRegexp},
+							type: {validate: alphanumericRegexp, optional: true},
+							email: {validate: emailRegexp, optional: true}
+						})}
+				}),
 				subUnits: sanitizeMutationTypes,
 				unit: unitNameRegexp
 			},
