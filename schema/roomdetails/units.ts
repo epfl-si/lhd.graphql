@@ -10,8 +10,8 @@ import {findOrCreatePerson} from "../../model/persons";
 import {deleteUnitCascade, getUnitByName} from "../../model/units";
 import {getReportFilesByUnit} from "../../utils/fileUtilities";
 import {acceptInteger, sanitizeArray, sanitizeObject} from "../../utils/fieldValidatePlugin";
-import {sanitizeMutationTypes, sanitizeRoomsNames} from "../../utils/searchStrings";
-import {alphanumericRegexp, emailRegexp, unitNameRegexp, validateId} from "../../api/lib/lhdValidators";
+import {sanitizeMutationTypes, sanitizeNames} from "../../utils/searchStrings";
+import {alphanumericRegexp, emailRegexp, roomNameRegexp, unitNameRegexp, validateId} from "../../api/lib/lhdValidators";
 
 export const UnitStruct = objectType({
 	name: Unit.$name,
@@ -457,7 +457,7 @@ export const UnitsForDispensationQuery = extendType({
 			},
 			authorize: (parent, args, context) => context.user.canListUnits,
 			validate: {
-				rooms: sanitizeRoomsNames
+				rooms: {function: sanitizeNames, validator: roomNameRegexp}
 			},
 			async resolve(parent, args, context) {
 				return await context.prisma.Unit.findMany({
