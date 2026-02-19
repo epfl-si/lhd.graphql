@@ -1,11 +1,5 @@
-import {
-	alphanumericRegexp,
-	casRegexp,
-	dbNamesRegexp,
-	dispensationTicketRegexp, emailRegexp, fileContentRegexp, fileNameRegexp,
-	roomNameRegexp
-} from "../api/lib/lhdValidators";
-import {acceptInteger, sanitizeObject} from "./fieldValidatePlugin";
+import {alphanumericRegexp, casRegexp} from "../api/lib/lhdValidators";
+import {sanitizeObject} from "./fieldValidatePlugin";
 
 /**
  *  Split and sanitize a URL-encoded search string.
@@ -112,18 +106,6 @@ export function sanitizeCasMutationTypes (values: {status: string, name?: string
 			throw new Error("Invalid cas");
 		}
 		sanitizeObject(val, { status: {validate: {enum: ["New", "Default", "Deleted"]}} })
-	});
-	return values;
-}
-
-export function sanitizeNames (value: string, validator: RegExp) {
-	if (!value) return [];
-
-	const values = value.split(',');
-	values.forEach(val => {
-		if (val && !validator.test(val)) {
-			throw new Error("Invalid db name");
-		}
 	});
 	return values;
 }

@@ -183,8 +183,7 @@ const isCustomEnumerator = (value) => {
 		typeof value === "object" &&
 		value !== null &&
 		"enum" in value &&
-		Array.isArray((value as any).enum) &&
-		(value as any).enum.every(item => typeof item === 'string')
+		Array.isArray((value as any).enum)
 	)
 }
 
@@ -246,7 +245,7 @@ export function sanitizeObject (obj: any, spec: {[k: string]: {	rename ?: string
 				}
 			} else if (isCustomEnumerator(validator)) {
 				try {
-					ret[renamedKey] = acceptEnum(obj[key], validator[key].enum);
+					ret[renamedKey] = acceptEnum(obj[key], validator.enum);
 				} catch (e) {
 					errors.push(key);
 				}
@@ -260,4 +259,23 @@ export function sanitizeObject (obj: any, spec: {[k: string]: {	rename ?: string
 
 export function sanitizeArray (arr: any[], spec: {[k: string]: {rename ?: string, validate: RegExp | ((value: string) => any) | {enum: string[]}}}) {
 	return arr.map(item => sanitizeObject(item, spec));
+}
+
+export function sanitizeNames (value: string, validator: RegExp) {
+	if (!value) return [];
+
+	const values = value.split(',');
+	values.forEach(val => {
+		if (val && !validator.test(val)) {
+			throw new Error("Invalid db name");
+		}
+	});
+	return values;
+}
+
+export function sanitizeOptionalField (value: string, validator: RegExp) {
+	if (value && !validator.test(value)) {
+		throw new Error(`Invalid format for ${value}`);
+	}
+	return value;
 }

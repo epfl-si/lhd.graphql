@@ -6,7 +6,7 @@ import {IDObfuscator} from "../../utils/IDObfuscator";
 import {updateBioOrg} from "../hazards/labHazardChild";
 import {getUserInfoFromAPI} from "../../utils/callAPI";
 import {alphanumericRegexp, fileContentRegexp, fileNameRegexp, validateId} from "../../api/lib/lhdValidators";
-import {acceptInteger} from "../../utils/fieldValidatePlugin";
+import {acceptInteger, sanitizeOptionalField} from "../../utils/fieldValidatePlugin";
 
 export const BioOrgStruct = objectType({
 	name: bio_org.$name,
@@ -110,9 +110,9 @@ export const OrganismMutations = extendType({
 			authorize: (parent, args, context) => context.user.canEditOrganisms,
 			validate: {
 				organismName: alphanumericRegexp,
-				risk: acceptInteger,
-				fileContent: fileContentRegexp,
-				fileName: fileNameRegexp
+				risk: {enum: [1, 2, 3]},
+				fileContent: {function: sanitizeOptionalField, validator: fileContentRegexp},
+				fileName: {function: sanitizeOptionalField, validator: fileNameRegexp}
 			},
 			async resolve(root, args, context) {
 				const userInfo = await getUserInfoFromAPI(context.user.username);
@@ -151,9 +151,9 @@ export const OrganismMutations = extendType({
 			validate: {
 				id: validateId,
 				organismName: alphanumericRegexp,
-				risk: acceptInteger,
-				fileContent: fileContentRegexp,
-				fileName: fileNameRegexp
+				risk: {enum: [1, 2, 3]},
+				fileContent: {function: sanitizeOptionalField, validator: fileContentRegexp},
+				fileName: {function: sanitizeOptionalField, validator: fileNameRegexp}
 			},
 			async resolve(root, args, context) {
 				const userInfo = await getUserInfoFromAPI(context.user.username);

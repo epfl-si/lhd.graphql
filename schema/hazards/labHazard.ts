@@ -111,8 +111,8 @@ export const RoomHazardMutations = extendType({
 				category: hazardCategoryNameRegexp,
 				additionalInfo: (s) => sanitizeObject(s, {
 					comment: {validate: alphanumericRegexp},
-					file: {validate: fileContentRegexp},
-					fileName: {validate: fileNameRegexp}
+					file: {validate: fileContentRegexp, optional: true},
+					fileName: {validate: fileNameRegexp, optional: true}
 				})
 			},
 			async resolve(root, args, context) {
