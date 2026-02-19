@@ -254,7 +254,17 @@ export async function getRoomByNameForAxs(prisma, roomName: string) {
 					}
 				}
 			},
-			lab_has_hazards: true
+			lab_has_hazards: true,
+			lab_has_hazards_additional_info: {
+				include: {
+					hazard_category: true,
+					hazards_additional_info_has_tag: {
+						include: {
+							tag: true
+						}
+					}
+				}
+			}
 		},
 	});
 }

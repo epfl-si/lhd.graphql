@@ -35,6 +35,10 @@ export function makeRESTAxsAPI() {
 				return;
 			}
 
+			const exceptions = roomResult.lab_has_hazards_additional_info.filter(info => info.hazards_additional_info_has_tag.filter(tags => tags.tag.tag_name === 'Exception AxS').length > 0);
+			const bioException = exceptions.filter(info => info.hazard_category.hazard_category_name === 'Biological').length > 0;
+			const laserException = exceptions.filter(info => info.hazard_category.hazard_category_name === 'Laser').length > 0;
+
 			const bioLevel = getHazardLevel(roomResult.lab_has_hazards, 'Biological');
 			const laserLevel = getHazardLevel(roomResult.lab_has_hazards, 'Laser');
 
@@ -49,9 +53,9 @@ export function makeRESTAxsAPI() {
 						...new Set(roomResult.unit_has_room.flatMap(uhr => uhr.unit.unit_has_cosec.map(uhc => uhc.cosec.sciper)))
 					],
 					hazard: {
-						bio: bioLevel.bio.length > 0,
+						bio: bioLevel.bio.length > 0 && !bioException,
 						nano: false,
-						laser: laserLevel.laser.length > 0,
+						laser: laserLevel.laser.length > 0 && !laserException,
 						irad: false,
 						chem: false,
 						cryo: false,
@@ -61,9 +65,9 @@ export function makeRESTAxsAPI() {
 						gas: false
 					},
 					training: {
-						bio: bioLevel.bio.length > 0,
+						bio: bioLevel.bio.length > 0 && !bioException,
 						nano: false,
-						laser: laserLevel.laser.length > 0,
+						laser: laserLevel.laser.length > 0 && !laserException,
 						irad: false,
 						chem: false,
 						cryo: false,
@@ -73,7 +77,7 @@ export function makeRESTAxsAPI() {
 						gas: false
 					},
 					med_check:{
-						bio: bioLevel.bio.length > 0,
+						bio: bioLevel.bio.length > 0 && !bioException,
 						nano: false,
 						laser: false,
 						irad: false,
@@ -85,7 +89,7 @@ export function makeRESTAxsAPI() {
 						gas: false
 					},
 					dsps_signature: {
-						bio: bioScipers.length > 0 ? bioScipers : false,
+						bio: bioScipers.length > 0 && !bioException ? bioScipers : false,
 						nano: false,
 						laser: false,
 						irad: false,
