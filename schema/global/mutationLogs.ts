@@ -3,7 +3,7 @@ import {mutation_logs} from 'nexus-prisma';
 import {IDObfuscator} from "../../utils/IDObfuscator";
 import {diffObjects} from "../../utils/jsonUtils";
 import {dbNamesRegexp, validateId} from "../../api/lib/lhdValidators";
-import {sanitizeDBNames} from "../../utils/searchStrings";
+import {sanitizeNames} from "../../utils/searchStrings";
 
 export const MutationLogsStruct = objectType({
 	name: mutation_logs.$name,
@@ -65,9 +65,9 @@ export const MutationLogsByTable = extendType({
 			},
 			authorize: (parent, args, context) => context.user.canListDispensations,
 			validate: {
-				tableName: sanitizeDBNames,
+				tableName: {function: sanitizeNames, validator: dbNamesRegexp},
 				tableIdentifier: validateId,
-				excludedField: sanitizeDBNames
+				excludedField: {function: sanitizeNames, validator: dbNamesRegexp}
 			},
 			async resolve(parent, args, context) {
 				if (args.tableName && args.tableIdentifier) {

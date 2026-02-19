@@ -116,25 +116,13 @@ export function sanitizeCasMutationTypes (values: {status: string, name?: string
 	return values;
 }
 
-export function sanitizeDBNames (value: string) {
+export function sanitizeNames (value: string, validator: RegExp) {
 	if (!value) return [];
 
 	const values = value.split(',');
 	values.forEach(val => {
-		if (val && !dbNamesRegexp.test(val)) {
+		if (val && !validator.test(val)) {
 			throw new Error("Invalid db name");
-		}
-	});
-	return values;
-}
-
-export function sanitizeRoomsNames (value: string) {
-	if (!value) return [];
-
-	const values = value.split(',');
-	values.forEach(val => {
-		if (val && !roomNameRegexp.test(val)) {
-			throw new Error("Invalid room name");
 		}
 	});
 	return values;

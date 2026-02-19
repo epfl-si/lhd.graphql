@@ -110,6 +110,12 @@ export const fieldValidatePlugin = (authConfig: FieldValidatePluginConfig = {}) 
 							} catch (e) {
 								errors.push(e.message);
 							}
+						} else if (isCustomFunction(validate[key])) {
+							try {
+								validatedArgs[key] = validate[key].function(args[key], validate[key].validator)
+							} catch (e) {
+								errors.push(e.message);
+							}
 						} else {
 							throw new Error(`Validator for ${key} not valid`);
 						}
@@ -179,6 +185,17 @@ const isCustomEnumerator = (value) => {
 		"enum" in value &&
 		Array.isArray((value as any).enum) &&
 		(value as any).enum.every(item => typeof item === 'string')
+	)
+}
+
+const isCustomFunction = (value) => {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		"function" in value &&
+		(value as any).function instanceof Function &&
+		"validator" in value &&
+		(value as any).validator instanceof RegExp
 	)
 }
 
