@@ -11,7 +11,13 @@ import {TicketStruct} from "./ticket";
 import {saveBase64File} from "../../utils/fileUtilities";
 import {sendEmailForDispensation,} from "../../utils/email/mailer";
 import {UnitStruct} from "../roomdetails/units";
-import {acceptDateString, acceptInteger, acceptSubstringInList, sanitizeArray} from "../../utils/fieldValidatePlugin";
+import {
+  acceptDateString,
+  acceptInteger,
+  acceptSubstringInList,
+  sanitizeArray,
+  sanitizeOptionalField
+} from "../../utils/fieldValidatePlugin";
 import {sanitizeHolderMutationTypes, sanitizeMutationTypes, sanitizeSearchString,} from "../../utils/searchStrings";
 import {
   alphanumericRegexp,
@@ -294,8 +300,8 @@ export const DispensationMutations = extendType({
         status: {enum: Object.values(DispensationStatus)},
         date_start: acceptDateString,
         date_end: acceptDateString,
-        file: fileContentRegexp,
-        file_name: fileNameRegexp,
+        file: {function: sanitizeOptionalField, validator: fileContentRegexp},
+        file_name: {function: sanitizeOptionalField, validator: fileNameRegexp},
         rooms: sanitizeMutationTypes,
         units: sanitizeMutationTypes,
         holders: sanitizeHolderMutationTypes,
@@ -364,8 +370,8 @@ export const DispensationMutations = extendType({
         comment: alphanumericRegexp,
         status: {enum: Object.values(DispensationStatus)},
         date_end: acceptDateString,
-        file: fileContentRegexp,
-        file_name: fileNameRegexp,
+        file: {function: sanitizeOptionalField, validator: fileContentRegexp},
+        file_name: {function: sanitizeOptionalField, validator: fileNameRegexp},
         rooms: sanitizeMutationTypes,
         units: sanitizeMutationTypes,
         holders: sanitizeHolderMutationTypes,

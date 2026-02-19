@@ -3,7 +3,7 @@ import {mutation_logs} from 'nexus-prisma';
 import {IDObfuscator} from "../../utils/IDObfuscator";
 import {diffObjects} from "../../utils/jsonUtils";
 import {dbNamesRegexp, validateId} from "../../api/lib/lhdValidators";
-import {sanitizeNames} from "../../utils/searchStrings";
+import {sanitizeNames} from "../../utils/fieldValidatePlugin";
 
 export const MutationLogsStruct = objectType({
 	name: mutation_logs.$name,

@@ -9,8 +9,8 @@ import {getUnitsFromApi} from "../../utils/callAPI";
 import {findOrCreatePerson} from "../../model/persons";
 import {deleteUnitCascade, getUnitByName} from "../../model/units";
 import {getReportFilesByUnit} from "../../utils/fileUtilities";
-import {acceptInteger, sanitizeArray, sanitizeObject} from "../../utils/fieldValidatePlugin";
-import {sanitizeMutationTypes, sanitizeNames} from "../../utils/searchStrings";
+import {acceptInteger, sanitizeArray, sanitizeNames, sanitizeObject} from "../../utils/fieldValidatePlugin";
+import {sanitizeMutationTypes} from "../../utils/searchStrings";
 import {alphanumericRegexp, emailRegexp, roomNameRegexp, unitNameRegexp, validateId} from "../../api/lib/lhdValidators";
 
 export const UnitStruct = objectType({
