@@ -4,6 +4,8 @@ import {TagStruct} from "./tag";
 import {IDObfuscator} from "../../utils/IDObfuscator";
 import {mutationStatusType} from "../statuses";
 import {getLabHasHazardsAdditionalInfoToString} from "./hazardsAdditionalInfo";
+import {getUserInfoFromAPI} from "../../utils/callAPI";
+import {getRoomToString} from "../global/rooms";
 
 export const HazardsAdditionalInfoHasTagStruct = objectType({
 	name: HazardsAdditionalInfoHasTag.$name,
@@ -54,7 +56,9 @@ const hazardTagType = {
 	id: stringArg(),
 	tag: stringArg(),
 	comment: stringArg(),
-	additionalInfoId: stringArg()
+	additionalInfoId: stringArg(),
+	categoryName: stringArg(),
+	roomId: stringArg()
 };
 
 export const HazardTagStatus = mutationStatusType({
@@ -73,6 +77,7 @@ export const HazardsAdditionalInfoHasTagMutations = extendType({
 			type: "HazardTagStatus",
 			authorize: (parent, args, context) => context.user.isAdmin || context.user.canEditHazards,
 			async resolve(root, args, context) {
+				const userInfo = await getUserInfoFromAPI(context.user.username);
 				return await context.prisma.$transaction(async (tx) => {
 					const id = IDObfuscator.getId(args.id);
 					IDObfuscator.checkId(id);
@@ -81,9 +86,32 @@ export const HazardsAdditionalInfoHasTagMutations = extendType({
 						throw new Error(`Bad descrypted request`);
 					}
 
-					const additionalInfo = await IDObfuscator.ensureDBObjectIsTheSame(args.additionalInfoId,
-						'lab_has_hazards_additional_info', 'id_lab_has_hazards_additional_info',
-						tx, 'Additional Info', getLabHasHazardsAdditionalInfoToString);
+					let additionalInfo;
+					if (args.additionalInfoId !== '') {
+						additionalInfo = await IDObfuscator.ensureDBObjectIsTheSame(args.additionalInfoId,
+							'lab_has_hazards_additional_info', 'id_lab_has_hazards_additional_info',
+							tx, 'Additional Info', getLabHasHazardsAdditionalInfoToString);
+					} else if (args.roomId) {
+						const room = await IDObfuscator.ensureDBObjectIsTheSame(args.roomId,
+							'Room', 'id',
+							tx, "room", getRoomToString);
+
+						const category = await tx.hazard_category.findFirst({where: {hazard_category_name: args.categoryName}});
+						if (!category) {
+							throw new Error(`Category ${args.categoryName} not found`);
+						}
+
+						additionalInfo = await tx.lab_has_hazards_additional_info.create({
+							data: {
+								modified_by: `${userInfo.userFullName} (${userInfo.sciper})`,
+								modified_on: new Date(),
+								comment: '',
+								id_hazard_category: category.id_hazard_category,
+								id_lab: room.id
+							}
+						});
+					}
+
 					const tag = await tx.Tag.findUnique({ where: { tag_name: args.tag }});
 					await tx.HazardsAdditionalInfoHasTag.create(
 						{ data: {
