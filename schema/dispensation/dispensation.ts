@@ -11,15 +11,15 @@ import {TicketStruct} from "./ticket";
 import {saveBase64File} from "../../utils/fileUtilities";
 import {sendEmailForDispensation,} from "../../utils/email/mailer";
 import {UnitStruct} from "../roomdetails/units";
-import {getFormattedDate} from "../../utils/date";
-import {acceptDateString, acceptInteger, acceptSubstringInList} from "../../utils/fieldValidatePlugin";
+import {acceptDateString, acceptInteger, acceptSubstringInList, sanitizeArray} from "../../utils/fieldValidatePlugin";
+import {sanitizeHolderMutationTypes, sanitizeMutationTypes, sanitizeSearchString,} from "../../utils/searchStrings";
 import {
-  sanitizeHolderMutationTypes,
-  sanitizeMutationTypes,
-  sanitizeSearchString,
-  sanitizeTicketMutationTypes
-} from "../../utils/searchStrings";
-import {alphanumericRegexp, fileContentRegexp, fileNameRegexp, validateId} from "../../api/lib/lhdValidators";
+  alphanumericRegexp,
+  dispensationTicketRegexp,
+  fileContentRegexp,
+  fileNameRegexp,
+  validateId
+} from "../../api/lib/lhdValidators";
 import {DispensationStatus} from "@prisma/client";
 
 export const DispensationStruct = objectType({
@@ -299,7 +299,10 @@ export const DispensationMutations = extendType({
         rooms: sanitizeMutationTypes,
         units: sanitizeMutationTypes,
         holders: sanitizeHolderMutationTypes,
-        tickets: sanitizeTicketMutationTypes,
+        tickets: (s) => sanitizeArray(s, {
+          status: {validate: {enum: ["New", "Default", "Deleted"]}},
+          name: {validate: dispensationTicketRegexp},
+        }),
       },
       async resolve(root, args, context) {
         const userInfo = await getUserInfoFromAPI(context.user.username);
@@ -366,7 +369,10 @@ export const DispensationMutations = extendType({
         rooms: sanitizeMutationTypes,
         units: sanitizeMutationTypes,
         holders: sanitizeHolderMutationTypes,
-        tickets: sanitizeTicketMutationTypes,
+        tickets: (s) => sanitizeArray(s, {
+          status: {validate: {enum: ["New", "Default", "Deleted"]}},
+          name: {validate: dispensationTicketRegexp},
+        }),
       },
       async resolve(root, args, context) {
         const userInfo = await getUserInfoFromAPI(context.user.username);

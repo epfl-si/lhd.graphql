@@ -87,11 +87,9 @@ export function sanitizeMutationTypes (values: {status: string, name?: string, i
 		if (!val.name && !val.id) {
 			throw new Error("Name and id both undefined");
 		}
+		sanitizeObject(val, { status: {validate: {enum: ["New", "Default", "Deleted"]}} })
 		if (val.name && !alphanumericRegexp.test(val.name)) {
 			throw new Error("Invalid name");
-		}
-		if (!["New", "Default", "Deleted"].includes(val.status)) {
-			throw new Error("Invalid status");
 		}
 	});
 	return values;
@@ -101,37 +99,19 @@ export function sanitizeHolderMutationTypes (values: {status: string, sciper: nu
 	if (!values) return [];
 
 	values.forEach(val => {
-		if (!["New", "Default", "Deleted"].includes(val.status)) {
-			throw new Error("Invalid status");
-		}
+		sanitizeObject(val, { status: {validate: {enum: ["New", "Default", "Deleted"]}} })
 	});
 	return values;
 }
 
-export function sanitizeCasMutationTypes (values: {status: string, name: string}[]) {
+export function sanitizeCasMutationTypes (values: {status: string, name?: string}[]) {
 	if (!values) return [];
 
 	values.forEach(val => {
 		if (val.name && !casRegexp.test(val.name)) {
 			throw new Error("Invalid cas");
 		}
-		if (!["New", "Default", "Deleted"].includes(val.status)) {
-			throw new Error("Invalid status");
-		}
-	});
-	return values;
-}
-
-export function sanitizeTicketMutationTypes (values: {status: string, name: string}[]) {
-	if (!values) return [];
-
-	values.forEach(val => {
-		if (val.name && !dispensationTicketRegexp.test(val.name)) {
-			throw new Error("Invalid ticket number");
-		}
-		if (!["New", "Default", "Deleted"].includes(val.status)) {
-			throw new Error("Invalid status");
-		}
+		sanitizeObject(val, { status: {validate: {enum: ["New", "Default", "Deleted"]}} })
 	});
 	return values;
 }
@@ -155,20 +135,6 @@ export function sanitizeRoomsNames (value: string) {
 	values.forEach(val => {
 		if (val && !roomNameRegexp.test(val)) {
 			throw new Error("Invalid room name");
-		}
-	});
-	return values;
-}
-
-export function sanitizePersonMutationTypes (values: {status: string, person: {sciper: number, name: string, surname: string, type?: string, email?: string}}[]) {
-	if (!values) return [];
-
-	values.forEach(val => {
-		if (val.person && val.person.email && !emailRegexp.test(val.person.email)) {
-			throw new Error("Invalid email");
-		}
-		if (!["New", "Default", "Deleted"].includes(val.status)) {
-			throw new Error("Invalid status");
 		}
 	});
 	return values;
