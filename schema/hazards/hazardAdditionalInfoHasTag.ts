@@ -6,6 +6,7 @@ import {mutationStatusType} from "../statuses";
 import {getLabHasHazardsAdditionalInfoToString} from "./hazardsAdditionalInfo";
 import {getUserInfoFromAPI} from "../../utils/callAPI";
 import {getRoomToString} from "../global/rooms";
+import {alphanumericRegexp, hazardCategoryNameRegexp, validateId} from "../../api/lib/lhdValidators";
 
 export const HazardsAdditionalInfoHasTagStruct = objectType({
 	name: HazardsAdditionalInfoHasTag.$name,
@@ -79,7 +80,9 @@ export const HazardsAdditionalInfoHasTagMutations = extendType({
 			validate: {
 				tag: {enum: ['Exception AxS']},
 				comment: alphanumericRegexp,
-				additionalInfoId: validateId
+				additionalInfoId: validateId,
+				categoryName: hazardCategoryNameRegexp,
+				roomId: validateId
 			},
 			async resolve(root, args, context) {
 				const userInfo = await getUserInfoFromAPI(context.user.username);
