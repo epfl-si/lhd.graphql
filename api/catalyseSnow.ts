@@ -133,45 +133,6 @@ export function makeRESTAPI() {
 				break;
 		}
 	});
-	// OBSOLETE; will be removed once ServiceNow migrates over to the new API.
-	app.get("/catalyse.php",
-		restAuthenticateByTokenQueryParam,
-		async (req: any, res) => {
-		switch (req.query.m as string) {
-			case "auth_check":
-				if ( !req.user.canListAuthorizations ) {
-					res.status(403).json({Message: 'Unauthorized'});
-					break;
-				}
-
-				if ( !req.query.sciper ) return res.status(400).json({Message: "Missing sciper number"});
-				if ( !req.query.cas ) return res.status(400).json({Message: "Missing cas number"});
-				const sciper = (req.query.sciper as string);
-				const cas = (req.query.cas as string).split(',');
-
-				const result = await getAuthorizations(req.prisma, "Chemical", {holder: sciper});
-				const casResult = result.authorizations
-					.filter(auth => auth.expiration_date > new Date())
-					.flatMap(auth => auth.authorization_has_chemical)
-					.flatMap(auth => auth.chemical)
-					.filter(chem => chem.flag_auth_chem == 1)
-					.flatMap(cas => cas.cas_auth_chem);
-				const casAuth = {};
-				cas.forEach(c => {
-					if ( casResult.includes(c) ) {
-						casAuth[c] = 1;
-					} else {
-						casAuth[c] = 0;
-					}
-				})
-				res.json({Message: "Ok", Data: [casAuth]});
-				break;
-			default:
-				res.status(404).json({Message: 'Not Found'});
-				break;
-		}
-	});
-
 
 	type AuthReqParams = {id_unit: number, req: string, date: Date, scipers: number[], cas: string[], room_ids: number[]};
 	app.post<AuthReqParams>("/auth_req",
