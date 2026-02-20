@@ -215,7 +215,7 @@ export const acceptJson = (i: string) => {
 }
 
 export function sanitizeObject (obj: any, spec: {[k: string]: {	rename ?: string,
-		validate?: RegExp | ((value: string) => any) | {enum: string[]}
+		validate?: RegExp | ((value: string) => any) | {enum: string[]},
 		optional?: boolean
 }}) {
 	const ret = {};
@@ -257,7 +257,10 @@ export function sanitizeObject (obj: any, spec: {[k: string]: {	rename ?: string
 	return ret;
 }
 
-export function sanitizeArray (arr: any[], spec: {[k: string]: {rename ?: string, validate: RegExp | ((value: string) => any) | {enum: string[]}}}) {
+export function sanitizeArray (arr: any[], spec: {[k: string]: {rename ?: string,
+		validate: RegExp | ((value: string) => any) | {enum: string[]},
+		optional?: boolean
+}}) {
 	return arr.map(item => sanitizeObject(item, spec));
 }
 
