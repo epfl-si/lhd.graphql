@@ -15,7 +15,7 @@ import {getDoorPlugFromApi, getRoomsFromApi} from "../../utils/callAPI";
 import {HazardsAdditionalInfoStruct} from "../hazards/hazardsAdditionalInfo";
 import {LabHazardChildStruct} from "../hazards/labHazardChild";
 import {deleteRoom, getRooms} from "../../model/rooms";
-import {acceptBoolean, acceptInteger, acceptNumberFromString} from "../../utils/fieldValidatePlugin";
+import {acceptBoolean, acceptInteger, acceptNumberFromString, sanitizeArray} from "../../utils/fieldValidatePlugin";
 import {sanitizeMutationTypes, sanitizeSearchString} from "../../utils/searchStrings";
 import {alphanumericRegexp, roomNameRegexp, validateId} from "../../api/lib/lhdValidators";
 
@@ -331,7 +331,20 @@ export const RoomMutations = extendType({
 			description: `Create a new room.`,
 			args: roomCreationType,
 			type: "RoomStatus",
-			authorize: (parent, args, context) => context.user.canEditRooms,  // TODO validate
+			authorize: (parent, args, context) => context.user.canEditRooms,
+			validate: {
+				rooms: (s) => sanitizeArray(s, {
+					id: {validate: acceptInteger},
+					name: {validate: roomNameRegexp},
+					site: {validate: alphanumericRegexp, optional: true},
+					floor: {validate: alphanumericRegexp, optional: true},
+					building: {validate: alphanumericRegexp, optional: true},
+					sector: {validate: alphanumericRegexp, optional: true},
+					vol: {validate: acceptInteger, optional: true},
+					facultyuse: {validate: alphanumericRegexp, optional: true},
+					status: {validate: {enum: ["New", "Default", "Deleted"]}}
+				})
+			},
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					for (const room of args.rooms) {

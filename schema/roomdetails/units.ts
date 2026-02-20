@@ -186,7 +186,19 @@ export const UnitMutations = extendType({
 			args: unitCreationType,
 			type: "UnitStatus",
 			authorize: (parent, args, context) => context.user.canEditUnits,
-			async resolve(root, args, context) {  // TODO validate
+			validate: {
+				units: (s) => sanitizeArray(s, {
+					name: {validate: alphanumericRegexp},
+					path: {validate: alphanumericRegexp},
+					unitId: {validate: acceptInteger},
+					responsibleId: {validate: acceptInteger, optional: true},
+					responsibleFirstName: {validate: alphanumericRegexp, optional: true},
+					responsibleLastName: {validate: alphanumericRegexp, optional: true},
+					responsibleEmail: {validate: emailRegexp, optional: true},
+					status: {validate: {enum: ["New", "Default", "Deleted"]}}
+				})
+			},
+			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {
 					for (const unit of args.units) {
 						if (unit.status === 'New') {
