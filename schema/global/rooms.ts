@@ -11,13 +11,14 @@ import {UnitMutationType, UnitStruct} from "../roomdetails/units";
 import {mutationStatusType} from "../statuses";
 import {LabHazardStruct} from "../hazards/labHazard";
 import {IDObfuscator} from "../../utils/IDObfuscator";
-import {getDoorPlugFromApi, getRoomsFromApi} from "../../utils/callAPI";
+import {getDoorPlugFromApi, getRoomsFromApi, getUserInfoFromAPI} from "../../utils/callAPI";
 import {HazardsAdditionalInfoStruct} from "../hazards/hazardsAdditionalInfo";
 import {LabHazardChildStruct} from "../hazards/labHazardChild";
 import {deleteRoom, getRooms} from "../../model/rooms";
 import {acceptBoolean, acceptInteger, acceptNumberFromString, sanitizeArray} from "../../utils/fieldValidatePlugin";
 import {sanitizeMutationTypes, sanitizeSearchString} from "../../utils/searchStrings";
 import {alphanumericRegexp, roomNameRegexp, validateId} from "../../api/lib/lhdValidators";
+import {sendEmailForDispensation} from "../../utils/email/mailer";
 
 const debug = debug_('lhd:rooms');
 
@@ -439,13 +440,19 @@ export const RoomMutations = extendType({
 				id: validateId
 			},
 			async resolve(root, args, context) {
-				return await context.prisma.$transaction(async (tx) => {
+				const userInfo = await getUserInfoFromAPI(context.user.username);
+				let emails = {dispensations: []};
+				const result = await context.prisma.$transaction(async (tx) => {
 					const room = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
 						'Room', 'id',
 						tx, 'Room', getRoomToString);
-					await deleteRoom(tx, context, room);
+					emails = await deleteRoom(tx, context, room, userInfo);
 					return mutationStatusType.success();
 				});
+				for ( const disp of emails.dispensations ) {
+					await sendEmailForDispensation(userInfo.userFullName, userInfo.userEmail, disp, 'expiredDispensation');
+				}
+				return result;
 			}
 		});
 	}
