@@ -162,13 +162,13 @@ export async function deleteRoom(tx, context, r:Room) {
 			}
 		});
 		if (authChem.length == 1) {
-			const date = getFormattedDate(new Date());
-			const [dayCrea, monthCrea, yearCrea] = date.split("/").map(Number);
+			const date = new Date();
+			date.setHours(12,0,0,0);
 			await tx.authorization.update(
 				{ where: { id_authorization: a.id_authorization },
 					data: {
 						status: 'Expired',
-						expiration_date: new Date(yearCrea, monthCrea - 1, dayCrea, 12),
+						expiration_date: date
 					}
 				});
 		}
