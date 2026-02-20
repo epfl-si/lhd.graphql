@@ -1,6 +1,6 @@
 import {Room} from "nexus-prisma";
-import {getFormattedDate} from "../utils/date";
-import {alphanumericRegexp, roomNameRegexp} from "../api/lib/lhdValidators";
+import {expireDispensation, getDispensation} from "./dispensation";
+import {expireAuthorization} from "./authorization";
 
 export async function getRooms(prisma, dictionary?: Partial<{
 	hazard: string,
@@ -109,7 +109,9 @@ export async function getRooms(prisma, dictionary?: Partial<{
 	return { rooms, totalCount };
 }
 
-export async function deleteRoom(tx, context, r:Room) {
+export async function deleteRoom(tx, context, r:Room, infoUser) {
+	const emails = {dispensations: []};
+
 	const where = { where: { id_lab: r.id } }
 
 	const bioOrg = await context.prisma.bio.findMany(where);
@@ -161,16 +163,8 @@ export async function deleteRoom(tx, context, r:Room) {
 				]
 			}
 		});
-		if (authChem.length == 1) {
-			const date = new Date();
-			date.setHours(12,0,0,0);
-			await tx.authorization.update(
-				{ where: { id_authorization: a.id_authorization },
-					data: {
-						status: 'Expired',
-						expiration_date: date
-					}
-				});
+		if (authChem.length == 1) { // If the current room is the only one still active
+			await expireAuthorization(tx, a);
 		}
 	}
 
@@ -188,15 +182,8 @@ export async function deleteRoom(tx, context, r:Room) {
 			}
 		});
 		if (disp.length == 1) { // If the current room is the only one still active
-			const date = getFormattedDate(new Date());
-			const [dayCrea, monthCrea, yearCrea] = date.split("/").map(Number);
-			await tx.Dispensation.update(
-				{ where: { id_dispensation: a.id_dispensation },
-					data: {
-						status: 'Expired',
-						date_end: new Date(yearCrea, monthCrea - 1, dayCrea, 12),
-					}
-				});
+			await expireDispensation(tx, a, infoUser);
+			emails.dispensations.push(await getDispensation(tx, a.id_dispensation));
 		}
 	}
 
@@ -215,6 +202,14 @@ export async function deleteRoom(tx, context, r:Room) {
 	await tx.haz_date.deleteMany(where);
 	await tx.irad.deleteMany(where);
 	await tx.lab_has_hazards.deleteMany(where);
+	const info = await context.prisma.lab_has_hazards_additional_info.findMany(where);
+	for ( const i of info ) {
+		await tx.HazardsAdditionalInfoHasTag.deleteMany({
+			where: {
+				id_lab_has_hazards_additional_info: i.id_lab_has_hazards_additional_info
+			}
+		});
+	}
 	await tx.lab_has_hazards_additional_info.deleteMany(where);
 	await tx.laser.deleteMany(where);
 	await tx.nano.deleteMany(where);
@@ -237,6 +232,8 @@ export async function deleteRoom(tx, context, r:Room) {
 				isDeleted: true
 			}
 		});
+
+	return emails;
 }
 
 /**

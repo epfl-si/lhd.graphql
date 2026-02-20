@@ -255,7 +255,8 @@ export async function expireAuthorization (tx, auth) {
 	return await tx.authorization.update({
 		where: { id_authorization: auth.id_authorization },
 		data: {
-			status: 'Expired'
+			status: 'Expired',
+			expiration_date: new Date()
 		}
 	});
 }
