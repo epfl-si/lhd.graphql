@@ -2,8 +2,6 @@
  * GraphQL types and queries for Room's and RoomKind's
  */
 
-import {HazLevelStruct} from '../hazards/hazlevel';
-import {BioStruct} from '../bio/biohazard';
 import {booleanArg, enumType, extendType, inputObjectType, intArg, list, objectType, stringArg} from 'nexus';
 import {Room, RoomKind} from 'nexus-prisma';
 import {debug as debug_} from 'debug';
@@ -39,11 +37,6 @@ const catalyseSpecialLocations = {
 export const LocationEnum = enumType({
 	name: 'Location',
 	members: ['Lausanne', 'Sion', 'Neuchatel'],
-});
-
-export const CatalyseTypeEnum = enumType({
-	name: 'CatalyseType',
-	members: ['stockroom', 'receivingLocation'],
 });
 
 export const RoomStruct = objectType({
@@ -99,35 +92,6 @@ export const RoomStruct = objectType({
 			},
 		});
 
-		t.field('catalyseType', {
-			type: 'CatalyseType',
-			resolve(room) {
-				for (const k in catalyseSpecialLocations) {
-					if (catalyseSpecialLocations[k].includes(room.name)) {
-						return k as keyof typeof catalyseSpecialLocations;
-					}
-				}
-				return null;
-			},
-		});
-
-		t.nonNull.list.nonNull.field('occupancies', {
-			type: 'Occupancy',
-			async resolve(parent, _, context) {
-				return [];
-			},
-		});
-
-		t.field('bio', {
-			type: BioStruct,
-			resolve: async (parent, _, context) => {
-				return await context.prisma.bio.findUnique({
-					where: { id_lab: parent.id },
-					include: { bio_org_lab: { include: { bio_org: true } } },
-				});
-			},
-		});
-
 		t.nonNull.list.nonNull.field('lhd_units', {
 			type: UnitStruct,
 			resolve: async (parent, _, context) => {
@@ -138,16 +102,6 @@ export const RoomStruct = objectType({
 				return await context.prisma.Unit.findMany({
 					where: { id: { in: [...unitIDs] }}
 				})
-			},
-		});
-
-		t.list.field('haz_levels', {
-			type: HazLevelStruct,
-			resolve: async (parent, _, context) => {
-				return await context.prisma.cad_lab.findMany({
-					where: { id_lab: parent.id },
-					include: { haz: true },
-				});
 			},
 		});
 
@@ -178,17 +132,6 @@ export const RoomStruct = objectType({
 						}},
 				});
 			}
-		});
-
-		t.float('yearly_audits', {
-			resolve: async (parent, _, context) => {
-				const naudits = await context.prisma.naudits.findMany({
-					where: { id_lab: parent.id },
-				});
-				// For some reason this is a 1:n relationship in the LHDv2
-				// database ‽
-				return naudits[naudits.length - 1]?.naudits;
-			},
 		});
 	},
 });

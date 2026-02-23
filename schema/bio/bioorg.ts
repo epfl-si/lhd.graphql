@@ -197,7 +197,6 @@ export const OrganismMutations = extendType({
 						'bio_org', 'id_bio_org',
 						tx, 'Organism', getBioOrgToString);
 
-					await tx.bio_org_lab.deleteMany({ where: { id_bio_org: org.id_bio_org }});
 					await tx.bio_org.delete({ where: { id_bio_org: org.id_bio_org }});
 
 					return mutationStatusType.success();

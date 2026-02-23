@@ -25,12 +25,6 @@ export async function deleteUnitCascade(tx, context, u:Unit) {
 		},
 	});
 
-	await tx.unit_has_storage_for_room.deleteMany({
-		where: {
-			id_unit: u.id,
-		},
-	});
-
 	const subUnitList = await tx.Unit.findMany({
 		where: {
 			name: { startsWith: u.name },

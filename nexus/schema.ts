@@ -65,7 +65,6 @@ import { NexusPrismaCRUDPlugin } from './prisma_crud_plugin';
 
 import * as schoolTypes from '../schema/roomdetails/schools';
 import * as instituteTypes from '../schema/roomdetails/institutes';
-import * as occupancyTypes from '../schema/roomdetails/occupancies';
 import * as peopleTypes from '../schema/global/people';
 import * as roomTypes from '../schema/global/rooms';
 import * as unitTypes from '../schema/roomdetails/units';
@@ -93,7 +92,6 @@ import {fieldValidatePlugin} from "../utils/fieldValidatePlugin";
 const types = [
 	schoolTypes,
 	instituteTypes,
-	occupancyTypes,
 	peopleTypes,
 	roomTypes,
 	unitTypes,

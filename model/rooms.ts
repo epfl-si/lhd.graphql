@@ -114,29 +114,11 @@ export async function deleteRoom(tx, context, r:Room, infoUser) {
 
 	const where = { where: { id_lab: r.id } }
 
-	const bioOrg = await context.prisma.bio.findMany(where);
-	for ( const h of bioOrg ) {
-		await tx.bio_org_lab.deleteMany({
-			where: {
-				id_bio: h.id_bio
-			}
-		});
-	}
-
 	const hazards = await context.prisma.lab_has_hazards.findMany(where);
 	for ( const h of hazards ) {
 		await tx.lab_has_hazards_child.deleteMany({
 			where: {
 				id_lab_has_hazards: h.id_lab_has_hazards
-			}
-		});
-	}
-
-	const dewar = await context.prisma.dewar.findMany(where);
-	for ( const d of dewar ) {
-		await tx.cryo.deleteMany({
-			where: {
-				id_dewar: d.id_dewar
 			}
 		});
 	}
@@ -188,19 +170,7 @@ export async function deleteRoom(tx, context, r:Room, infoUser) {
 	}
 
 	await tx.aa.deleteMany(where);
-	await tx.auth_lab.deleteMany(where);
 	await tx.bio.deleteMany(where);
-	await tx.cad_corr.deleteMany(where);
-	await tx.cad_lab.deleteMany(where);
-	await tx.cut.deleteMany(where);
-	await tx.dewar.deleteMany(where);
-	await tx.elec.deleteMany(where);
-	await tx.mag_f.deleteMany(where);
-	await tx.mag.deleteMany(where);
-	await tx.gaschem.deleteMany(where);
-	await tx.gnb_labsto.deleteMany(where);
-	await tx.haz_date.deleteMany(where);
-	await tx.irad.deleteMany(where);
 	await tx.lab_has_hazards.deleteMany(where);
 	const info = await context.prisma.lab_has_hazards_additional_info.findMany(where);
 	for ( const i of info ) {
@@ -211,20 +181,7 @@ export async function deleteRoom(tx, context, r:Room, infoUser) {
 		});
 	}
 	await tx.lab_has_hazards_additional_info.deleteMany(where);
-	await tx.laser.deleteMany(where);
-	await tx.nano.deleteMany(where);
-	await tx.naudits.deleteMany(where);
-	await tx.nirad.deleteMany(where);
-	await tx.noise.deleteMany(where);
-	await tx.tdegree.deleteMany(where);
 	await tx.unit_has_room.deleteMany(where);
-	await tx.unit_has_storage_for_room.deleteMany(where);
-
-	await tx.DispensationInRoomRelation.deleteMany({
-		where: {
-			id_room: r.id
-		}
-	});
 
 	await tx.Room.update(
 		{ where: { id: r.id },
