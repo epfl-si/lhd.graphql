@@ -164,8 +164,6 @@ export const ChemicalMutations = extendType({
 						'auth_chem', 'id_auth_chem',
 						tx, 'Chemical', getChemicalToString);
 
-					await tx.auth_chem_log.deleteMany({ where: { id_auth_chem: chem.id_auth_chem }});
-					await tx.auth_rchem.deleteMany({ where: { id_auth_chem: chem.id_auth_chem }});
 					await tx.auth_chem.delete({ where: { id_auth_chem: chem.id_auth_chem }});
 
 					//TODO delete authorizations?
