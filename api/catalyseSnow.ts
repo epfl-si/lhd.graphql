@@ -1,4 +1,4 @@
-import {getNow} from "../utils/date";
+import {getNow, todayDate} from "../utils/date";
 import {getBearerToken} from "../utils/authentication";
 import {checkAPICall} from "./lib/checkedAPICalls";
 import {
@@ -67,14 +67,11 @@ export function makeRESTAPI() {
 				if (!req.query.scipers) return res.status(400).json({ Message: "missing <scipers> list of authorisation holders" });
 				const scipers = (req.query.scipers as string).split(',');
 
-
-				const now = new Date();
-				now.setHours(12, 0, 0, 0);
 				const cas = (req.query.cas as string).split(',');
 				const args = {
 					id_unit: idUnit,
 					authorization: request,
-					creation_date: now,
+					creation_date: todayDate(),
 					expiration_date: expirationDate,
 					status: "Active",
 					type: "Chemical",
@@ -158,14 +155,12 @@ export function makeRESTAPI() {
 				}
 			}),
 		async (req, res) => {
-			const now = new Date();
-			now.setHours(12, 0, 0, 0);
 			const exp = new Date(req.params.date);
 			exp.setHours(12, 0, 0, 0);
 			const args = {
 				id_unit: req.params.id_unit,
 				authorization: req.params.req,
-				creation_date: now,
+				creation_date: todayDate(),
 				expiration_date: exp,
 				status: "Active",
 				type: "Chemical",
