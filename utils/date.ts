@@ -19,3 +19,9 @@ export function getFormattedDate(date: Date, split: String = '/') {
 
 	return `${day}${split}${month}${split}${year}`;
 }
+
+export function todayDate() {
+	const now = new Date();
+	now.setHours(12, 0, 0, 0);
+	return now;
+}
