@@ -388,7 +388,7 @@ export const DispensationMutations = extendType({
         const subject = await context.prisma.DispensationSubject.findUnique({where: {subject: args.subject}});
         const newHolders = args.holders.filter(holder => holder.status === 'New');
         await ensurePerson(context.prisma, newHolders);
-        const ren = disp.date_end < args.date_end ? (disp.renewals + 1) : disp.renewals;
+        const ren = disp.date_end.setHours(12,0,0,0) < (args as any).date_end.setHours(12,0,0,0) ? (disp.renewals + 1) : disp.renewals;
         await context.prisma.$transaction(async (tx) => {
           const dispensation = await tx.Dispensation.update({
             where: { id_dispensation: disp.id_dispensation },

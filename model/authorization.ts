@@ -30,7 +30,7 @@ export async function updateAuthorization(prisma, newData, oldAuth, tx = undefin
 	}
 
 	async function doUpdateAuthorization (tx) {
-		const ren = newData.renewals ?? (newData.expiration_date > oldAuth.expiration_date ? (oldAuth.renewals + 1) : oldAuth.renewals);
+		const ren = newData.renewals ?? (newData.expiration_date.setHours(12,0,0,0) > oldAuth.expiration_date.setHours(12,0,0,0) ? (oldAuth.renewals + 1) : oldAuth.renewals);
 		const data = {
 			status: newData.status,
 			expiration_date: newData.expiration_date,
