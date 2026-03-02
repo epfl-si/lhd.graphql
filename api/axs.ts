@@ -7,6 +7,7 @@ import {auditAPI, setReqPrismaMiddleware} from "./lib/rest";
 import {getRoomByNameForAxs} from "../model/rooms";
 import {getHazardLevel} from "../utils/hazardsParser";
 import {getGroupMembersFromApi} from "../utils/callAPI";
+import {getBearerToken} from "../utils/authentication";
 
 export function makeRESTAxsAPI() {
 	const app = express();
@@ -117,16 +118,17 @@ async function getAxsBioRecipients (bio) {
 }
 
 function restAxsAuthenticate(req: Request, res, next) {
-	const token = req.query.app;
+	const token = getBearerToken(req);
 
-	if (token !== process.env.AXS_TOKEN) {
-		return res.status(403).send("Unauthorized");
+	if (token === process.env.AXS_TOKEN) {
+		req.user = {
+			username: 'AXS',
+			canListRooms: true
+		};
+		next();
+	} else {
+		res.status(403);
+		res.send(`Unauthorized`);
+		return;
 	}
-
-	req.user = {
-		username: 'AXS',
-		canListRooms: true
-	}
-
-	next();
 }
