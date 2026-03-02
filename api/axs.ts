@@ -117,13 +117,9 @@ async function getAxsBioRecipients (bio) {
 }
 
 function restAxsAuthenticate(req: Request, res, next) {
-	const allowedIPs = process.env.AXS_ALLOWED_IPS.split(",").map(ip => ip.trim());
-	console.log(req.rawHeaders);
-	const clientIP = req.headers["x-forwarded-for"] as string || req.socket.remoteAddress;
-
 	const token = req.query.app;
 
-	if (!allowedIPs.includes(clientIP) || token !== process.env.AXS_TOKEN) {
+	if (token !== process.env.AXS_TOKEN) {
 		return res.status(403).send("Unauthorized");
 	}
 
