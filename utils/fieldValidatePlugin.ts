@@ -257,11 +257,21 @@ export function sanitizeObject (obj: any, spec: {[k: string]: {	rename ?: string
 	return ret;
 }
 
-export function sanitizeArray (arr: any[], spec: {[k: string]: {rename ?: string,
+export function sanitizeArray (arr: any[], spec: RegExp | ((value: any) => any) | {[k: string]: {rename ?: string,
 		validate: RegExp | ((value: string) => any) | {enum: string[]},
 		optional?: boolean
 }}) {
-	return arr.map(item => sanitizeObject(item, spec));
+	if (spec instanceof RegExp) {
+		return arr.map((item, i) => {
+			const matched = item.match(spec);
+			if (! matched) throw new Error(`Bad value in array position ${i}`);
+			return matched[0];
+		});
+	} else if (spec instanceof Function) {
+		return arr.map(spec);
+	} else {
+		return arr.map(item => sanitizeObject(item, spec));
+	}
 }
 
 export function sanitizeNames (value: string, validator: RegExp) {
