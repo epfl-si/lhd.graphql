@@ -558,20 +558,18 @@ export const UnitReportFilesQuery = extendType({
 		t.field("unitReportFiles", {
 			type: list("UnitReportFiles"),
 			args: {
-				id: stringArg()
+				units: list(stringArg())
 			},
 			authorize: (parent, args, context) => context.user.canListReportFiles,
 			validate: {
-				id: validateId
+				units: (s) => sanitizeArray(s, unitNameRegexp)
 			},
-			async resolve(parent, args, context): Promise<any> {
-				const ids = IDObfuscator.getId(args.id);
+			async resolve(parent, args: any, context): Promise<any> {
 				const reportList = [];
-				await Promise.all(ids.map(async (id) => {
-					const idDeobfuscated = IDObfuscator.getIdDeobfuscated(id);
-					const unit = await context.prisma.Unit.findUnique({where: {id: idDeobfuscated}});
+				await Promise.all(args.units.map(async (name) => {
+					const unit = await context.prisma.Unit.findFirst({where: {name}});
 					if (! unit) {
-						throw new Error(`Unit not found.`);
+						throw new Error(`Unit ${name} not found.`);
 					}
 					reportList.push(await getReportFilesByUnit(unit));
 				}));
