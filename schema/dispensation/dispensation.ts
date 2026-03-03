@@ -23,7 +23,7 @@ import {
   alphanumericRegexp,
   dispensationTicketRegexp,
   fileContentRegexp,
-  fileNameRegexp,
+  fileNameRegexp, freeFormTextRegexp,
   validateId
 } from "../../api/lib/lhdValidators";
 import {DispensationStatus} from "@prisma/client";
@@ -295,8 +295,8 @@ export const DispensationMutations = extendType({
       validate: {
         subject: alphanumericRegexp,
         subject_other: alphanumericRegexp,
-        description: alphanumericRegexp,
-        comment: alphanumericRegexp,
+        description: freeFormTextRegexp,
+        comment: freeFormTextRegexp,
         status: {enum: Object.values(DispensationStatus)},
         date_start: acceptDateString,
         date_end: acceptDateString,
@@ -366,8 +366,8 @@ export const DispensationMutations = extendType({
         id: validateId,
         subject: alphanumericRegexp,
         subject_other: alphanumericRegexp,
-        description: alphanumericRegexp,
-        comment: alphanumericRegexp,
+        description: freeFormTextRegexp,
+        comment: freeFormTextRegexp,
         status: {enum: Object.values(DispensationStatus)},
         date_end: acceptDateString,
         file: {function: sanitizeOptionalField, validator: fileContentRegexp},

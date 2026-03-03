@@ -11,6 +11,7 @@ export const authRegexp = new RegExp("yes|no|1|0");
 export const fileNameRegexp = new RegExp(/^[\p{L}\p{N} _\-\(\)\.]+\.[A-Za-z0-9]+$/u);
 export const fileContentRegexp = new RegExp("^data:[^;]+;base64,(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$")
 export const alphanumericRegexp = new RegExp("[a-zA-Z0-9-.,'/_° ]*");
+export const freeFormTextRegexp = new RegExp(/^[\p{Script=Latin}\p{Mark}\p{Number}\p{Punctuation}\p{Separator}\p{Symbol}]*$/u);
 export const dispensationTicketRegexp = new RegExp(/^SCCTI\d{7}$/);
 export const dbNamesRegexp = new RegExp(/^[a-zA-Z_]*$/);
 export const emailRegexp = new RegExp(/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/);

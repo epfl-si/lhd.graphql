@@ -6,7 +6,7 @@ import {mutationStatusType} from "../statuses";
 import {getLabHasHazardsAdditionalInfoToString} from "./hazardsAdditionalInfo";
 import {getUserInfoFromAPI} from "../../utils/callAPI";
 import {getRoomToString} from "../global/rooms";
-import {alphanumericRegexp, hazardCategoryNameRegexp, validateId} from "../../api/lib/lhdValidators";
+import {freeFormTextRegexp, hazardCategoryNameRegexp, validateId} from "../../api/lib/lhdValidators";
 
 export const HazardsAdditionalInfoHasTagStruct = objectType({
 	name: HazardsAdditionalInfoHasTag.$name,
@@ -79,7 +79,7 @@ export const HazardsAdditionalInfoHasTagMutations = extendType({
 			authorize: (parent, args, context) => context.user.isAdmin || context.user.canEditHazards,
 			validate: {
 				tag: {enum: ['Exception AxS']},
-				comment: alphanumericRegexp,
+				comment: freeFormTextRegexp,
 				additionalInfoId: validateId,
 				categoryName: hazardCategoryNameRegexp,
 				roomId: validateId
@@ -132,7 +132,7 @@ export const HazardsAdditionalInfoHasTagMutations = extendType({
 			authorize: (parent, args, context) => context.user.isAdmin || context.user.canEditHazards,
 			validate: {
 				id: validateId,
-				comment: alphanumericRegexp
+				comment: freeFormTextRegexp
 			},
 			async resolve(root, args, context) {
 				return await context.prisma.$transaction(async (tx) => {

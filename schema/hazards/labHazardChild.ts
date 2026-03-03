@@ -180,7 +180,7 @@ export const HazardsWithPaginationQuery = extendType({
 					Room: {rename: 'room', validate: roomNameRegexp},
 					Cosec: {rename: 'cosec', validate: alphanumericRegexp},
 					Prof: {rename: 'prof', validate: alphanumericRegexp},
-					Unit: {rename: 'unit', validate: unitNameRegexp}
+					Unit: {rename: 'unit', validate: alphanumericRegexp}
 				}, true),
 			},
 			async resolve(parent, args, context) {

@@ -10,9 +10,9 @@ import {saveBase64File} from "../../utils/fileUtilities";
 import {sendEmailsForHazards} from "../../utils/email/mailer";
 import {getUserInfoFromAPI} from "../../utils/callAPI";
 import {
-	alphanumericRegexp,
 	fileContentRegexp,
 	fileNameRegexp,
+	freeFormTextRegexp,
 	hazardCategoryNameRegexp,
 	roomNameRegexp,
 	validateId
@@ -110,7 +110,7 @@ export const RoomHazardMutations = extendType({
 				submission: acceptJson,
 				category: hazardCategoryNameRegexp,
 				additionalInfo: (s) => sanitizeObject(s, {
-					comment: {validate: alphanumericRegexp},
+					comment: {validate: freeFormTextRegexp},
 					file: {validate: fileContentRegexp, optional: true},
 					fileName: {validate: fileNameRegexp, optional: true}
 				})
