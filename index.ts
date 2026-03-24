@@ -7,8 +7,8 @@ dns.setDefaultResultOrder('ipv4first');
 const start = async () => {
 	const server = await makeServer(configFromDotEnv());
 
-	server.listen(3001, () => {
-		console.log(`🚀  Server ready at localhost:3001`);
+	server.listen(3010, () => {
+		console.log(`🚀  Server ready at localhost:3010`);
 	});
 };
 
