@@ -1,12 +1,6 @@
 import {Unit} from "nexus-prisma";
 
 export async function deleteUnitCascade(tx, context, u:Unit) {
-	await tx.aa.deleteMany({
-		where: {
-			id_unit: u.id,
-		}
-	});
-
 	await tx.unit_has_cosec.deleteMany({
 		where: {
 			id_unit: u.id,

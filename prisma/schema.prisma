@@ -11,29 +11,6 @@ datasource db {
   url      = env("LHD_DB_URL")
 }
 
-model aa {
-  id_aa                      Int      @id @default(autoincrement())
-  id_lab                     Int
-  din                        String   @db.VarChar(10)
-  vol                        Float?
-  description                String?  @db.VarChar(100)
-  id_unit                    Int
-  id_cosec                   Int
-  id_head                    Int
-  updated                    String   @db.VarChar(100)
-  who_when                   String?  @db.VarChar(100)
-  flag                       Boolean?
-  room                       Room     @relation(fields: [id_lab], references: [id], onDelete: Cascade, map: "aa_ibfk_1")
-  unit                       Unit     @relation(fields: [id_unit], references: [id], onUpdate: Restrict, map: "aa_ibfk_2")
-  person_aa_id_cosecToperson Person   @relation("aa_id_cosecToperson", fields: [id_cosec], references: [id_person], onUpdate: Restrict, map: "aa_ibfk_3")
-  person_aa_id_headToperson  Person   @relation("aa_id_headToperson", fields: [id_head], references: [id_person], onUpdate: Restrict, map: "aa_ibfk_4")
-
-  @@index([id_cosec], map: "id_cosec")
-  @@index([id_head], map: "id_head")
-  @@index([id_lab], map: "id_lab")
-  @@index([id_unit], map: "id_unit")
-}
-
 model audits {
   id_audit   Int      @id @default(autoincrement())
   id_unit    Int      @unique(map: "id_unit")
@@ -99,7 +76,6 @@ model Room {
   vol                       Float?
   vent                      String?                      @db.Char(1)
   name                      String?                      @map("lab_display") @db.VarChar(20)
-  aa                        aa[]
   kind                      RoomKind?                    @relation(fields: [id_labType], references: [id_labType], onDelete: Restrict, onUpdate: Restrict, map: "lab_ibfk_1")
   unit_has_room             unit_has_room[]
   lab_has_hazards           lab_has_hazards[]
@@ -151,8 +127,6 @@ model Person {
   name                   String?                    @map("name_person") @db.VarChar(60)
   surname                String?                    @map("surname_person") @db.VarChar(60)
   email                  String?                    @map("email_person") @db.VarChar(60)
-  aa_aa_id_cosecToperson aa[]                       @relation("aa_id_cosecToperson")
-  aa_aa_id_headToperson  aa[]                       @relation("aa_id_headToperson")
   subunpro               subunpro[]
   unit_has_cosec         unit_has_cosec[]
   responsible_for_units   Unit[]
@@ -183,7 +157,6 @@ model Unit {
   name                      String?                     @map("name_unit") @db.VarChar(60)
   id_institute              Int?                        @map("id_institut")
   responsible_id            Int?
-  aa                        aa[]
   subunpro                  subunpro[]
   institute                 Institute?                  @relation(fields: [id_institute], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "unit_ibfk_1")
   unit_has_cosec            unit_has_cosec[]

@@ -169,7 +169,6 @@ export async function deleteRoom(tx, context, r:Room, infoUser) {
 		}
 	}
 
-	await tx.aa.deleteMany(where);
 	await tx.lab_has_hazards.deleteMany(where);
 	const info = await context.prisma.lab_has_hazards_additional_info.findMany(where);
 	for ( const i of info ) {
