@@ -22,6 +22,6 @@ COPY . ./
 
 # Runs yarn a second time to generate types from the Prisma schema
 RUN yarn codegen
-EXPOSE 3001
+EXPOSE 3010
 # start app
 CMD ["yarn", "start"]
