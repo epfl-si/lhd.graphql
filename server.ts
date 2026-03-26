@@ -1,7 +1,8 @@
 import * as express from 'express';
 import * as http from 'http';
 import * as cors from 'cors';
-import * as fs from 'fs/promises'
+import * as fs from 'fs/promises';
+import { parse as parseGraphQL, DocumentNode, OperationDefinitionNode } from 'graphql';
 
 import {schema} from './nexus/schema';
 import {Prisma} from '@prisma/client';
@@ -56,7 +57,7 @@ export async function makeServer(
 	app.get('/graphiql', async (req, res) => {
 		let html =  await fs.readFile('developer/graphiql.html', 'utf8')
 		html = html.replace("@@OIDC_BASE_URL@@", process.env.OIDC_BASE_URL)
-		html = html.replace("@@REACT_CLIENT_ID@@", process.env.REACT_CLIENT_ID)
+		html = html.replace("@@OIDC_CLIENT_ID@@", process.env.OIDC_CLIENT_ID)
 		res.send(html)
 	})
 
@@ -80,12 +81,51 @@ export async function makeServer(
 /**
  * Whether the request is a harmless POST query.
  *
- * `IntrospectionQuery` GraphQL requests are presumed harmless;
- * everything else returns `false`.
+ * GraphQL requests that consult the `__schema` (i.e. GraphiQL's
+ * introspection) are presumed harmless; everything else returns
+ * `false`.
  */
-function isHarmless(req: express.Request): boolean {
+function isHarmless (req: express.Request) : boolean {
 	const query = (req?.body?.query || '').trim();
-	return req.method === 'POST' &&
-		req.url.startsWith("/graphql") &&
-		query.startsWith('query IntrospectionQuery');
+	const doc: DocumentNode = parseGraphQL(query);
+
+	const def = doc.definitions[0];
+	if (def.kind !== 'OperationDefinition') {
+		return false;
+	}
+	if (doc.definitions.slice(1).some((def) => def.kind !== 'FragmentDefinition')) {
+		return false;
+	}
+
+	const op = def as OperationDefinitionNode;
+
+	// Only allow "query"
+	if (op.operation !== 'query') {
+		return false;
+	}
+
+	const selections = op.selectionSet.selections;
+
+	// Must have exactly one root field
+	if (selections.length !== 1) {
+		return false;
+	}
+
+	const sel = selections[0];
+
+	if (sel.kind !== 'Field') {
+		return false;
+	}
+
+	// No alias trickery
+	if (sel.alias) {
+		return false;
+	}
+
+	// Root must be exactly "__schema" ()
+	if (sel.name.value !== '__schema') {
+		return false;
+	}
+
+	return true;
 }
