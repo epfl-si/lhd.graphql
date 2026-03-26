@@ -31,8 +31,6 @@ export async function authenticateFromBearerToken(req): Promise<object> {
 		username: ( authenticationResult.unique_name ||
 			authenticationResult.gaspar )  // EPFL-ism in Entra
 	};
-	console.log('Logged in', user);
-	console.log('Allowed groups', allowedGroups);
 
 	const hasRoleAdmin = user.groups.indexOf(process.env.ADMIN_GROUP) > -1;
 	const hasRoleManager = user.groups.indexOf(process.env.LHD_GROUP) > -1;
