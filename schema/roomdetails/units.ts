@@ -11,7 +11,14 @@ import {deleteUnitCascade, getUnitByName} from "../../model/units";
 import {getReportFilesByUnit} from "../../utils/fileUtilities";
 import {acceptInteger, sanitizeArray, sanitizeNames, sanitizeObject} from "../../utils/fieldValidatePlugin";
 import {sanitizeMutationTypes} from "../../utils/searchStrings";
-import {alphanumericRegexp, emailRegexp, roomNameRegexp, unitNameRegexp, validateId} from "../../api/lib/lhdValidators";
+import {
+	alphanumericRegexp,
+	emailRegexp,
+	freeFormTextRegexp,
+	roomNameRegexp,
+	unitNameRegexp,
+	validateId
+} from "../../api/lib/lhdValidators";
 
 export const UnitStruct = objectType({
 	name: Unit.$name,
@@ -562,7 +569,7 @@ export const UnitReportFilesQuery = extendType({
 			},
 			authorize: (parent, args, context) => context.user.canListReportFiles,
 			validate: {
-				units: (s) => sanitizeArray(s, unitNameRegexp)
+				units: (s) => sanitizeArray(s, freeFormTextRegexp)
 			},
 			async resolve(parent, args: any, context): Promise<any> {
 				const reportList = [];
