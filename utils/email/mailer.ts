@@ -37,7 +37,8 @@ async function sendEmailCAE(modifiedByName: string,
 		.replaceAll("{{action.fr}}", action['fr'])
 		.replaceAll("{{action.en}}", action['en'])
 		.replaceAll("{{hazardType}}", hazardType)
-		.replaceAll("{{comments}}", decodeURIComponent(comments));
+		.replaceAll("{{comments}}", decodeURIComponent(comments))
+		.replaceAll('\n', '<br />');
 
 	await mailer.sendMail({
 		from: `"LHD" <${process.env.SMTP_USER}>`,
@@ -61,7 +62,8 @@ async function sendEmailCosec(modifiedByName: string,
 		.replaceAll("{{room}}", room)
 		.replaceAll("{{action.fr}}", action['fr'])
 		.replaceAll("{{action.en}}", action['en'])
-		.replaceAll("{{hazardType}}", hazardType);
+		.replaceAll("{{hazardType}}", hazardType)
+		.replaceAll('\n', '<br />');
 
 	await mailer.sendMail({
 		from: `"LHD" <${process.env.SMTP_USER}>`,
@@ -181,7 +183,8 @@ export async function sendEmailForDispensation(modifiedByName: string,
 		.replaceAll("{{status}}", dispensation.status)
 		.replaceAll("{{rooms}}", dispensation.dispensation_has_room.map(dhr => `<a href="${process.env.APP_BASE_PATH}/roomdetails?room=${dhr.room.name}">${dhr.room.name}</a>`).join(', '))
 		.replaceAll("{{holders}}", dispensation.dispensation_has_holder.map(dhr => `${dhr.holder.name} ${dhr.holder.surname} (${dhr.holder.sciper})`).join(', '))
-		.replaceAll("{{tickets}}", dispensation.dispensation_has_ticket.map(dhr => `<a href="https://go.epfl.ch/${dhr.ticket_number}">${dhr.ticket_number}</a>`).join(', '));
+		.replaceAll("{{tickets}}", dispensation.dispensation_has_ticket.map(dhr => `<a href="https://go.epfl.ch/${dhr.ticket_number}">${dhr.ticket_number}</a>`).join(', '))
+		.replaceAll('\n', '<br />');
 
 	const holders = dispensation.dispensation_has_holder.map(dhr => dhr.holder.email);
 	const profs = dispensation.dispensation_has_unit.flatMap(dhu => dhu.unit.subunpro).map(pers => pers.person.email);
@@ -200,7 +203,8 @@ export async function sendEmailForAuthorization(modifiedByName: string,
 																							 modifiedByEmail: string,
 																							 authorization: any,
 																							 template: { body: string; subject: string; }) {
-	const body = template.body.replaceAll("{{authNumber}}", authorization.authorization);
+	const body = template.body.replaceAll("{{authNumber}}", authorization.authorization)
+		.replaceAll('\n', '<br />');
 
 	const holders = [];
 	await mailer.sendMail({
