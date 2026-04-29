@@ -1,7 +1,7 @@
 import * as express from "express";
 import {Request} from "express";
 
-export function makeRESTMonitoringAPI() {
+export function makeRESTHealthAPI() {
 	const app = express();
 
 	app.get("/",
