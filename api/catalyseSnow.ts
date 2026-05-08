@@ -359,9 +359,7 @@ export function makeRESTAPI() {
 			}),
 		async (req, res) => {
 			const resultNew = await getUnitByName(req.prisma, req.params.unit);
-			const unitMap: { [unit: string]: {unit: string, id_unit: number, sciper: string[], sciper_cosec: string[], rooms: string[] }; } = {};
-			resultNew.forEach(unit => {
-				const unitName = unit.name.split(' (')[0];
+			const list = resultNew.map(unit => {
 				const cosecs = unit.unit_has_cosec.map(uhc => {
 						return uhc.cosec.sciper;
 					}
@@ -374,22 +372,15 @@ export function makeRESTAPI() {
 						return uhr.id_lab;
 					}
 				);
-				if (!unitMap.hasOwnProperty(unitName)) {
-					unitMap[unitName] = {
-						sciper_cosec: cosecs,
-						sciper: profs,
-						unit: `${unit.institute.school.name} ${unit.institute.name} ${unitName}`,
-						id_unit: unit.name === unitName ? unit.id : 0,
-						rooms: rooms
-					};
-				} else {
-					unitMap[unitName].sciper_cosec = [...new Set([...unitMap[unitName].sciper_cosec, ...cosecs])];
-					unitMap[unitName].sciper = [...new Set([...unitMap[unitName].sciper, ...profs])];
-					unitMap[unitName].id_unit = unit.name === unitName ? unit.id : unitMap[unitName].id_unit;
-					unitMap[unitName].rooms = [...new Set([...unitMap[unitName].rooms, ...rooms])];
-				}
+				return {
+					sciper_cosec: cosecs,
+					sciper: profs,
+					unit: `${unit.institute.school.name} ${unit.institute.name} ${unit.name}`,
+					id_unit: unit.id,
+					rooms: rooms
+				};
 			});
-			const result = Object.values(unitMap).filter(val => val.rooms.length > 0).map(value => {
+			const result = list.filter(val => val.rooms.length > 0).map(value => {
 				return {unit: value.unit, id_unit: value.id_unit, sciper: value.sciper.join(','), sciper_cosec: value.sciper_cosec.join(',')}
 			});
 			res.json({Message: "Ok", Data: result});
