@@ -15,7 +15,7 @@ import {LabHazardChildStruct} from "../hazards/labHazardChild";
 import {deleteRoom, getRooms} from "../../model/rooms";
 import {acceptBoolean, acceptInteger, acceptNumberFromString, sanitizeArray} from "../../utils/fieldValidatePlugin";
 import {sanitizeMutationTypes, sanitizeSearchString} from "../../utils/searchStrings";
-import {alphanumericRegexp, roomNameRegexp, validateId} from "../../api/lib/lhdValidators";
+import {alphanumericRegexp, roomNameRegexp, unitNameRegexp, validateId} from "../../api/lib/lhdValidators";
 import {sendEmailForDispensation} from "../../utils/email/mailer";
 
 const debug = debug_('lhd:rooms');
@@ -203,7 +203,7 @@ export const RoomsWithPaginationQuery = extendType({
 					Floor: {rename: 'floor', validate: alphanumericRegexp},
 					Sector: {rename: 'sector', validate: alphanumericRegexp},
 					Building: {rename: 'building', validate: alphanumericRegexp},
-					Unit: {rename: 'unit', validate: alphanumericRegexp},
+					Unit: {rename: 'unit', validate: unitNameRegexp},
 					Cosec: {rename: 'cosec', validate: alphanumericRegexp},
 					Volume: {rename: 'volume', validate: acceptNumberFromString},
 					Prof: {rename: 'prof', validate: alphanumericRegexp},

@@ -318,20 +318,11 @@ export function makeRESTAPI() {
 			}),
 		async (req, res) => {
 			const resultNew = await getRooms(req.prisma, {unit: req.params.unit, room: req.params.room});
-			for ( let i = 0; i<resultNew.rooms.length; i++) {
-				for ( let j = 0; j<resultNew.rooms[i].unit_has_room.length; j++) {
-					resultNew.rooms[i].unit_has_room[j].realID = resultNew.rooms[i].unit_has_room[j].id_unit;
-					if ( resultNew.rooms[i].unit_has_room[j].unit.unitId == null) {
-						const parentName = resultNew.rooms[i].unit_has_room[j].unit.name.substring(0, resultNew.rooms[i].unit_has_room[j].unit.name.indexOf(' ('));
-						const parent = await getParentUnit(req.prisma, parentName);
-						resultNew.rooms[i].unit_has_room[j].realID = parent.length > 0 ? parent[0].id : null;
-					}
-				}
-			}
+
 			const all = resultNew.rooms.map(r => {
 				return {
 					id_lab: r.id,
-					units: r.unit_has_room.filter(uhr => uhr.unit.name.indexOf(req.params.unit ?? '') > -1).map(uhr => uhr.realID),
+					units: r.unit_has_room.filter(uhr => uhr.unit.name === req.params.unit).map(uhr => uhr.id_unit),
 					lab_display: r.name
 				}
 			});
