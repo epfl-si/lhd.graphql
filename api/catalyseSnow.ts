@@ -322,7 +322,7 @@ export function makeRESTAPI() {
 			const all = resultNew.rooms.map(r => {
 				return {
 					id_lab: r.id,
-					units: r.unit_has_room.filter(uhr => uhr.unit.name === req.params.unit).map(uhr => uhr.id_unit),
+					units: req.params.unit ? r.unit_has_room.filter(uhr =>  uhr.unit.name === req.params.unit).map(uhr => uhr.id_unit) : r.unit_has_room.map(uhr => uhr.id_unit),
 					lab_display: r.name
 				}
 			});
