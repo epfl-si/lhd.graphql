@@ -5,7 +5,7 @@ import {mutationStatusType} from "../statuses";
 import {sendEmailsForChemical} from "../../utils/email/mailer";
 import {createChemical, getChemicals} from "../../model/chemicals";
 import {sanitizeSearchString} from "../../utils/searchStrings";
-import {casRegexp, chemicalNameRegexp, validateId} from "../../api/lib/lhdValidators";
+import {authCodeRegexp, casRegexp, chemicalNameRegexp, validateId} from "../../api/lib/lhdValidators";
 import {
 	acceptBoolean,
 	acceptInteger,
@@ -92,7 +92,9 @@ const newChemicalType = {
 	id: stringArg(),
 	cas_auth_chem: stringArg(),
 	auth_chem_en: stringArg(),
-	flag_auth_chem: booleanArg()
+	flag_auth_chem: booleanArg(),
+	fastway: booleanArg(),
+	auth_code: stringArg()
 };
 
 export const ChemicalStatus = mutationStatusType({
@@ -113,7 +115,9 @@ export const ChemicalMutations = extendType({
 			validate: {
 				cas_auth_chem: casRegexp,
 				auth_chem_en: chemicalNameRegexp,
-				flag_auth_chem: acceptBoolean
+				flag_auth_chem: acceptBoolean,
+				fastway: acceptBoolean,
+				auth_code: authCodeRegexp
 			},
 			async resolve(root, args, context) {
 				await createChemical(args, context);
@@ -129,20 +133,23 @@ export const ChemicalMutations = extendType({
 				id: validateId,
 				cas_auth_chem: casRegexp,
 				auth_chem_en: chemicalNameRegexp,
-				flag_auth_chem: acceptBoolean
+				flag_auth_chem: acceptBoolean,
+				fastway: acceptBoolean,
+				auth_code: authCodeRegexp
 			},
 			async resolve(root, args, context) {
-				await context.prisma.$transaction(async (tx) => {
-					const chem = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
-						'auth_chem', 'id_auth_chem',
-						tx, args.cas_auth_chem, getChemicalToString);
-
-					await tx.auth_chem.update(
+				const chem = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
+					'auth_chem', 'id_auth_chem',
+					context.prisma, args.cas_auth_chem, getChemicalToString);
+				const newChem = await context.prisma.$transaction(async (tx) => {
+					return await tx.auth_chem.update(
 						{ where: { id_auth_chem: chem.id_auth_chem },
 							data: {
 								cas_auth_chem: args.cas_auth_chem,
 								auth_chem_en: args.auth_chem_en,
-								flag_auth_chem: args.flag_auth_chem
+								flag_auth_chem: args.flag_auth_chem,
+								fastway: args.fastway,
+								auth_code: args.auth_code
 							}
 						});
 				});
@@ -159,13 +166,11 @@ export const ChemicalMutations = extendType({
 				id: validateId
 			},
 			async resolve(root, args, context) {
+				const chem = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
+					'auth_chem', 'id_auth_chem',
+					context.prisma, 'Chemical', getChemicalToString);
 				await context.prisma.$transaction(async (tx) => {
-					const chem = await IDObfuscator.ensureDBObjectIsTheSame(args.id,
-						'auth_chem', 'id_auth_chem',
-						tx, 'Chemical', getChemicalToString);
-
 					await tx.auth_chem.delete({ where: { id_auth_chem: chem.id_auth_chem }});
-
 					//TODO delete authorizations?
 				});
 				await sendEmailsForChemical(context.prisma, context.user.username);
