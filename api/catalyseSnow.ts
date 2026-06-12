@@ -2,6 +2,7 @@ import {getNow, todayDate} from "../utils/date";
 import {getBearerToken} from "../utils/authentication";
 import {checkAPICall} from "./lib/checkedAPICalls";
 import {
+	authCodeRegexp,
 	chemicalNameRegexp,
 	reqRegexp,
 	reqRenewRegexp,
@@ -18,7 +19,7 @@ import {errorHandler} from "./lib/errorHandler";
 import {createAuthorization, getAuthorizations, getTheAuthorization, updateAuthorization} from "../model/authorization";
 import {createChemical, getChemicals} from "../model/chemicals";
 import {getRooms} from "../model/rooms";
-import {getParentUnit, getUnitByName} from "../model/units";
+import {getUnitByName} from "../model/units";
 import {setReqPrismaMiddleware} from "./lib/rest";
 
 export function makeRESTAPI() {
@@ -210,7 +211,7 @@ export function makeRESTAPI() {
 	);
 
 	/* Will replace /auth_chem endpoint */
-	app.post<{cas: string, en: string, auth: boolean, fr?: string}>("/add_chem",
+	app.post<{cas: string, en: string, auth: boolean, fr?: string, code: string, fastway?: boolean}>("/add_chem",
 		restAuthenticateBearer,
 		checkAPICall(
 			{
@@ -218,23 +219,29 @@ export function makeRESTAPI() {
 				required: {
 					cas (req) { return req.query.cas; },
 					en (req) { return req.query.en; },
-					auth (req) { return req.query.auth; }
+					auth (req) { return req.query.auth; },
+					code (req) { return req.query.code; }
 				},
 				validate: {
 					cas: singleCAS,
 					en: chemicalNameRegexp,
 					fr: chemicalNameRegexp,
 					auth: validateAuth,
+					code: authCodeRegexp,
+					fastway: validateAuth
 				},
 				optional: {
-					fr (req) { return req.query.fr; }
+					fr (req) { return req.query.fr; },
+					fastway (req) { return req.query.fastway; },
 				}
 			}),
 		async (req, res) => {
 			const argsChem = {
 				auth_chem_en: req.params.en,
 				cas_auth_chem: req.params.cas,
-				flag_auth_chem: req.params.auth
+				flag_auth_chem: req.params.auth,
+				auth_code: req.params.code,
+				fastway: req.params.fastway
 			}
 			await createChemical(argsChem, req);
 			res.json({Message: "Ok"});
@@ -258,7 +265,9 @@ export function makeRESTAPI() {
 				return {
 					cas_auth_chem: chem.cas_auth_chem,
 					auth_chem_en: chem.auth_chem_en,
-					flag_auth_chem: chem.flag_auth_chem
+					flag_auth_chem: chem.flag_auth_chem,
+					auth_code: chem.auth_code,
+					fastway: chem.fastway
 				}
 			});
 			if ( req.params.cas ) {
