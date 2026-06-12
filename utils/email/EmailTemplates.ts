@@ -51,7 +51,10 @@ OHS Support`,
 export const chemical: EmailTemplate = {
 	subject: 'LHD - Mise à jour de la table des produits chimiques sous autorisation',
 	body: `Bonjour, <br/>
-en pièce jointe vous pouvez trouver la liste des produits chimiques mise à jour.<br/>
+en pièce jointe vous pouvez trouver la liste des produits chimiques mise à jour.<br/><br/>
+<b>{{action}}</b><br/>
+{{oldValue}}<br/>
+{{newValue}}<br/><br/>
 Cordialement,<br/>
 LHD`
 }
