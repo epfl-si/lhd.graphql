@@ -124,10 +124,19 @@ export async function sendEmailsForHazards(
 	}
 }
 
-export async function sendEmailsForChemical(prisma, user: string) {
+export async function sendEmailsForChemical(prisma, user: string, oldChemical, newChemical) {
 	const userInfo = await getUserInfoFromAPI(user);
 	const chemicals = await prisma.auth_chem.findMany({where: {flag_auth_chem: true}});
 	const template = chemical;
+	const body = template.body
+		.replaceAll("{{action}}", oldChemical && newChemical ?
+			'Mise à jour' : (oldChemical ? 'Suppression' : 'Création'))
+		.replaceAll("{{oldValue}}", oldChemical ?
+			`Ancien valeur: ${oldChemical.cas_auth_chem} - ${oldChemical.auth_chem_en} (${oldChemical.flag_auth_chem ? 'Actif' : 'Archivé'})` :
+			'')
+		.replaceAll("{{newValue}}", newChemical ?
+			`Nouvelle valeur: ${newChemical.cas_auth_chem} - ${newChemical.auth_chem_en} (${newChemical.flag_auth_chem ? 'Actif' : 'Archivé'})` :
+			'');
 
 	const csv: string = chemicals.map(chem => `${chem.cas_auth_chem},"${chem.auth_chem_en}"`).join('\n');
 
@@ -136,7 +145,7 @@ export async function sendEmailsForChemical(prisma, user: string) {
 			from: `"LHD" <${process.env.SMTP_USER}>`,
 			to: process.env.ENVIRONMENT === 'prod' ? process.env.CATALYSE_EMAIL : userInfo.userEmail,
 			subject: template.subject,
-			html: process.env.ENVIRONMENT === 'prod' ? template.body : `${logRecipients([process.env.CATALYSE_EMAIL], [], [])}\n${template.body}`,
+			html: process.env.ENVIRONMENT === 'prod' ? body : `${logRecipients([process.env.CATALYSE_EMAIL], [], [])}\n${body}`,
 			attachments: [{raw: ["Content-Type: text/csv; charset=utf-8", `Content-Disposition: attachment; filename="chemicals-${getFormattedDate(new Date(), '')}.csv"`, "", csv].join("\r\n"),}]
 		});
 	}

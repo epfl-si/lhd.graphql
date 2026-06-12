@@ -153,7 +153,7 @@ export const ChemicalMutations = extendType({
 							}
 						});
 				});
-				await sendEmailsForChemical(context.prisma, context.user.username);
+				await sendEmailsForChemical(context.prisma, context.user.username, chem, newChem);
 				return mutationStatusType.success();
 			}
 		});
@@ -173,7 +173,7 @@ export const ChemicalMutations = extendType({
 					await tx.auth_chem.delete({ where: { id_auth_chem: chem.id_auth_chem }});
 					//TODO delete authorizations?
 				});
-				await sendEmailsForChemical(context.prisma, context.user.username);
+				await sendEmailsForChemical(context.prisma, context.user.username, chem, undefined);
 				return mutationStatusType.success();
 			}
 		});
