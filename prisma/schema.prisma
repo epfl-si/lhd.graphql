@@ -62,27 +62,28 @@ model Institute {
 }
 
 model Room {
-  id                        Int                          @id @default(autoincrement()) @map("id_lab")
-  sciper_lab                Int?                         @unique(map: "unique_sciper_lab")
-  site                      String?                      @db.VarChar(50)
-  building                  String                       @db.VarChar(5)
-  sector                    String?                      @db.VarChar(5)
-  floor                     String?                      @db.VarChar(5)
-  roomNo                    String                       @map("lab") @db.VarChar(10)
-  id_labType                Int?
-  lab_type_is_different     Boolean                      @default(false)
-  description               String?                      @db.VarChar(200)
-  location                  String?                      @db.VarChar(10)
-  vol                       Float?
-  vent                      String?                      @db.Char(1)
-  name                      String?                      @map("lab_display") @db.VarChar(20)
-  kind                      RoomKind?                    @relation(fields: [id_labType], references: [id_labType], onDelete: Restrict, onUpdate: Restrict, map: "lab_ibfk_1")
-  unit_has_room             unit_has_room[]
-  lab_has_hazards           lab_has_hazards[]
-  lab_has_hazards_additional_info lab_has_hazards_additional_info[]
-  authorization_has_room      authorization_has_room[]
-  dispensation_has_room       DispensationHasRoom[]
-  isDeleted                   Boolean                      @default(false)
+  id                               Int                          @id @default(autoincrement()) @map("id_lab")
+  sciper_lab                       Int?                         @unique(map: "unique_sciper_lab")
+  site                             String?                      @db.VarChar(50)
+  building                         String                       @db.VarChar(5)
+  sector                           String?                      @db.VarChar(5)
+  floor                            String?                      @db.VarChar(5)
+  roomNo                           String                       @map("lab") @db.VarChar(10)
+  id_labType                       Int?
+  lab_type_is_different            Boolean                      @default(false)
+  description                      String?                      @db.VarChar(200)
+  location                         String?                      @db.VarChar(10)
+  vol                              Float?
+  vent                             String?                      @db.Char(1)
+  name                             String?                      @map("lab_display") @db.VarChar(20)
+  kind                             RoomKind?                    @relation(fields: [id_labType], references: [id_labType], onDelete: Restrict, onUpdate: Restrict, map: "lab_ibfk_1")
+  unit_has_room                    unit_has_room[]
+  lab_has_hazards                  lab_has_hazards[]
+  lab_has_hazards_additional_info  lab_has_hazards_additional_info[]
+  authorization_has_room           authorization_has_room[]
+  dispensation_has_room            DispensationHasRoom[]
+  assessment_and_decision_has_room AssessmentDecisionHasRoom[]
+  isDeleted                        Boolean                      @default(false)
 
   @@unique([building, sector, floor, roomNo], name: "unique_lab", map: "unique_lab")
   @@unique([sciper_lab, building, sector, floor, roomNo], name: "unique_labo", map: "unique_labo")
@@ -122,16 +123,17 @@ model unit_has_cosec {
 }
 
 model Person {
-  id_person              Int                        @id @default(autoincrement())
-  sciper                 Int?                       @unique(map: "unique_sciper")
-  name                   String?                    @map("name_person") @db.VarChar(60)
-  surname                String?                    @map("surname_person") @db.VarChar(60)
-  email                  String?                    @map("email_person") @db.VarChar(60)
-  subunpro               subunpro[]
-  unit_has_cosec         unit_has_cosec[]
-  responsible_for_units   Unit[]
-  authorization_has_holder authorization_has_holder[]
-  dispensation_has_holder  DispensationHasHolder[]
+  id_person                            Int                        @id @default(autoincrement())
+  sciper                               Int?                       @unique(map: "unique_sciper")
+  name                                 String?                    @map("name_person") @db.VarChar(60)
+  surname                              String?                    @map("surname_person") @db.VarChar(60)
+  email                                String?                    @map("email_person") @db.VarChar(60)
+  subunpro                             subunpro[]
+  unit_has_cosec                       unit_has_cosec[]
+  responsible_for_units                Unit[]
+  authorization_has_holder             authorization_has_holder[]
+  dispensation_has_holder              DispensationHasHolder[]
+  assessment_and_decision_has_contact  AssessmentDecisionHasContact[]
 
   @@unique([name, surname, email], name: "unique_per", map: "unique_per")
   @@unique([sciper, name, surname, email], name: "unique_person", map: "unique_person")
@@ -152,18 +154,19 @@ model subunpro {
 }
 
 model Unit {
-  id                        Int                         @id @default(autoincrement()) @map("id_unit")
-  unitId                    Int?                        @unique(map: "unique_sciper_unit") @map("sciper_unit")
-  name                      String?                     @map("name_unit") @db.VarChar(60)
-  id_institute              Int?                        @map("id_institut")
-  responsible_id            Int?
-  subunpro                  subunpro[]
-  institute                 Institute?                  @relation(fields: [id_institute], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "unit_ibfk_1")
-  unit_has_cosec            unit_has_cosec[]
-  unit_has_room             unit_has_room[]
-  authorization             authorization[]
-  dispensation_has_unit     DispensationHasUnit[]
-  responsible               Person? @relation(fields: [responsible_id], references: [id_person], onUpdate: Restrict, map: "unit_has_responsible")
+  id                                   Int                         @id @default(autoincrement()) @map("id_unit")
+  unitId                               Int?                        @unique(map: "unique_sciper_unit") @map("sciper_unit")
+  name                                 String?                     @map("name_unit") @db.VarChar(60)
+  id_institute                         Int?                        @map("id_institut")
+  responsible_id                       Int?
+  subunpro                             subunpro[]
+  institute                            Institute?                  @relation(fields: [id_institute], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "unit_ibfk_1")
+  unit_has_cosec                       unit_has_cosec[]
+  unit_has_room                        unit_has_room[]
+  authorization                        authorization[]
+  dispensation_has_unit                DispensationHasUnit[]
+  assessment_and_decision_has_unit     AssessmentDecisionHasUnit[]
+  responsible                          Person? @relation(fields: [responsible_id], references: [id_person], onUpdate: Restrict, map: "unit_has_responsible")
 
   @@unique([name, id_institute], name: "unique_un", map: "unique_un")
   @@unique([unitId, name, id_institute], name: "unique_unit", map: "unique_unit")
@@ -466,5 +469,109 @@ model DispensationHasUnit {
   unit             Unit @relation(fields: [id_unit], references: [id], onUpdate: Restrict, map: "dispensation_has_unit_ibfk_2")
 
   @@unique([id_dispensation, id_unit], name: "unique_dispensation_has_unit", map: "unique_dispensation_has_unit")
+  @@index([id_unit], map: "id_unit")
+}
+
+model AssessmentDecisionSubject {
+  @@map("assessment_and_decision_subject")
+
+  id_assessment_and_decision_subject     Int        @id @default(autoincrement())
+  subject                                String     @db.VarChar(60)
+
+  assessment_and_decision                AssessmentDecision[]
+
+  @@unique([subject], map: "unique_assessment_and_decision_subject")
+}
+
+model AssessmentDecision {
+  @@map("assessment_and_decision")
+
+  id_assessment_and_decision           Int                          @id @default(autoincrement())
+  id_assessment_and_decision_subject   Int
+  subject_other                        String                       @db.VarChar(60)
+  description                          String                       @db.LongText
+  conclusion                           String?                      @db.LongText
+  status                               AssessmentDecisionStatus
+  date                                 DateTime                     @db.Date
+
+  created_by                           String                       @db.VarChar(50)
+  created_on                           DateTime                     @db.DateTime(0)
+  modified_by                          String                       @db.VarChar(50)
+  modified_on                          DateTime                     @db.DateTime(0)
+
+  assessment_and_decision_has_room     AssessmentDecisionHasRoom[]
+  assessment_and_decision_has_contact  AssessmentDecisionHasContact[]
+  assessment_and_decision_has_ticket   AssessmentDecisionHasTicket[]
+  assessment_and_decision_has_file     AssessmentDecisionHasFile[]
+  assessment_and_decision_has_unit     AssessmentDecisionHasUnit[]
+  subject                              AssessmentDecisionSubject    @relation(fields: [id_assessment_and_decision_subject], references: [id_assessment_and_decision_subject], onUpdate: Restrict, map: "assessment_and_decision_has_subject_ibfk_1")
+}
+
+enum AssessmentDecisionStatus {
+  Draft
+  Active
+  Closed
+}
+
+model AssessmentDecisionHasFile {
+  @@map("assessment_and_decision_has_file")
+
+  id_assessment_and_decision    Int
+  file_path                     String             @db.VarChar(250)
+
+  assessment_and_decision       AssessmentDecision @relation(fields: [id_assessment_and_decision], references: [id_assessment_and_decision], onUpdate: Restrict, map: "assessment_and_decision_has_file_ibfk_1")
+
+  @@unique([id_assessment_and_decision, file_path], name: "unique_assessment_and_decision_has_file", map: "unique_assessment_and_decision_has_file")
+  @@index([file_path], map: "file_path")
+}
+
+model AssessmentDecisionHasTicket {
+  @@map("assessment_and_decision_has_ticket")
+
+  id_assessment_and_decision    Int
+  ticket_number                 String
+
+  assessment_and_decision       AssessmentDecision @relation(fields: [id_assessment_and_decision], references: [id_assessment_and_decision], onUpdate: Restrict, map: "assessment_and_decision_has_ticket_ibfk_1")
+
+  @@unique([id_assessment_and_decision, ticket_number], name: "unique_assessment_and_decision_has_ticket", map: "unique_assessment_and_decision_has_ticket")
+  @@index([ticket_number], map: "ticket_number")
+}
+
+model AssessmentDecisionHasContact {
+  @@map("assessment_and_decision_has_contact")
+
+  id_assessment_and_decision    Int
+  id_person                     Int
+
+  assessment_and_decision       AssessmentDecision @relation(fields: [id_assessment_and_decision], references: [id_assessment_and_decision], onUpdate: Restrict, map: "assessment_and_decision_has_contact_ibfk_1")
+  contact                       Person             @relation(fields: [id_person], references: [id_person], onUpdate: Restrict, map: "assessment_and_decision_has_contact_ibfk_2")
+
+  @@unique([id_assessment_and_decision, id_person], name: "unique_assessment_and_decision_has_contact", map: "unique_assessment_and_decision_has_contact")
+  @@index([id_person], map: "id_person")
+}
+
+model AssessmentDecisionHasRoom {
+  @@map("assessment_and_decision_has_room")
+
+  id_assessment_and_decision  Int
+  id_lab                      Int
+
+  assessment_and_decision     AssessmentDecision @relation(fields: [id_assessment_and_decision], references: [id_assessment_and_decision], onUpdate: Restrict, map: "assessment_and_decision_has_room_ibfk_1")
+  room                        Room               @relation(fields: [id_lab], references: [id], onUpdate: Restrict, map: "assessment_and_decision_has_room_ibfk_2")
+
+  @@unique([id_assessment_and_decision, id_lab], name: "unique_assessment_and_decision_has_room", map: "unique_assessment_and_decision_has_room")
+  @@index([id_lab], map: "id_lab")
+}
+
+model AssessmentDecisionHasUnit {
+  @@map("assessment_and_decision_has_unit")
+
+  id_assessment_and_decision  Int
+  id_unit                     Int
+
+  assessment_and_decision     AssessmentDecision @relation(fields: [id_assessment_and_decision], references: [id_assessment_and_decision], onUpdate: Restrict, map: "assessment_and_decision_has_unit_ibfk_1")
+  unit                        Unit               @relation(fields: [id_unit], references: [id], onUpdate: Restrict, map: "assessment_and_decision_has_unit_ibfk_2")
+
+  @@unique([id_assessment_and_decision, id_unit], name: "unique_assessment_and_decision_has_unit", map: "unique_assessment_and_decision_has_unit")
   @@index([id_unit], map: "id_unit")
 }
