@@ -86,6 +86,10 @@ import * as hazardAdditionalInfoHasTagType from '../schema/hazards/hazardAdditio
 import * as mutationType from '../utils/mutationTypes'
 import * as subjectType from '../schema/dispensation/subject'
 import * as ticketTypes from '../schema/dispensation/ticket'
+import * as assessmentDecisionTypes from '../schema/assessment/assessmentDecision';
+import * as subjectANDType from '../schema/assessment/subject'
+import * as ticketANDTypes from '../schema/assessment/ticket'
+import * as fileANDTypes from '../schema/assessment/files'
 import {fieldValidatePlugin} from "../utils/fieldValidatePlugin";
 
 
@@ -112,7 +116,11 @@ const types = [
 	hazardAdditionalInfoHasTagType,
 	mutationType,
 	subjectType,
-	ticketTypes
+	ticketTypes,
+	assessmentDecisionTypes,
+	subjectANDType,
+	ticketANDTypes,
+	fileANDTypes
 ];
 
 // No user-serviceable parts below /////////////////////////////////////////////////
