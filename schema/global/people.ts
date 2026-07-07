@@ -141,6 +141,8 @@ export const ConnectedUserInfoStruct = objectType({
 		t.boolean('canEditAuthorizations');
 		t.boolean('canListDispensations');
 		t.boolean('canEditDispensations');
+		t.boolean('canListAssessments');
+		t.boolean('canEditAssessments');
 		t.boolean('canListHazardsForm');
 		t.boolean('canListPersons');
 		t.boolean('canListForms');
@@ -175,6 +177,8 @@ export const ConnectedUserInfoQuery = extendType({
 					canEditAuthorizations: context.user.canEditAuthorizations,
 					canListDispensations: context.user.canListDispensations,
 					canEditDispensations: context.user.canEditDispensations,
+					canListAssessments: context.user.canListAssessments,
+					canEditAssessments: context.user.canEditAssessments,
 					canListHazardsForm: context.user.canListHazardsForm,
 					canListPersons: context.user.canListPersons,
 					canListForms: context.user.canListForms,
