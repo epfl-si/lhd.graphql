@@ -36,7 +36,7 @@ export const AssessmentDecisionStruct = objectType({
     t.field('assessment', {
       type: "String",
       resolve: async (parent, _, context) => {
-        return `ASSMT-${parent.id_assessment_and_decision}`;
+        return `ASMT-${parent.id_assessment_and_decision}`;
       }
     });
 
