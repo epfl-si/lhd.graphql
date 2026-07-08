@@ -466,10 +466,10 @@ export const UnitFullTextQuery = extendType({
 	},
 })
 
-export const UnitsForDispensationQuery = extendType({
+export const UnitsByRoomQuery = extendType({
 	type: 'Query',
 	definition(t) {
-		t.field("unitsForDispensation", {
+		t.field("unitsByRoom", {
 			type: list(UnitStruct),
 			args: {
 				rooms: stringArg(),
