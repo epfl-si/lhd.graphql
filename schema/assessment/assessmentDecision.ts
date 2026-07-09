@@ -43,7 +43,7 @@ export const AssessmentDecisionStruct = objectType({
     t.field('subject', {
       type: "String",
       resolve: async (parent, _, context) => {
-        const subject = await context.prisma.assessmentDecisionSubjects.findUnique({
+        const subject = await context.prisma.AssessmentDecisionSubject.findUnique({
           where: { id_assessment_and_decision_subject: parent.id_assessment_and_decision_subject }
         });
         return subject ? subject.subject : null;
@@ -53,7 +53,7 @@ export const AssessmentDecisionStruct = objectType({
     t.nonNull.list.nonNull.field('assessment_rooms', {
       type: RoomStruct,
       resolve: async (parent, _, context) => {
-        const assessmentAndRooms = await context.prisma.assessmentDecisionHasRooms.findMany({
+        const assessmentAndRooms = await context.prisma.AssessmentDecisionHasRoom.findMany({
           where: { id_assessment_and_decision: parent.id_assessment_and_decision }
         });
         const roomIDs = new Set(assessmentAndRooms.map((assessmentAndRoom) => assessmentAndRoom.id_lab));
@@ -66,7 +66,7 @@ export const AssessmentDecisionStruct = objectType({
     t.nonNull.list.nonNull.field('assessment_contacts', {
       type: PersonStruct,
       resolve: async (parent, _, context) => {
-        const assessmentAndPeople = await context.prisma.assessmentDecisionHasContacts.findMany({
+        const assessmentAndPeople = await context.prisma.AssessmentDecisionHasContact.findMany({
           where: { id_assessment_and_decision: parent.id_assessment_and_decision }
         });
         const peopleIDs = new Set(assessmentAndPeople.map((assessmentAndPerson) => assessmentAndPerson.id_person));
@@ -79,7 +79,7 @@ export const AssessmentDecisionStruct = objectType({
     t.nonNull.list.nonNull.field('assessment_units', {
       type: UnitStruct,
       resolve: async (parent, _, context) => {
-        const assessmentAndUnits = await context.prisma.assessmentDecisionHasUnits.findMany({
+        const assessmentAndUnits = await context.prisma.AssessmentDecisionHasUnit.findMany({
           where: { id_assessment_and_decision: parent.id_assessment_and_decision }
         });
         const unitIDs = new Set(assessmentAndUnits.map((assessmentAndUnit) => assessmentAndUnit.id_unit));
@@ -163,7 +163,7 @@ export const AssessmentDecisionsWithPaginationQuery = extendType({
         take: acceptInteger,
         search: (s) => sanitizeSearchString(s, {
           Unit: {rename: 'unit', validate: alphanumericRegexp},
-          AssessmentDecision: {rename: 'assessment', validate: alphanumericRegexp},
+          Assessment: {rename: 'assessment', validate: alphanumericRegexp},
           Status: {rename: 'status', validate: (value) => acceptSubstringInList(value, Object.values(AssessmentDecisionStatus))},
           Room: {rename: 'room', validate: alphanumericRegexp},
           Contact: {rename: 'contact', validate: alphanumericRegexp},
@@ -390,14 +390,14 @@ async function setAssessmentDecisionRelations(tx, id_assessment_and_decision: nu
   for ( const contact of changes.contacts || []) {
     const p = await tx.Person.findUnique({where: {sciper: contact.sciper}});
     if ( contact.status === 'New' ) {
-      await tx.AssessmentDecisionHascontact.create({
+      await tx.AssessmentDecisionHasContact.create({
         data: {
           id_person: Number(p.id_person),
           id_assessment_and_decision: id_assessment_and_decision
         }
       });
     } else if ( contact.status === 'Deleted' ) {
-      await tx.AssessmentDecisionHascontact.deleteMany({
+      await tx.AssessmentDecisionHasContact.deleteMany({
         where: {
           id_assessment_and_decision: id_assessment_and_decision,
           id_person: p.id_person
