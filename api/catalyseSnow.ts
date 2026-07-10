@@ -1,15 +1,11 @@
-import {getNow, todayDate} from "../utils/date";
+import {todayDate} from "../utils/date";
 import {getBearerToken} from "../utils/authentication";
 import {checkAPICall} from "./lib/checkedAPICalls";
 import {
-	authCodeRegexp,
-	chemicalNameRegexp,
 	reqRegexp,
 	reqRenewRegexp,
 	roomNameRegexp,
-	singleCAS,
 	unitNameRegexp,
-	validateAuth,
 	validateCASList,
 	validateCommaSeparatedNumbers
 } from "./lib/lhdValidators";
@@ -17,124 +13,20 @@ import * as express from "express";
 import {Request} from "express";
 import {errorHandler} from "./lib/errorHandler";
 import {createAuthorization, getAuthorizations, getTheAuthorization, updateAuthorization} from "../model/authorization";
-import {createChemical, getChemicals} from "../model/chemicals";
+import {getChemicals} from "../model/chemicals";
 import {getRooms} from "../model/rooms";
 import {getUnitByName} from "../model/units";
-import {setReqPrismaMiddleware} from "./lib/rest";
+import {auditAPI, setReqPrismaMiddleware} from "./lib/rest";
 
 export function makeRESTAPI() {
 	const app = express();
 
+	app.use(restAuthenticateBearer);
 	app.use(setReqPrismaMiddleware);
-
-	app.use(function auditAPI (req, res, next) {
-		console.log(`API CALL - [${getNow()}] - ${req.method} - ${req.protocol}://${req.hostname}${req.originalUrl}`);
-
-		//TODO delete when Catalyse and SNOW have migrated to the new URLs
-		if (req.url.indexOf(".php") > -1) {
-			const method = req.query.m as string;
-			if (!method) return res.status(400).json({ Message: "missing <m> command (e.g. m=auth_req)." });
-		}
-
-		next();
-	});
-
-
-	// OBSOLETE; will be removed once ServiceNow migrates over to the new API.
-	app.post("/snow.php",
-		restAuthenticateByTokenQueryParam,
-		async (req: any, res) => {
-		const method = req.query.m as string;
-		const request = req.query.req as string;
-
-		if (!request && method !== 'auth_chem') return res.status(400).json({ Message: "missing <req> string for request+authorisation number of the form req=AUTH_SST-AUTH_REQ" });
-		if (!req.query.date && method !== 'auth_chem') return res.status(400).json({ Message: "missing authorisation expiration <date>" });
-		const expirationDate = new Date(req.query.date as string);
-		expirationDate.setHours(12, 0, 0, 0);
-
-		switch (method) {
-			case "auth_req":
-				if ( !req.user.canEditAuthorizations ) {
-					res.status(403).json({Message: 'Unauthorized'});
-					break;
-				}
-
-				const idUnit = parseInt(req.query.id_unit as string);
-				if (!idUnit) return res.status(400).json({ Message: "missing <id_unit>" });
-
-				if (!req.query.room_ids) return res.status(400).json({ Message: "missing <room_ids> list of lab ids" });
-				const roomIds = (req.query.room_ids as string).split(',');
-
-				if (!req.query.scipers) return res.status(400).json({ Message: "missing <scipers> list of authorisation holders" });
-				const scipers = (req.query.scipers as string).split(',');
-
-				const cas = (req.query.cas as string).split(',');
-				const args = {
-					id_unit: idUnit,
-					authorization: request,
-					creation_date: todayDate(),
-					expiration_date: expirationDate,
-					status: "Active",
-					type: "Chemical",
-					cas: cas.map(c => {
-							return {name: c, status: "New"};
-						}),
-					holders: scipers.map(sc => {
-							return {sciper: parseInt(sc), status: "New"};
-						}),
-					rooms: roomIds.map(r => {
-							return {id: parseInt(r), status: "New"};
-						}),
-				}
-				await createAuthorization(req.prisma, args, args.id_unit, args.holders);
-				res.json({Message: "Ok"});
-				break;
-			case "auth_renew":
-				if ( !req.user.canEditAuthorizations ) {
-					res.status(403).json({Message: 'Unauthorized'});
-					break;
-				}
-
-				const reqParts = request.split("-");
-				const requestNumber = `${reqParts[0]}-${reqParts[1]}`;
-				const auth = await getTheAuthorization(req.prisma, requestNumber, "Chemical");
-				const exp = new Date(expirationDate);
-				exp.setHours(12, 0, 0, 0);
-				const argsUpdate = {
-					expiration_date: exp,
-					status: "Active",
-					renewals: parseInt(reqParts[2])
-				};
-				await updateAuthorization(req.prisma, argsUpdate, auth)
-				res.json({Message: "Ok"});
-				break;
-			case "auth_chem":
-				if ( !req.user.canEditChemicals ) {
-					res.status(403).json({Message: 'Unauthorized'});
-					break;
-				}
-
-				if ( !req.query.cas ) return res.status(400).json({Message: "missing <cas> code for chemical product"});
-				if ( !req.query.en ) return res.status(400).json({Message: "missing <en> english translation of the chemical name or description"});
-				if ( !req.query.auth ) return res.status(400).json({Message: "missing <auth> flag for setting if the new chemical requires authorisation"});
-
-				const argsChem = {
-					auth_chem_en: req.query.en as string,
-					cas_auth_chem: req.query.cas as string,
-					flag_auth_chem: (req.query.auth as string).toLowerCase() === 'yes' || (req.query.auth as string) === '1'
-				}
-				await createChemical(argsChem, req);
-				res.json({Message: "Ok"});
-				break;
-			default:
-				res.status(404).json({Message: 'Not Found'});
-				break;
-		}
-	});
+	app.use(auditAPI);
 
 	type AuthReqParams = {id_unit: number, req: string, date: Date, scipers: number[], cas: string[], room_ids: number[]};
 	app.post<AuthReqParams>("/auth_req",
-		restAuthenticateBearer,   // TODO: factor all these out with `app.use()` once the obsolete API is gone.
 		checkAPICall(
 			{
 				authorize: (req) => req.user.canEditAuthorizations,
@@ -181,7 +73,6 @@ export function makeRESTAPI() {
 	);
 
 	app.post<{req: string, date: Date}>("/auth_renew",
-		restAuthenticateBearer,
 		checkAPICall(
 			{
 				authorize: (req) => req.user.canEditAuthorizations,
@@ -210,45 +101,7 @@ export function makeRESTAPI() {
 		}
 	);
 
-	/* Will replace /auth_chem endpoint */
-	app.post<{cas: string, en: string, auth: boolean, fr?: string, code: string, fastway?: boolean}>("/add_chem",
-		restAuthenticateBearer,
-		checkAPICall(
-			{
-				authorize: (req) => req.user.canEditChemicals,
-				required: {
-					cas (req) { return req.query.cas; },
-					en (req) { return req.query.en; },
-					auth (req) { return req.query.auth; },
-					code (req) { return req.query.code; }
-				},
-				validate: {
-					cas: singleCAS,
-					en: chemicalNameRegexp,
-					fr: chemicalNameRegexp,
-					auth: validateAuth,
-					code: authCodeRegexp,
-					fastway: validateAuth
-				},
-				optional: {
-					fr (req) { return req.query.fr; },
-					fastway (req) { return req.query.fastway; },
-				}
-			}),
-		async (req, res) => {
-			const argsChem = {
-				auth_chem_en: req.params.en,
-				cas_auth_chem: req.params.cas,
-				flag_auth_chem: req.params.auth,
-				auth_code: req.params.code,
-				fastway: req.params.fastway
-			}
-			await createChemical(argsChem, req);
-			res.json({Message: "Ok"});
-	});
-
 	app.get<{cas?: string[]}>("/get_chem",
-		restAuthenticateBearer,
 		checkAPICall(
 			{
 				authorize: (req) => req.user.canListChemicals,
@@ -279,7 +132,6 @@ export function makeRESTAPI() {
 		});
 
 	app.get<{cas: string[], sciper: Number}>("/auth_check",
-		restAuthenticateBearer,
 		checkAPICall(
 			{
 				authorize: (req) => req.user.canListAuthorizations,
@@ -293,7 +145,7 @@ export function makeRESTAPI() {
 				}
 			}),
 		async (req, res) => {
-			const result = await getAuthorizations(req.prisma, "Chemical", {holder: req.params.sciper});
+			const result = await getAuthorizations(req.prisma, "Chemical", {holder: `${req.params.sciper}`});
 			const casResult = result.authorizations
 				.filter(auth => auth.expiration_date > new Date())
 				.flatMap(auth => auth.authorization_has_chemical)
@@ -312,7 +164,6 @@ export function makeRESTAPI() {
 		});
 
 	app.get<{unit?: string, room?: string}>("/get_labs_and_units",
-		restAuthenticateBearer,
 		checkAPICall(
 			{
 				authorize: (req) => req.user.canListRooms,
@@ -346,7 +197,6 @@ export function makeRESTAPI() {
 		});
 
 	app.get<{unit?: string}>("/get_profs_and_cosecs",
-		restAuthenticateBearer,
 		checkAPICall(
 			{
 				authorize: (req) => req.user.canListUnits,
@@ -403,22 +253,6 @@ const snowApiUser = {
 const catalyseApiUser = {
 	username: 'CATALYSE',
 	canListAuthorizations: true
-}
-
-function restAuthenticateByTokenQueryParam(req: Request, res, next) {
-	const token = req.query.token;
-
-	if (token === process.env.SNOW_TOKEN) {
-		req.user = snowApiUser;
-		next();
-	} else if (token === process.env.CATALYSE_TOKEN) {
-		req.user = catalyseApiUser;
-		next();
-	} else {
-		res.status(403);
-		res.send(`Unauthorized`);
-		return;
-	}
 }
 
 function restAuthenticateBearer(req: Request, res, next) {
