@@ -4,7 +4,7 @@ import {RoomStruct} from "../global/rooms";
 import {PersonStruct} from "../global/people";
 import {IDObfuscator} from "../../utils/IDObfuscator";
 import {mutationStatusType} from "../statuses";
-import {HolderMutationType, OthersMutationType, StringMutationType} from "../../utils/mutationTypes";
+import {FileMutationType, HolderMutationType, OthersMutationType, StringMutationType} from "../../utils/mutationTypes";
 import {getUserInfoFromAPI} from "../../utils/callAPI";
 import {ensurePerson} from "../../model/persons";
 import {UnitStruct} from "../roomdetails/units";
@@ -13,6 +13,8 @@ import {sanitizeHolderMutationTypes, sanitizeMutationTypes, sanitizeSearchString
 import {
   alphanumericRegexp,
   dispensationTicketRegexp,
+  fileContentRegexp,
+  fileNameRegexp,
   freeFormTextRegexp,
   validateId
 } from "../../api/lib/lhdValidators";
@@ -257,6 +259,7 @@ const newAssessmentDecisionType = {
   units: list(OthersMutationType),
   contacts: list(HolderMutationType),
   tickets: list(StringMutationType),
+  files: list(FileMutationType)
 };
 
 export const AssessmentDecisionMutationStatus = mutationStatusType({
@@ -287,6 +290,11 @@ export const AssessmentDecisionMutations = extendType({
         tickets: (s) => sanitizeArray(s, {
           status: {validate: {enum: ["New", "Default", "Deleted"]}},
           name: {validate: dispensationTicketRegexp},
+        }),
+        files: (s) => sanitizeArray(s, {
+          status: {validate: {enum: ["New", "Default", "Deleted"]}},
+          base64: {validate: fileContentRegexp},
+          path: {validate: fileNameRegexp},
         }),
       },
       async resolve(root, args, context) {
@@ -333,6 +341,11 @@ export const AssessmentDecisionMutations = extendType({
         tickets: (s) => sanitizeArray(s, {
           status: {validate: {enum: ["New", "Default", "Deleted"]}},
           name: {validate: dispensationTicketRegexp},
+        }),
+        files: (s) => sanitizeArray(s, {
+          status: {validate: {enum: ["New", "Default", "Deleted"]}},
+          base64: {validate: fileContentRegexp},
+          path: {validate: fileNameRegexp},
         }),
       },
       async resolve(root, args, context) {

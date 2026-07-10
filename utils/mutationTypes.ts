@@ -24,3 +24,12 @@ export const StringMutationType = inputObjectType({
 		t.nonNull.string('name');
 	}
 });
+
+export const FileMutationType = inputObjectType({
+	name: "FileMutationType",
+	definition(t) {
+		t.nonNull.string('status');
+		t.nonNull.string('path');
+		t.nonNull.string('base64');
+	}
+});
