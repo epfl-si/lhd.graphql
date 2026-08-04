@@ -335,7 +335,7 @@ export const DispensationMutations = extendType({
           await tx.Dispensation.update({
             where: { id_dispensation: disp.id_dispensation },
             data: {
-              file_path: getFilePath(args.file_name, args.file, disp.id_dispensation)
+              file_path: saveBase64File(args.file, process.env.DISPENSATION_DOCUMENT_FOLDER + '/' + disp.id_dispensation + '/', args.file_name)
             }
           });
           await setDispensationRelations(tx, disp.id_dispensation, args);
@@ -401,7 +401,7 @@ export const DispensationMutations = extendType({
               comment: decodeURIComponent(args.comment),
               status: args.status,
               date_end: args.date_end,
-              file_path: getFilePath(args.file_name, args.file, disp.id_dispensation),
+              file_path: saveBase64File(args.file, process.env.DISPENSATION_DOCUMENT_FOLDER + '/' + disp.id_dispensation + '/', args.file_name),
               modified_by: `${userInfo.userFullName} (${userInfo.sciper})`,
               modified_on: new Date()
             }
@@ -456,14 +456,6 @@ export const DispensationMutations = extendType({
     });
   }
 });
-
-function getFilePath (fileName, fileContent, id) {
-  let filePath = '';
-  if (fileContent && fileName) {
-    filePath = saveBase64File(fileContent, process.env.DISPENSATION_DOCUMENT_FOLDER + '/' + id + '/', fileName)
-  }
-  return filePath;
-}
 
 async function setDispensationRelations(tx, id_dispensation: number, changes) {
   for ( const holder of changes.holders || []) {
