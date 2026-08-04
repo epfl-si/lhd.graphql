@@ -3,7 +3,7 @@ import {Request} from "express";
 import {errorHandler} from "../api/lib/errorHandler";
 import {authenticateFromBearerToken} from "../utils/authentication";
 import {checkAPICall} from "../api/lib/checkedAPICalls";
-import {fileNameRegexp, obfuscatedIdValidators} from "../api/lib/lhdValidators";
+import {fileNameRegexp, obfuscatedIdValidators, pathRegexp} from "../api/lib/lhdValidators";
 import {ID, IDObfuscator} from "../utils/IDObfuscator";
 import {getBioOrgToString} from "../schema/bio/bioorg";
 import {getReportFilesByUnit, sendFileResponse} from "../utils/fileUtilities";
@@ -12,6 +12,7 @@ import {getLabHasHazardsAdditionalInfoToString} from "../schema/hazards/hazardsA
 import {getLabHasHazardChildToString} from "../schema/hazards/labHazardChild";
 import {setReqPrismaMiddleware} from "../api/lib/rest";
 import {getDispensationToString} from "../schema/dispensation/dispensation";
+import {getAssessmentDecisionToString} from "../schema/assessment/assessmentDecision";
 
 const obfuscatedIdParams = {
 	eph_id (req) { return req.params.eph_id },
@@ -149,6 +150,29 @@ export function makeRESTFilesAPI() {
 				'Dispensation', 'id_dispensation',
 				req.prisma, 'Dispensation', getDispensationToString);
 			sendFileResponse(info.file_path, res);
+		});
+
+	type GetAssessmentFile = {salt: string, eph_id: string, fileName: string};
+	app.get("/assessment/:eph_id",
+		checkAPICall(
+			{
+				authorize: (req) => req.user.canListAssessments,
+				required: {
+					...obfuscatedIdParams,
+					fileName (req) { return req.query.fileName }
+				},
+				validate: {
+					...obfuscatedIdValidators,
+					fileName: pathRegexp
+				}
+			}),
+		async (req: Request<GetAssessmentFile>, res) => {
+			const id: ID = {salt: req.params.salt, eph_id: req.params.eph_id};
+			IDObfuscator.checkId(id);
+			const info = await IDObfuscator.getObjectByObfuscatedId(id,
+				'AssessmentDecision', 'id_assessment_and_decision',
+				req.prisma, 'AssessmentDecision', getAssessmentDecisionToString);
+			sendFileResponse(req.params.fileName, res);
 		});
 
 	app.use(errorHandler);
