@@ -18,15 +18,18 @@ export function checkFileAttributeByRegexp(fileAttribute, regexp) {
 }
 
 export function saveBase64File(base64Data: string, filePath: string, fileName: string): string {
-	checkFileAttributeByRegexp(fileName, fileNameRegexp); //TODO retester erreur qui ne s'affiche pas
-	// Remove the data URL part if present
-	const base64Content = base64Data.split(';base64,').pop() || base64Data;
-	// Decode base64 string to buffer
-	const fileBuffer = Buffer.from(base64Content, 'base64');
-	fs.mkdirSync(DOCUMENTS_PATH + "/" + filePath, {recursive: true});
-	// Write the buffer to a file
-	fs.writeFileSync(DOCUMENTS_PATH + "/" + filePath + fileName, fileBuffer);
-	return filePath + fileName;
+	if (base64Data && fileName) {
+		checkFileAttributeByRegexp(fileName, fileNameRegexp); //TODO retester erreur qui ne s'affiche pas
+		// Remove the data URL part if present
+		const base64Content = base64Data.split(';base64,').pop() || base64Data;
+		// Decode base64 string to buffer
+		const fileBuffer = Buffer.from(base64Content, 'base64');
+		fs.mkdirSync(DOCUMENTS_PATH + "/" + filePath, {recursive: true});
+		// Write the buffer to a file
+		fs.writeFileSync(DOCUMENTS_PATH + "/" + filePath + fileName, fileBuffer);
+		return filePath + fileName;
+	}
+	return '';
 }
 
 export async function isDirectory(path: string) {
