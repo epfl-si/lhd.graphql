@@ -126,13 +126,9 @@ export const OrganismMutations = extendType({
 						}
 					});
 
-					let filePath = '';
-					if (args.fileContent != '' && args.fileName != '') {
-						filePath = saveBase64File(args.fileContent, 'd_bio/' + organism.id_bio_org + '/', args.fileName)
-					}
 					await tx.bio_org.update({
 						data: {
-							filePath: filePath
+							filePath: saveBase64File(args.fileContent, 'd_bio/' + organism.id_bio_org + '/', args.fileName)
 						},
 						where: {
 							id_bio_org: organism.id_bio_org
