@@ -30,6 +30,6 @@ export const FileMutationType = inputObjectType({
 	definition(t) {
 		t.nonNull.string('status');
 		t.nonNull.string('path');
-		t.nonNull.string('base64');
+		t.string('base64');
 	}
 });
