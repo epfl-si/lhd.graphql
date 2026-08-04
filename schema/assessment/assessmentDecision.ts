@@ -8,19 +8,26 @@ import {FileMutationType, HolderMutationType, OthersMutationType, StringMutation
 import {getUserInfoFromAPI} from "../../utils/callAPI";
 import {ensurePerson} from "../../model/persons";
 import {UnitStruct} from "../roomdetails/units";
-import {acceptDateString, acceptInteger, acceptSubstringInList, sanitizeArray} from "../../utils/fieldValidatePlugin";
+import {
+  acceptDateString,
+  acceptInteger,
+  acceptSubstringInList,
+  sanitizeArray,
+  sanitizeOptionalField
+} from "../../utils/fieldValidatePlugin";
 import {sanitizeHolderMutationTypes, sanitizeMutationTypes, sanitizeSearchString,} from "../../utils/searchStrings";
 import {
   alphanumericRegexp,
   dispensationTicketRegexp,
   fileContentRegexp,
-  fileNameRegexp,
   freeFormTextRegexp,
+  pathRegexp,
   validateId
 } from "../../api/lib/lhdValidators";
 import {AssessmentDecisionStatus} from "@prisma/client";
 import {TicketANDStruct} from "./ticket";
 import {FileANDStruct} from "./files";
+import {saveBase64File} from "../../utils/fileUtilities";
 
 export const AssessmentDecisionStruct = objectType({
   name: AssessmentDecision.$name,
@@ -293,8 +300,8 @@ export const AssessmentDecisionMutations = extendType({
         }),
         files: (s) => sanitizeArray(s, {
           status: {validate: {enum: ["New", "Default", "Deleted"]}},
-          base64: {validate: fileContentRegexp},
-          path: {validate: fileNameRegexp},
+          base64: {validate: (s) => sanitizeOptionalField(s, fileContentRegexp), optional: true},
+          path: {validate: (s) => sanitizeOptionalField(s, pathRegexp)},
         }),
       },
       async resolve(root, args, context) {
@@ -344,8 +351,8 @@ export const AssessmentDecisionMutations = extendType({
         }),
         files: (s) => sanitizeArray(s, {
           status: {validate: {enum: ["New", "Default", "Deleted"]}},
-          base64: {validate: fileContentRegexp},
-          path: {validate: fileNameRegexp},
+          base64: {validate: (s) => sanitizeOptionalField(s, fileContentRegexp), optional: true},
+          path: {validate: (s) => sanitizeOptionalField(s, pathRegexp)},
         }),
       },
       async resolve(root, args, context) {
@@ -480,6 +487,24 @@ async function setAssessmentDecisionRelations(tx, id_assessment_and_decision: nu
         where: {
           id_assessment_and_decision: id_assessment_and_decision,
           ticket_number: ticket.name
+        }
+      });
+    }
+  }
+
+  for ( const file of changes.files || []) {
+    if ( file.status === 'New' ) {
+      await tx.AssessmentDecisionHasFile.create({
+        data: {
+          id_assessment_and_decision: id_assessment_and_decision,
+          file_path: saveBase64File(file.base64, process.env.ASSESSMENT_DECISION_DOCUMENT_FOLDER + '/' + id_assessment_and_decision + '/', file.path)
+        }
+      });
+    } else if ( file.status === 'Deleted' ) {
+      await tx.AssessmentDecisionHasFile.deleteMany({
+        where: {
+          id_assessment_and_decision: id_assessment_and_decision,
+          file_path: file.path
         }
       });
     }
