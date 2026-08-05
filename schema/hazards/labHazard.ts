@@ -197,7 +197,7 @@ export const RoomHazardMutations = extendType({
 									modified_by: `${userInfo.userFullName} (${userInfo.sciper})`,
 									modified_on: new Date(),
 									comment: args.additionalInfo.comment ? args.additionalInfo.comment : '',
-									filePath: filePath != '' ? filePath : additionalInfoResult.filePath
+									filePath: filePath
 								}
 							});
 					} else {
