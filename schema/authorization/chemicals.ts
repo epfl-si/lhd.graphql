@@ -8,6 +8,7 @@ import {sanitizeSearchString} from "../../utils/searchStrings";
 import {authCodeRegexp, casRegexp, chemicalNameRegexp, validateId} from "../../api/lib/lhdValidators";
 import {
 	acceptBoolean,
+	acceptBooleanString,
 	acceptInteger,
 	acceptSubstringInList
 } from "../../utils/fieldValidatePlugin";
@@ -78,7 +79,9 @@ export const ChemicalsWithPaginationQuery = extendType({
 					Status: {rename: 'status', validate: (value) => {
 						const keyword = acceptSubstringInList(value, ['active', 'archived']);
 						return keyword === 'active';
-					}}
+					}},
+					Fastway: {rename: 'fastway', validate: acceptBooleanString},
+					AuthCode: {rename: 'authCode', validate: authCodeRegexp},
 				})
 			},
 			async resolve(parent, args, context) {
