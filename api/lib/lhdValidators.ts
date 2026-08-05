@@ -19,6 +19,7 @@ export const emailRegexp = new RegExp(/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-z
 export const hazardCategoryNameRegexp = new RegExp(/^[a-zA-Z_]*$/);
 export const hazardFormVersionRegexp = new RegExp(/^\d+\.\d+\.\d+$/);
 export const authCodeRegexp = new RegExp(/^[a-zA-Z]*$/);
+export const booleanRegexp = new RegExp("yes|no|1|0|true|false");
 
 export const saltRegexp = new RegExp("[a-f0-9]+");
 export const ephIdRegexp = new RegExp("[a-zA-Z0-9/+=]+");

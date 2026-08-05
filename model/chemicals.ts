@@ -19,10 +19,12 @@ export async function getChemicals(prisma, opts?: Partial<{
 	name: string;
 	status: boolean;
 	cas: string;
+	fastway: string;
+	authCode: string;
 	take: number;
 	skip: number;
 }>) {
-	const { name, status, cas, take, skip } = opts || {};
+	const { name, status, cas, fastway, authCode, take, skip } = opts || {};
 	const whereCondition = [];
 	if (cas) {
 		whereCondition.push({ cas_auth_chem: { contains: cas }})
@@ -32,6 +34,12 @@ export async function getChemicals(prisma, opts?: Partial<{
 	}
 	if (status !== undefined) {
 		whereCondition.push({ flag_auth_chem : status })
+	}
+	if (fastway) {
+		whereCondition.push({ fastway: ['yes', '1', 'true'].indexOf(fastway.toLowerCase()) > -1})
+	}
+	if (authCode) {
+		whereCondition.push({ auth_code: { contains: authCode }})
 	}
 	if (! whereCondition) {
 		whereCondition.push({ cas_auth_chem: { contains: '' }})

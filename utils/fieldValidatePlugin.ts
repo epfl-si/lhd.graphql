@@ -2,6 +2,7 @@ import type {GraphQLResolveInfo} from 'graphql'
 import {printedGenTyping, printedGenTypingImport} from 'nexus/dist/utils'
 import {ArgsValue, GetGen, MaybePromise, SourceValue} from "nexus/dist-esm/typegenTypeHelpers";
 import {plugin} from "nexus";
+import {booleanRegexp} from "../api/lib/lhdValidators";
 
 const ValidateResolverImport = printedGenTypingImport({
 	module: 'nexus/dist/plugins/fieldValidatePlugin',
@@ -145,6 +146,11 @@ export const acceptNumberFromString = (i) => {
 
 export const acceptBoolean = (i) => {
 	if (typeof(i) !== 'boolean') throw new Error(`Bad type: ${typeof(i)}, expected boolean`);
+	return i;
+}
+
+export const acceptBooleanString = (i) => {
+	if (!booleanRegexp.test(i.toLowerCase())) throw new Error(`Bad format for ${i}`);
 	return i;
 }
 
