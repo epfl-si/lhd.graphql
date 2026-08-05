@@ -398,6 +398,7 @@ export const AssessmentDecisionMutations = extendType({
           await tx.AssessmentDecisionHasContact.deleteMany({ where: { id_assessment_and_decision: disp.id_assessment_and_decision }});
           await tx.AssessmentDecisionHasTicket.deleteMany({ where: { id_assessment_and_decision: disp.id_assessment_and_decision }});
           await tx.AssessmentDecisionHasUnit.deleteMany({ where: { id_assessment_and_decision: disp.id_assessment_and_decision }});
+          await tx.AssessmentDecisionHasFile.deleteMany({ where: { id_assessment_and_decision: disp.id_assessment_and_decision }});
           await tx.AssessmentDecision.delete({ where: { id_assessment_and_decision: disp.id_assessment_and_decision }});
         });
         return mutationStatusType.success();
