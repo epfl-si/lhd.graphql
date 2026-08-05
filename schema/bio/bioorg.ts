@@ -158,11 +158,6 @@ export const OrganismMutations = extendType({
 						'bio_org', 'id_bio_org',
 						tx, args.organismName, getBioOrgToString);
 
-					let filePath = org.filePath;
-					if (args.fileContent != '' && args.fileName != '') {
-						filePath = saveBase64File(args.fileContent, 'd_bio/' + org.id_bio_org + '/', args.fileName)
-					}
-
 					const updatedOrganism = await tx.bio_org.update(
 						{ where: { id_bio_org: org.id_bio_org },
 							data: {
@@ -170,7 +165,7 @@ export const OrganismMutations = extendType({
 								risk_group: args.risk,
 								updated_on: new Date(),
 								updated_by: `${userInfo.userFullName} (${userInfo.sciper})`,
-								filePath: filePath
+								filePath: saveBase64File(args.fileContent, 'd_bio/' + org.id_bio_org + '/', args.fileName)
 							}
 						});
 
