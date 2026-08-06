@@ -4,7 +4,7 @@ import {RoomStruct} from "../global/rooms";
 import {PersonStruct} from "../global/people";
 import {IDObfuscator} from "../../utils/IDObfuscator";
 import {mutationStatusType} from "../statuses";
-import {HolderMutationType, OthersMutationType, StringMutationType} from "../../utils/mutationTypes";
+import {FileMutationType, HolderMutationType, OthersMutationType, StringMutationType} from "../../utils/mutationTypes";
 import {getUserInfoFromAPI} from "../../utils/callAPI";
 import {ensurePerson} from "../../model/persons";
 import {TicketStruct} from "./ticket";
@@ -23,10 +23,12 @@ import {
   alphanumericRegexp,
   dispensationTicketRegexp,
   fileContentRegexp,
-  fileNameRegexp, freeFormTextRegexp,
+  freeFormTextRegexp,
+  pathRegexp,
   validateId
 } from "../../api/lib/lhdValidators";
 import {DispensationStatus} from "@prisma/client";
+import {FileDispensationStruct} from "./files";
 
 export const DispensationStruct = objectType({
   name: Dispensation.$name,
@@ -46,7 +48,6 @@ UI.`,
     t.field(Dispensation.status);
     t.field(Dispensation.date_start);
     t.field(Dispensation.date_end);
-    t.field(Dispensation.file_path);
     t.field(Dispensation.created_by);
     t.field(Dispensation.created_on);
     t.field(Dispensation.modified_by);
@@ -117,6 +118,15 @@ UI.`,
       },
     });
 
+    t.nonNull.list.nonNull.field('dispensation_files', {
+      type: FileDispensationStruct,
+      resolve: async (parent, _, context) => {
+        return await context.prisma.DispensationHasFile.findMany({
+          where: { id_dispensation: parent.id_dispensation }
+        });
+      },
+    });
+
     t.string('id', {
       resolve: async (parent, _, context) => {
         const encryptedID = IDObfuscator.obfuscate({id: parent.id_dispensation, obj: getDispensationToString(parent)});
@@ -138,7 +148,6 @@ export function getDispensationToString(parent) {
     status: parent.status,
     date_start: parent.date_start,
     date_end: parent.date_end,
-    file_path: parent.file_path,
     created_by: parent.created_by,
     created_on: parent.created_on,
     modified_by: parent.modified_by,
@@ -265,8 +274,6 @@ const newDispensationType = {
   status: stringArg(),
   date_start: stringArg(),
   date_end: stringArg(),
-  file: stringArg(),
-  file_name: stringArg(),
   created_by: stringArg(),
   created_on: stringArg(),
   modified_by: stringArg(),
@@ -275,6 +282,7 @@ const newDispensationType = {
   units: list(OthersMutationType),
   holders: list(HolderMutationType),
   tickets: list(StringMutationType),
+  files: list(FileMutationType)
 };
 
 export const DispensationMutationStatus = mutationStatusType({
@@ -300,14 +308,17 @@ export const DispensationMutations = extendType({
         status: {enum: Object.values(DispensationStatus)},
         date_start: acceptDateString,
         date_end: acceptDateString,
-        file: {function: sanitizeOptionalField, validator: fileContentRegexp},
-        file_name: {function: sanitizeOptionalField, validator: fileNameRegexp},
         rooms: sanitizeMutationTypes,
         units: sanitizeMutationTypes,
         holders: sanitizeHolderMutationTypes,
         tickets: (s) => sanitizeArray(s, {
           status: {validate: {enum: ["New", "Default", "Deleted"]}},
           name: {validate: dispensationTicketRegexp},
+        }),
+        files: (s) => sanitizeArray(s, {
+          status: {validate: {enum: ["New", "Default", "Deleted"]}},
+          base64: {validate: (s) => sanitizeOptionalField(s, fileContentRegexp), optional: true},
+          path: {validate: (s) => sanitizeOptionalField(s, pathRegexp)},
         }),
       },
       async resolve(root, args, context) {
@@ -332,12 +343,7 @@ export const DispensationMutations = extendType({
               modified_on: new Date()
             }
           });
-          await tx.Dispensation.update({
-            where: { id_dispensation: disp.id_dispensation },
-            data: {
-              file_path: saveBase64File(args.file, process.env.DISPENSATION_DOCUMENT_FOLDER + '/' + disp.id_dispensation + '/', args.file_name)
-            }
-          });
+
           await setDispensationRelations(tx, disp.id_dispensation, args);
           return disp;
         });
@@ -370,14 +376,17 @@ export const DispensationMutations = extendType({
         comment: freeFormTextRegexp,
         status: {enum: Object.values(DispensationStatus)},
         date_end: acceptDateString,
-        file: {function: sanitizeOptionalField, validator: fileContentRegexp},
-        file_name: {function: sanitizeOptionalField, validator: fileNameRegexp},
         rooms: sanitizeMutationTypes,
         units: sanitizeMutationTypes,
         holders: sanitizeHolderMutationTypes,
         tickets: (s) => sanitizeArray(s, {
           status: {validate: {enum: ["New", "Default", "Deleted"]}},
           name: {validate: dispensationTicketRegexp},
+        }),
+        files: (s) => sanitizeArray(s, {
+          status: {validate: {enum: ["New", "Default", "Deleted"]}},
+          base64: {validate: (s) => sanitizeOptionalField(s, fileContentRegexp), optional: true},
+          path: {validate: (s) => sanitizeOptionalField(s, pathRegexp)},
         }),
       },
       async resolve(root, args, context) {
@@ -401,7 +410,6 @@ export const DispensationMutations = extendType({
               comment: decodeURIComponent(args.comment),
               status: args.status,
               date_end: args.date_end,
-              file_path: saveBase64File(args.file, process.env.DISPENSATION_DOCUMENT_FOLDER + '/' + disp.id_dispensation + '/', args.file_name),
               modified_by: `${userInfo.userFullName} (${userInfo.sciper})`,
               modified_on: new Date()
             }
@@ -449,6 +457,7 @@ export const DispensationMutations = extendType({
           await tx.DispensationHasHolder.deleteMany({ where: { id_dispensation: disp.id_dispensation }});
           await tx.DispensationHasTicket.deleteMany({ where: { id_dispensation: disp.id_dispensation }});
           await tx.DispensationHasUnit.deleteMany({ where: { id_dispensation: disp.id_dispensation }});
+          await tx.DispensationHasFile.deleteMany({ where: { id_dispensation: disp.id_dispensation }});
           await tx.Dispensation.delete({ where: { id_dispensation: disp.id_dispensation }});
         });
         return mutationStatusType.success();
@@ -538,6 +547,24 @@ async function setDispensationRelations(tx, id_dispensation: number, changes) {
         where: {
           id_dispensation: id_dispensation,
           ticket_number: ticket.name
+        }
+      });
+    }
+  }
+
+  for ( const file of changes.files || []) {
+    if ( file.status === 'New' ) {
+      await tx.DispensationHasFile.create({
+        data: {
+          id_dispensation: id_dispensation,
+          file_path: saveBase64File(file.base64, process.env.DISPENSATION_DOCUMENT_FOLDER + '/' + id_dispensation + '/', file.path)
+        }
+      });
+    } else if ( file.status === 'Deleted' ) {
+      await tx.DispensationHasFile.deleteMany({
+        where: {
+          id_dispensation: id_dispensation,
+          file_path: file.path
         }
       });
     }
