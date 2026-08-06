@@ -284,9 +284,22 @@ model lab_has_hazards_additional_info {
   hazard_category                           hazard_category      @relation(fields: [id_hazard_category], references: [id_hazard_category])
   Room                                      Room                 @relation(fields: [id_lab], references: [id])
   hazards_additional_info_has_tag           HazardsAdditionalInfoHasTag[]
+  hazards_additional_info_has_file          HazardsAdditionalInfoHasFile[]
 
   @@index([id_lab], name: "id_lab")
   @@index([id_hazard_category], name: "id_hazard_category")
+}
+
+model HazardsAdditionalInfoHasFile {
+  @@map("hazards_additional_info_has_file")
+
+  id_lab_has_hazards_additional_info    Int
+  file_path                             String                          @db.VarChar(250)
+
+  lab_has_hazards_additional_info       lab_has_hazards_additional_info @relation(fields: [id_lab_has_hazards_additional_info], references: [id_lab_has_hazards_additional_info], onUpdate: Restrict, map: "lab_has_hazards_additional_info_has_file_ibfk_1")
+
+  @@unique([id_lab_has_hazards_additional_info, file_path], name: "unique_hazards_additional_info_has_file", map: "unique_hazards_additional_info_has_file")
+  @@index([file_path], map: "file_path")
 }
 
 model authorization {
