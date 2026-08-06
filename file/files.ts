@@ -52,9 +52,11 @@ export function makeRESTFilesAPI() {
 				authorize: (req) => req.user.canListHazards,
 				required: {
 					...obfuscatedIdParams,
+					fileName (req) { return req.query.fileName }
 				},
 				validate: {
 					...obfuscatedIdValidators,
+					fileName: pathRegexp
 				}
 			}),
 		async (req: Request<GetFile>, res) => {
@@ -63,7 +65,7 @@ export function makeRESTFilesAPI() {
 			const info = await IDObfuscator.getObjectByObfuscatedId(id,
 				'lab_has_hazards_additional_info', 'id_lab_has_hazards_additional_info',
 				req.prisma, 'hazard info', getLabHasHazardsAdditionalInfoToString);
-			sendFileResponse(info.filePath, res);
+			sendFileResponse(req.params.fileName, res);
 		});
 
 	app.get("/labHasHazardsChild/:eph_id",
