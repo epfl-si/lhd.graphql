@@ -1,4 +1,4 @@
-import {arg, extendType, inputObjectType, objectType, stringArg} from 'nexus';
+import {arg, extendType, inputObjectType, list, objectType, stringArg} from 'nexus';
 import {lab_has_hazards} from 'nexus-prisma';
 import {HazardFormHistoryStruct} from "./hazardFormHistory";
 import {mutationStatusType} from "../statuses";
@@ -11,13 +11,14 @@ import {sendEmailsForHazards} from "../../utils/email/mailer";
 import {getUserInfoFromAPI} from "../../utils/callAPI";
 import {
 	fileContentRegexp,
-	fileNameRegexp,
 	freeFormTextRegexp,
 	hazardCategoryNameRegexp,
+	pathRegexp,
 	roomNameRegexp,
 	validateId
 } from "../../api/lib/lhdValidators";
-import {acceptJson, sanitizeObject} from "../../utils/fieldValidatePlugin";
+import {acceptJson, sanitizeArray, sanitizeObject, sanitizeOptionalField} from "../../utils/fieldValidatePlugin";
+import {FileMutationType} from "../../utils/mutationTypes";
 
 dotenv.config();
 const HAZARD_DOCUMENT_FOLDER = process.env.HAZARD_DOCUMENT_FOLDER;
@@ -83,8 +84,6 @@ export const AdditionalInfoType = inputObjectType({
 	name: "AdditionalInfoType",
 	definition(t) {
 		t.string('comment');
-		t.string('file');
-		t.string('fileName');
 	}
 })
 
@@ -94,7 +93,8 @@ const roomHazardChangesType = {
 	category: stringArg(),
 	additionalInfo: arg({
 		type: 'AdditionalInfoType'
-	})
+	}),
+	files: list(FileMutationType)
 };
 
 export const RoomHazardMutations = extendType({
@@ -110,10 +110,13 @@ export const RoomHazardMutations = extendType({
 				submission: acceptJson,
 				category: hazardCategoryNameRegexp,
 				additionalInfo: (s) => sanitizeObject(s, {
-					comment: {validate: freeFormTextRegexp},
-					file: {validate: fileContentRegexp, optional: true},
-					fileName: {validate: fileNameRegexp, optional: true}
-				})
+					comment: {validate: freeFormTextRegexp}
+				}),
+				files: (s) => sanitizeArray(s, {
+					status: {validate: {enum: ["New", "Default", "Deleted"]}},
+					base64: {validate: (s) => sanitizeOptionalField(s, fileContentRegexp), optional: true},
+					path: {validate: (s) => sanitizeOptionalField(s, pathRegexp)},
+				}),
 			},
 			async resolve(root, args, context) {
 				const userInfo = await getUserInfoFromAPI(context.user.username);
@@ -183,8 +186,6 @@ export const RoomHazardMutations = extendType({
 						}
 					}
 
-					let filePath = saveBase64File(args.additionalInfo.file, HAZARD_DOCUMENT_FOLDER + args.category + '/' + room.id + '/', args.additionalInfo.fileName)
-
 					const additionalInfoResult = await tx.lab_has_hazards_additional_info.findFirst({
 						where: {
 							id_hazard_category: category.id_hazard_category,
@@ -197,20 +198,20 @@ export const RoomHazardMutations = extendType({
 									modified_by: `${userInfo.userFullName} (${userInfo.sciper})`,
 									modified_on: new Date(),
 									comment: args.additionalInfo.comment ? args.additionalInfo.comment : '',
-									filePath: filePath
 								}
 							});
+						await setAdditionaInfoRelations(tx, additionalInfoResult.id_lab_has_hazards_additional_info, args, room.id);
 					} else {
-						await tx.lab_has_hazards_additional_info.create({
+						const newInfo = await tx.lab_has_hazards_additional_info.create({
 							data: {
 								modified_by: `${userInfo.userFullName} (${userInfo.sciper})`,
 								modified_on: new Date(),
 								comment: args.additionalInfo.comment ? args.additionalInfo.comment : '',
-								filePath: filePath,
 								id_hazard_category: category.id_hazard_category,
 								id_lab: room.id
 							}
 						});
+						await setAdditionaInfoRelations(tx, newInfo.id_lab_has_hazards_additional_info, args, room.id);
 					}
 
 					return room;
@@ -262,4 +263,24 @@ async function deleteHazard (id: Number, tx) {
 			id_lab_has_hazards: id
 		}
 	});
+}
+
+async function setAdditionaInfoRelations(tx, id_info: number, changes, id_room: number) {
+	for ( const file of changes.files || []) {
+		if ( file.status === 'New' ) {
+			await tx.HazardsAdditionalInfoHasFile.create({
+				data: {
+					id_lab_has_hazards_additional_info: id_info,
+					file_path: saveBase64File(file.base64, HAZARD_DOCUMENT_FOLDER + changes.category + '/' + id_room + '/', file.path)
+				}
+			});
+		} else if ( file.status === 'Deleted' ) {
+			await tx.HazardsAdditionalInfoHasFile.deleteMany({
+				where: {
+					id_lab_has_hazards_additional_info: id_info,
+					file_path: file.path
+				}
+			});
+		}
+	}
 }

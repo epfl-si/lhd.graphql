@@ -61,7 +61,7 @@
 import * as path from 'path';
 
 import {fieldAuthorizePlugin, makeSchema} from 'nexus';
-import { NexusPrismaCRUDPlugin } from './prisma_crud_plugin';
+import {NexusPrismaCRUDPlugin} from './prisma_crud_plugin';
 
 import * as schoolTypes from '../schema/roomdetails/schools';
 import * as instituteTypes from '../schema/roomdetails/institutes';
@@ -91,6 +91,7 @@ import * as subjectANDType from '../schema/assessment/subject'
 import * as ticketANDTypes from '../schema/assessment/ticket'
 import * as fileANDTypes from '../schema/assessment/files'
 import * as fileDispensationType from '../schema/dispensation/files'
+import * as fileAdditionalInfoType from '../schema/hazards/hazardAdditionalInfoFile'
 import {fieldValidatePlugin} from "../utils/fieldValidatePlugin";
 
 
@@ -122,7 +123,8 @@ const types = [
 	subjectANDType,
 	ticketANDTypes,
 	fileANDTypes,
-	fileDispensationType
+	fileDispensationType,
+	fileAdditionalInfoType
 ];
 
 // No user-serviceable parts below /////////////////////////////////////////////////
