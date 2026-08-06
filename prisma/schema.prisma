@@ -414,6 +414,7 @@ model Dispensation {
   dispensation_has_room     DispensationHasRoom[]
   dispensation_has_holder   DispensationHasHolder[]
   dispensation_has_ticket   DispensationHasTicket[]
+  dispensation_has_file     DispensationHasFile[]
   dispensation_has_unit     DispensationHasUnit[]
   subject                   DispensationSubject @relation(fields: [id_dispensation_subject], references: [id_dispensation_subject], onUpdate: Restrict, map: "dispensation_has_subject_ibfk_1")
 }
@@ -434,6 +435,18 @@ model DispensationHasTicket {
 
   @@unique([id_dispensation, ticket_number], name: "unique_dispensation_has_ticket", map: "unique_dispensation_has_ticket")
   @@index([ticket_number], map: "ticket_number")
+}
+
+model DispensationHasFile {
+  @@map("dispensation_has_file")
+
+  id_dispensation    Int
+  file_path          String       @db.VarChar(250)
+
+  dispensation       Dispensation @relation(fields: [id_dispensation], references: [id_dispensation], onUpdate: Restrict, map: "dispensation_has_file_ibfk_1")
+
+  @@unique([id_dispensation, file_path], name: "unique_dispensation_has_file", map: "unique_dispensation_has_file")
+  @@index([file_path], map: "file_path")
 }
 
 model DispensationHasHolder {

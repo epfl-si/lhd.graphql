@@ -90,6 +90,7 @@ import * as assessmentDecisionTypes from '../schema/assessment/assessmentDecisio
 import * as subjectANDType from '../schema/assessment/subject'
 import * as ticketANDTypes from '../schema/assessment/ticket'
 import * as fileANDTypes from '../schema/assessment/files'
+import * as fileDispensationType from '../schema/dispensation/files'
 import {fieldValidatePlugin} from "../utils/fieldValidatePlugin";
 
 
@@ -120,7 +121,8 @@ const types = [
 	assessmentDecisionTypes,
 	subjectANDType,
 	ticketANDTypes,
-	fileANDTypes
+	fileANDTypes,
+	fileDispensationType
 ];
 
 // No user-serviceable parts below /////////////////////////////////////////////////

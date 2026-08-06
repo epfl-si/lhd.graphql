@@ -25,7 +25,8 @@ export function makeRESTFilesAPI() {
 	app.use(restFilesAuthenticate);
 	app.use(setReqPrismaMiddleware);
 
-	type GetFile = {salt: string, eph_id: string};
+	type GetFile = {salt: string, eph_id: string, fileName?: string};
+
 	app.get("/organism/:eph_id",
 		checkAPICall(
 			{
@@ -138,9 +139,11 @@ export function makeRESTFilesAPI() {
 				authorize: (req) => req.user.canListHazards,
 				required: {
 					...obfuscatedIdParams,
+					fileName (req) { return req.query.fileName }
 				},
 				validate: {
 					...obfuscatedIdValidators,
+					fileName: pathRegexp
 				}
 			}),
 		async (req: Request<GetFile>, res) => {
@@ -149,10 +152,9 @@ export function makeRESTFilesAPI() {
 			const info = await IDObfuscator.getObjectByObfuscatedId(id,
 				'Dispensation', 'id_dispensation',
 				req.prisma, 'Dispensation', getDispensationToString);
-			sendFileResponse(info.file_path, res);
+			sendFileResponse(req.params.fileName, res);
 		});
 
-	type GetAssessmentFile = {salt: string, eph_id: string, fileName: string};
 	app.get("/assessment/:eph_id",
 		checkAPICall(
 			{
@@ -166,7 +168,7 @@ export function makeRESTFilesAPI() {
 					fileName: pathRegexp
 				}
 			}),
-		async (req: Request<GetAssessmentFile>, res) => {
+		async (req: Request<GetFile>, res) => {
 			const id: ID = {salt: req.params.salt, eph_id: req.params.eph_id};
 			IDObfuscator.checkId(id);
 			const info = await IDObfuscator.getObjectByObfuscatedId(id,
