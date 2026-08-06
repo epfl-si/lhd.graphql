@@ -178,10 +178,12 @@ export const AssessmentDecisionsWithPaginationQuery = extendType({
           Contact: {rename: 'contact', validate: alphanumericRegexp},
           Subject: {rename: 'subject', validate: alphanumericRegexp},
           Ticket: {rename: 'ticket', validate: alphanumericRegexp},
+          Before: {rename: 'before', validate: acceptDateString},
+          After: {rename: 'after', validate: acceptDateString},
         })
       },
       async resolve(parent, args, context) {
-        const { unit, assessment, status, room, contact, subject, ticket } = args.search as any || {};
+        const { unit, assessment, status, room, contact, subject, ticket, before, after } = args.search as any || {};
         const whereCondition = [];
         if (assessment) {
           const disp = assessment.split('-');
@@ -194,6 +196,12 @@ export const AssessmentDecisionsWithPaginationQuery = extendType({
         }
         if (status) {
           whereCondition.push({ status: status })
+        }
+        if (before) {
+          whereCondition.push({ date: { lte: before } })
+        }
+        if (after) {
+          whereCondition.push({ date: { gte: after } })
         }
         if (room) {
           whereCondition.push({ assessment_and_decision_has_room: { some: {room: {is: {name: {contains: room}}}} }})
