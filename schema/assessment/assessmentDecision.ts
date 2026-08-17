@@ -304,7 +304,7 @@ export const AssessmentDecisionMutations = extendType({
         contacts: sanitizeHolderMutationTypes,
         tickets: (s) => sanitizeArray(s, {
           status: {validate: {enum: ["New", "Default", "Deleted"]}},
-          name: {validate: dispensationTicketRegexp},
+          name: {validate: alphanumericRegexp},
         }),
         files: (s) => sanitizeArray(s, {
           status: {validate: {enum: ["New", "Default", "Deleted"]}},
@@ -355,7 +355,7 @@ export const AssessmentDecisionMutations = extendType({
         contacts: sanitizeHolderMutationTypes,
         tickets: (s) => sanitizeArray(s, {
           status: {validate: {enum: ["New", "Default", "Deleted"]}},
-          name: {validate: dispensationTicketRegexp},
+          name: {validate: alphanumericRegexp},
         }),
         files: (s) => sanitizeArray(s, {
           status: {validate: {enum: ["New", "Default", "Deleted"]}},
