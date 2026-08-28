@@ -298,3 +298,26 @@ export function sanitizeOptionalField (value: string, validator: RegExp) {
 	}
 	return value;
 }
+
+export function sanitizeBase64DataUrl(value: string) {
+	const prefixMatch = value.match(/^data:[^;]+;base64,/);
+	if (!prefixMatch)
+		throw new Error(`Invalid format for ${value}`);
+
+	const b64 = value.slice(prefixMatch[0].length);
+
+	// length must be a multiple of 4
+	if (b64.length === 0 || b64.length % 4 !== 0)
+		throw new Error(`Invalid format for ${value}`);
+
+	// no backtracking risk: single linear scan, no nested/alternating quantifiers
+	if (!/^[A-Za-z0-9+/]*={0,2}$/.test(b64))
+		throw new Error(`Invalid format for ${value}`);
+
+	// '=' only allowed as the last 1-2 characters
+	const firstEq = b64.indexOf('=');
+	if (firstEq !== -1 && firstEq < b64.length - 2)
+		throw new Error(`Invalid format for ${value}`);
+
+	return value;
+}

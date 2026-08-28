@@ -10,14 +10,19 @@ import {saveBase64File} from "../../utils/fileUtilities";
 import {sendEmailsForHazards} from "../../utils/email/mailer";
 import {getUserInfoFromAPI} from "../../utils/callAPI";
 import {
-	fileContentRegexp,
 	freeFormTextRegexp,
 	hazardCategoryNameRegexp,
 	pathRegexp,
 	roomNameRegexp,
 	validateId
 } from "../../api/lib/lhdValidators";
-import {acceptJson, sanitizeArray, sanitizeObject, sanitizeOptionalField} from "../../utils/fieldValidatePlugin";
+import {
+	acceptJson,
+	sanitizeArray,
+	sanitizeBase64DataUrl,
+	sanitizeObject,
+	sanitizeOptionalField
+} from "../../utils/fieldValidatePlugin";
 import {FileMutationType} from "../../utils/mutationTypes";
 
 dotenv.config();
@@ -114,7 +119,7 @@ export const RoomHazardMutations = extendType({
 				}),
 				files: (s) => sanitizeArray(s, {
 					status: {validate: {enum: ["New", "Default", "Deleted"]}},
-					base64: {validate: (s) => sanitizeOptionalField(s, fileContentRegexp), optional: true},
+					base64: {validate: (s) => sanitizeBase64DataUrl(s), optional: true},
 					path: {validate: (s) => sanitizeOptionalField(s, pathRegexp)},
 				}),
 			},
