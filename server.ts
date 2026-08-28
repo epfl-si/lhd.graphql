@@ -17,6 +17,7 @@ import {formatErrorForNexus} from "./utils/errors";
 import {makeRESTAPI} from "./api/catalyseSnow";
 import {makeRESTAxsAPI} from "./api/axs";
 import {makeRESTHealthAPI} from "./api/monitoring";
+import {redirectToLIL} from "./api/lil";
 
 type TestInjections = {
 	insecure?: boolean;
@@ -76,6 +77,7 @@ export async function makeServer(
 	app.use("/files", makeRESTFilesAPI());
 	app.use("/axs", makeRESTAxsAPI());
 	app.use("/health", makeRESTHealthAPI());
+	app.use("/lhd_cosecs/barcodes", redirectToLIL());
 
 	return httpServer;
 }
