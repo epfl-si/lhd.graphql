@@ -13,17 +13,11 @@ import {
   acceptInteger,
   acceptSubstringInList,
   sanitizeArray,
+  sanitizeBase64DataUrl,
   sanitizeOptionalField
 } from "../../utils/fieldValidatePlugin";
 import {sanitizeHolderMutationTypes, sanitizeMutationTypes, sanitizeSearchString,} from "../../utils/searchStrings";
-import {
-  alphanumericRegexp,
-  dispensationTicketRegexp,
-  fileContentRegexp,
-  freeFormTextRegexp,
-  pathRegexp,
-  validateId
-} from "../../api/lib/lhdValidators";
+import {alphanumericRegexp, freeFormTextRegexp, pathRegexp, validateId} from "../../api/lib/lhdValidators";
 import {AssessmentDecisionStatus} from "@prisma/client";
 import {TicketANDStruct} from "./ticket";
 import {FileANDStruct} from "./files";
@@ -308,7 +302,7 @@ export const AssessmentDecisionMutations = extendType({
         }),
         files: (s) => sanitizeArray(s, {
           status: {validate: {enum: ["New", "Default", "Deleted"]}},
-          base64: {validate: (s) => sanitizeOptionalField(s, fileContentRegexp), optional: true},
+          base64: {validate: (s) => sanitizeBase64DataUrl(s), optional: true},
           path: {validate: (s) => sanitizeOptionalField(s, pathRegexp)},
         }),
       },
@@ -359,7 +353,7 @@ export const AssessmentDecisionMutations = extendType({
         }),
         files: (s) => sanitizeArray(s, {
           status: {validate: {enum: ["New", "Default", "Deleted"]}},
-          base64: {validate: (s) => sanitizeOptionalField(s, fileContentRegexp), optional: true},
+          base64: {validate: (s) => sanitizeBase64DataUrl(s), optional: true},
           path: {validate: (s) => sanitizeOptionalField(s, pathRegexp)},
         }),
       },

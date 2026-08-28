@@ -16,13 +16,13 @@ import {
   acceptInteger,
   acceptSubstringInList,
   sanitizeArray,
+  sanitizeBase64DataUrl,
   sanitizeOptionalField
 } from "../../utils/fieldValidatePlugin";
 import {sanitizeHolderMutationTypes, sanitizeMutationTypes, sanitizeSearchString,} from "../../utils/searchStrings";
 import {
   alphanumericRegexp,
   dispensationTicketRegexp,
-  fileContentRegexp,
   freeFormTextRegexp,
   pathRegexp,
   validateId
@@ -317,7 +317,7 @@ export const DispensationMutations = extendType({
         }),
         files: (s) => sanitizeArray(s, {
           status: {validate: {enum: ["New", "Default", "Deleted"]}},
-          base64: {validate: (s) => sanitizeOptionalField(s, fileContentRegexp), optional: true},
+          base64: {validate: (s) => sanitizeBase64DataUrl(s), optional: true},
           path: {validate: (s) => sanitizeOptionalField(s, pathRegexp)},
         }),
       },
@@ -385,7 +385,7 @@ export const DispensationMutations = extendType({
         }),
         files: (s) => sanitizeArray(s, {
           status: {validate: {enum: ["New", "Default", "Deleted"]}},
-          base64: {validate: (s) => sanitizeOptionalField(s, fileContentRegexp), optional: true},
+          base64: {validate: (s) => sanitizeBase64DataUrl(s), optional: true},
           path: {validate: (s) => sanitizeOptionalField(s, pathRegexp)},
         }),
       },

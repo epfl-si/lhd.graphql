@@ -5,8 +5,8 @@ import {mutationStatusType} from "../statuses";
 import {IDObfuscator} from "../../utils/IDObfuscator";
 import {updateBioOrg} from "../hazards/labHazardChild";
 import {getUserInfoFromAPI} from "../../utils/callAPI";
-import {alphanumericRegexp, fileContentRegexp, fileNameRegexp, validateId} from "../../api/lib/lhdValidators";
-import {acceptInteger, sanitizeOptionalField} from "../../utils/fieldValidatePlugin";
+import {alphanumericRegexp, fileNameRegexp, validateId} from "../../api/lib/lhdValidators";
+import {acceptInteger, sanitizeBase64DataUrl, sanitizeOptionalField} from "../../utils/fieldValidatePlugin";
 
 export const BioOrgStruct = objectType({
 	name: bio_org.$name,
@@ -111,7 +111,7 @@ export const OrganismMutations = extendType({
 			validate: {
 				organismName: alphanumericRegexp,
 				risk: {enum: [1, 2, 3]},
-				fileContent: {function: sanitizeOptionalField, validator: fileContentRegexp},
+				fileContent: sanitizeBase64DataUrl,
 				fileName: {function: sanitizeOptionalField, validator: fileNameRegexp}
 			},
 			async resolve(root, args, context) {
@@ -148,7 +148,7 @@ export const OrganismMutations = extendType({
 				id: validateId,
 				organismName: alphanumericRegexp,
 				risk: {enum: [1, 2, 3]},
-				fileContent: {function: sanitizeOptionalField, validator: fileContentRegexp},
+				fileContent: sanitizeBase64DataUrl,
 				fileName: {function: sanitizeOptionalField, validator: fileNameRegexp}
 			},
 			async resolve(root, args, context) {
