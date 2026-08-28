@@ -444,7 +444,7 @@ export const UnitFullTextQuery = extendType({
 					]
 				});
 
-				const units = unitList.slice(args.skip, args.skip + args.take);
+				const units = args.take == 0 ? unitList : unitList.slice(args.skip, args.skip + args.take);
 				const totalCount = unitList.length;
 
 				return { units, totalCount };
