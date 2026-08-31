@@ -1,4 +1,5 @@
 import {Unit} from "nexus-prisma";
+import {buildSearchConditions} from "../utils/searchConditionBuilder";
 
 export async function deleteUnitCascade(tx, context, u:Unit) {
 	await tx.unit_has_cosec.deleteMany({
@@ -37,12 +38,13 @@ export async function deleteUnitCascade(tx, context, u:Unit) {
 }
 
 export async function getUnitByName(prisma, unitName: string) {
+	const search = buildSearchConditions(unitName)
 	return await prisma.Unit.findMany({
 		where: {
 			OR: [
-				{ name: { contains: unitName }},
-				{ institute : { name: { contains: unitName } }},
-				{ institute : { school: { name: { contains: unitName } } }},
+				{ name: search },
+				{ institute : { name: search }},
+				{ institute : { school: { name: search } }},
 			]
 		},
 		include: { unit_has_cosec: { include: { cosec: true } }, subunpro: { include: { person: true } }, institute: { include: { school: true } }, unit_has_room: { include: true } },

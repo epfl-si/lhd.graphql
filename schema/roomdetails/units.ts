@@ -19,6 +19,7 @@ import {
 	unitNameRegexp,
 	validateId
 } from "../../api/lib/lhdValidators";
+import {buildSearchConditions} from "../../utils/searchConditionBuilder";
 
 export const UnitStruct = objectType({
 	name: Unit.$name,
@@ -425,16 +426,17 @@ export const UnitFullTextQuery = extendType({
 				search: alphanumericRegexp
 			},
 			async resolve(parent, args, context) {
+				const search = buildSearchConditions(args.search);
 				const unitList = await context.prisma.Unit.findMany({
 					where: {
 						OR: [
-							{ name: { contains: args.search }},
-							{ institute : { name: { contains: args.search } }},
-							{ institute : { school: { name: { contains: args.search } } }},
-							{ unit_has_cosec: { some: { cosec: { name: { contains: args.search }}}}},
-							{ unit_has_cosec: { some: { cosec: { surname: { contains: args.search }}}}},
-							{ subunpro: { some: { person: { name: { contains: args.search }}}}},
-							{ subunpro: { some: { person: { surname: { contains: args.search }}}}},
+							{ name: search },
+							{ institute : { name: search }},
+							{ institute : { school: { name: search } }},
+							{ unit_has_cosec: { some: { cosec: { name: search }}}},
+							{ unit_has_cosec: { some: { cosec: { surname: search }}}},
+							{ subunpro: { some: { person: { name: search }}}},
+							{ subunpro: { some: { person: { surname: search }}}},
 						]
 					},
 					orderBy: [

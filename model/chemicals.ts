@@ -1,4 +1,5 @@
 import {sendEmailsForChemical} from "../utils/email/mailer";
+import {buildSearchConditions} from "../utils/searchConditionBuilder";
 
 export async function createChemical(chemical, {prisma, user}) {
 	const newChem = await prisma.$transaction(async (tx) => {
@@ -30,7 +31,7 @@ export async function getChemicals(prisma, opts?: Partial<{
 		whereCondition.push({ cas_auth_chem: { contains: cas }})
 	}
 	if (name) {
-		whereCondition.push({ auth_chem_en : { contains: name }})
+		whereCondition.push({ auth_chem_en : buildSearchConditions(name)})
 	}
 	if (status !== undefined) {
 		whereCondition.push({ flag_auth_chem : status })

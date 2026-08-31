@@ -7,6 +7,7 @@ import {updateBioOrg} from "../hazards/labHazardChild";
 import {getUserInfoFromAPI} from "../../utils/callAPI";
 import {alphanumericRegexp, fileNameRegexp, validateId} from "../../api/lib/lhdValidators";
 import {acceptInteger, sanitizeBase64DataUrl, sanitizeOptionalField} from "../../utils/fieldValidatePlugin";
+import {buildSearchConditions} from "../../utils/searchConditionBuilder";
 
 export const BioOrgStruct = objectType({
 	name: bio_org.$name,
@@ -68,7 +69,7 @@ export const OrganismsFromFullTextQuery = extendType({
 			},
 			async resolve(parent, args, context) {
 				const bioList =  await context.prisma.bio_org.findMany({
-					where: { organism: { contains: args.search } },
+					where: { organism: buildSearchConditions(args.search) },
 					orderBy: [
 						{
 							organism: 'asc',

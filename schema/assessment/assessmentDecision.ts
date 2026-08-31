@@ -22,6 +22,7 @@ import {AssessmentDecisionStatus} from "@prisma/client";
 import {TicketANDStruct} from "./ticket";
 import {FileANDStruct} from "./files";
 import {saveBase64File} from "../../utils/fileUtilities";
+import {buildSearchConditions} from "../../utils/searchConditionBuilder";
 
 export const AssessmentDecisionStruct = objectType({
   name: AssessmentDecision.$name,
@@ -198,26 +199,28 @@ export const AssessmentDecisionsWithPaginationQuery = extendType({
           whereCondition.push({ date: { gte: after } })
         }
         if (room) {
-          whereCondition.push({ assessment_and_decision_has_room: { some: {room: {is: {name: {contains: room}}}} }})
+          whereCondition.push({ assessment_and_decision_has_room: { some: {room: {is: {name: buildSearchConditions(room)}}} }})
         }
         if (unit) {
+          const unitSearch = buildSearchConditions(unit);
           whereCondition.push({
             OR: [
-              { assessment_and_decision_has_unit: { some: {unit: {is: {name: {contains: unit}}}} }},
-              { assessment_and_decision_has_unit: { some: {unit: {is: {institute: {is: {name: {contains: unit}}}}}} }},
-              { assessment_and_decision_has_unit: { some: {unit: {is: {institute: {is: {school: {is: {name: {contains: unit}}}}}}}} }}
+              { assessment_and_decision_has_unit: { some: {unit: {is: {name: unitSearch}}} }},
+              { assessment_and_decision_has_unit: { some: {unit: {is: {institute: {is: {name: unitSearch}}}}} }},
+              { assessment_and_decision_has_unit: { some: {unit: {is: {institute: {is: {school: {is: {name: unitSearch}}}}}}} }}
             ]
           })
         }
         if (contact) {
+          const contactSearch = buildSearchConditions(contact);
           whereCondition.push({
             assessment_and_decision_has_contact: {
               some: {
                 contact: {
                   OR: [
-                    { name: { contains: contact } },
-                    { surname: { contains: contact } },
-                    { email: { contains: contact } },
+                    { name: contactSearch },
+                    { surname: contactSearch },
+                    { email: contactSearch },
                     { sciper: parseInt(contact) },
                   ],
                 },
@@ -229,7 +232,7 @@ export const AssessmentDecisionsWithPaginationQuery = extendType({
           whereCondition.push({ subject: {is: {subject: {contains: subject}}}})
         }
         if (ticket) {
-          whereCondition.push({ assessment_and_decision_has_ticket: { some: {ticket_number: {contains: ticket}} }})
+          whereCondition.push({ assessment_and_decision_has_ticket: { some: {ticket_number: buildSearchConditions(ticket)} }})
         }
 
         const assessmentList = await context.prisma.AssessmentDecision.findMany({

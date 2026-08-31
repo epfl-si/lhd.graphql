@@ -1,6 +1,7 @@
 import {NotFoundError} from "../utils/errors";
 import {ensurePerson} from "./persons";
 import {AuthorizationChanges} from "../utils/changeTypes";
+import {buildSearchConditions} from "../utils/searchConditionBuilder";
 
 export async function createAuthorization(prisma, auth, unitId, newHolders) {
 	await ensurePerson(prisma, newHolders);
@@ -64,26 +65,27 @@ export async function getAuthorizations(prisma, type: string, conditions?: Parti
 	const whereCondition = [];
 	whereCondition.push({ type: type});
 	if (unit) {
-		whereCondition.push({ unit: { is: {name: {contains: unit}} }})
+		whereCondition.push({ unit: { is: {name: buildSearchConditions(unit)} }})
 	}
 	if (authorization) {
-		whereCondition.push({ authorization: { contains: authorization }})
+		whereCondition.push({ authorization: buildSearchConditions(authorization)})
 	}
 	if (status) {
 		whereCondition.push({ status: status })
 	}
 	if (room) {
-		whereCondition.push({ authorization_has_room: { some: {room: {is: {name: {contains: room}}}} }})
+		whereCondition.push({ authorization_has_room: { some: {room: {is: {name: buildSearchConditions(room)}}} }})
 	}
 	if (holder) {
+		const holderSearch = buildSearchConditions(holder);
 		whereCondition.push({
 			authorization_has_holder: {
 				some: {
 					holder: {
 						OR: [
-							{ name: { contains: String(holder) } },
-							{ surname: { contains: String(holder) } },
-							{ email: { contains: String(holder) } },
+							{ name: holderSearch },
+							{ surname: holderSearch },
+							{ email: holderSearch },
 							{ sciper: parseInt(holder) },
 						],
 					},
@@ -95,7 +97,7 @@ export async function getAuthorizations(prisma, type: string, conditions?: Parti
 		whereCondition.push({ authorization_has_chemical: { some: {chemical: {
 						OR: [
 							{ cas_auth_chem: { contains: cas } },
-							{ auth_chem_en: { contains: cas } }
+							{ auth_chem_en: buildSearchConditions(cas) }
 						],
 					}} }})
 	}
