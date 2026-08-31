@@ -29,6 +29,7 @@ import {
 } from "../../api/lib/lhdValidators";
 import {DispensationStatus} from "@prisma/client";
 import {FileDispensationStruct} from "./files";
+import {buildSearchConditions} from "../../utils/searchConditionBuilder";
 
 export const DispensationStruct = objectType({
   name: Dispensation.$name,
@@ -210,26 +211,28 @@ export const DispensationsWithPaginationQuery = extendType({
           whereCondition.push({ status: status })
         }
         if (room) {
-          whereCondition.push({ dispensation_has_room: { some: {room: {is: {name: {contains: room}}}} }})
+          whereCondition.push({ dispensation_has_room: { some: {room: {is: {name: buildSearchConditions(room)}}} }})
         }
         if (unit) {
+          const unitSearch = buildSearchConditions(unit);
           whereCondition.push({
             OR: [
-              { dispensation_has_unit: { some: {unit: {is: {name: {contains: unit}}}} }},
-              { dispensation_has_unit: { some: {unit: {is: {institute: {is: {name: {contains: unit}}}}}} }},
-              { dispensation_has_unit: { some: {unit: {is: {institute: {is: {school: {is: {name: {contains: unit}}}}}}}} }}
+              { dispensation_has_unit: { some: {unit: {is: {name: unitSearch}}} }},
+              { dispensation_has_unit: { some: {unit: {is: {institute: {is: {name: unitSearch}}}}} }},
+              { dispensation_has_unit: { some: {unit: {is: {institute: {is: {school: {is: {name: unitSearch}}}}}}} }}
             ]
           })
         }
         if (holder) {
+          const holderSearch = buildSearchConditions(holder);
           whereCondition.push({
             dispensation_has_holder: {
               some: {
                 holder: {
                   OR: [
-                    { name: { contains: holder } },
-                    { surname: { contains: holder } },
-                    { email: { contains: holder } },
+                    { name: holderSearch },
+                    { surname: holderSearch },
+                    { email: holderSearch },
                     { sciper: parseInt(holder) },
                   ],
                 },
@@ -241,7 +244,7 @@ export const DispensationsWithPaginationQuery = extendType({
           whereCondition.push({ subject: {is: {subject: {contains: subject}}}})
         }
         if (ticket) {
-          whereCondition.push({ dispensation_has_ticket: { some: {ticket_number: {contains: ticket}} }})
+          whereCondition.push({ dispensation_has_ticket: { some: {ticket_number: buildSearchConditions(ticket)} }})
         }
 
         const dispensationList = await context.prisma.Dispensation.findMany({

@@ -1,6 +1,7 @@
 import {Room} from "nexus-prisma";
 import {expireDispensation, getDispensation} from "./dispensation";
 import {expireAuthorization} from "./authorization";
+import {buildSearchConditions} from "../utils/searchConditionBuilder";
 
 export async function getRooms(prisma, dictionary?: Partial<{
 	hazard: string,
@@ -19,13 +20,13 @@ export async function getRooms(prisma, dictionary?: Partial<{
 	const whereCondition = [];
 	whereCondition.push({ isDeleted: false });
 			if (room) {
-				whereCondition.push({ name: { contains: room }})
+				whereCondition.push({ name: buildSearchConditions(room)})
 			}
 			if (hazard) {
 				whereCondition.push({ lab_has_hazards : {some: {hazard_form_history: { is: {hazard_form: { is: {hazard_category: { is: {hazard_category_name: { contains: hazard }}}}}}}}}})
 			}
 			if (designation) {
-				whereCondition.push({ kind : { is: {name: { contains: designation }}}})
+				whereCondition.push({ kind : { is: {name: buildSearchConditions(designation)}}})
 			}
 			if (floor) {
 				whereCondition.push({ floor: { contains: floor }})
@@ -34,14 +35,15 @@ export async function getRooms(prisma, dictionary?: Partial<{
 				whereCondition.push({ sector: { contains: sector }})
 			}
 			if (building) {
-				whereCondition.push({ building: { contains: building }})
+				whereCondition.push({ building: buildSearchConditions(building)})
 			}
 			if (unit) {
+				const unitSearch = buildSearchConditions(unit);
 				whereCondition.push({
 					OR: [
-						{ unit_has_room: { some: {unit: {is: {name: {contains: unit}}}} }},
-						{ unit_has_room: { some: {unit: {is: {institute: {is: {name: {contains: unit}}}}}} }},
-						{ unit_has_room: { some: {unit: {is: {institute: {is: {school: {is: {name: {contains: unit}}}}}}}} }}
+						{ unit_has_room: { some: {unit: {is: {name: unitSearch }}} }},
+						{ unit_has_room: { some: {unit: {is: {institute: {is: {name: unitSearch }}}}} }},
+						{ unit_has_room: { some: {unit: {is: {institute: {is: {school: {is: {name: unitSearch }}}}}}} }}
 					]
 				})
 			}
@@ -49,6 +51,7 @@ export async function getRooms(prisma, dictionary?: Partial<{
 				whereCondition.push({ vol: { gt: volume - 10, lt: volume + 10 } })
 			}
 			if (cosec) {
+				const cosecSearch = buildSearchConditions(cosec);
 				whereCondition.push({
 					unit_has_room: {
 						some: {
@@ -57,9 +60,9 @@ export async function getRooms(prisma, dictionary?: Partial<{
 									some: {
 										cosec: {
 											OR: [
-												{ name: { contains: cosec } },
-												{ surname: { contains: cosec } },
-												{ email: { contains: cosec } },
+												{ name: cosecSearch },
+												{ surname: cosecSearch },
+												{ email: cosecSearch },
 											],
 										},
 									},
@@ -70,6 +73,7 @@ export async function getRooms(prisma, dictionary?: Partial<{
 				})
 			}
 			if (prof) {
+				const profSearch = buildSearchConditions(prof)
 				whereCondition.push({
 					unit_has_room: {
 						some: {
@@ -78,9 +82,9 @@ export async function getRooms(prisma, dictionary?: Partial<{
 									some: {
 										person: {
 											OR: [
-												{ name: { contains: prof } },
-												{ surname: { contains: prof } },
-												{ email: { contains: prof } },
+												{ name: profSearch },
+												{ surname: profSearch },
+												{ email: profSearch },
 											],
 										},
 									},
