@@ -13,6 +13,7 @@ import {getLabHasHazardChildToString} from "../schema/hazards/labHazardChild";
 import {setReqPrismaMiddleware} from "../api/lib/rest";
 import {getDispensationToString} from "../schema/dispensation/dispensation";
 import {getAssessmentDecisionToString} from "../schema/assessment/assessmentDecision";
+import {getAuthorizationToString} from "../schema/authorization/authorization";
 
 const obfuscatedIdParams = {
 	eph_id (req) { return req.params.eph_id },
@@ -154,6 +155,28 @@ export function makeRESTFilesAPI() {
 			const info = await IDObfuscator.getObjectByObfuscatedId(id,
 				'Dispensation', 'id_dispensation',
 				req.prisma, 'Dispensation', getDispensationToString);
+			sendFileResponse(req.params.fileName, res);
+		});
+
+	app.get("/authorization/:eph_id",
+		checkAPICall(
+			{
+				authorize: (req) => req.user.canListAuthorizations,
+				required: {
+					...obfuscatedIdParams,
+					fileName (req) { return req.query.fileName }
+				},
+				validate: {
+					...obfuscatedIdValidators,
+					fileName: pathRegexp
+				}
+			}),
+		async (req: Request<GetFile>, res) => {
+			const id: ID = {salt: req.params.salt, eph_id: req.params.eph_id};
+			IDObfuscator.checkId(id);
+			const info = await IDObfuscator.getObjectByObfuscatedId(id,
+				'authorization', 'id_authorization',
+				req.prisma, 'authorization', getAuthorizationToString);
 			sendFileResponse(req.params.fileName, res);
 		});
 
