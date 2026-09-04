@@ -91,6 +91,7 @@ import * as subjectANDType from '../schema/assessment/subject'
 import * as ticketANDTypes from '../schema/assessment/ticket'
 import * as fileANDTypes from '../schema/assessment/files'
 import * as fileDispensationType from '../schema/dispensation/files'
+import * as fileAuthorizationType from '../schema/authorization/files'
 import * as fileAdditionalInfoType from '../schema/hazards/hazardAdditionalInfoFile'
 import {fieldValidatePlugin} from "../utils/fieldValidatePlugin";
 
@@ -124,6 +125,7 @@ const types = [
 	ticketANDTypes,
 	fileANDTypes,
 	fileDispensationType,
+	fileAuthorizationType,
 	fileAdditionalInfoType
 ];
 

@@ -318,7 +318,8 @@ model authorization {
   authorization_has_room      authorization_has_room[]
   authorization_has_holder    authorization_has_holder[]
   authorization_has_chemical  authorization_has_chemical[]
-  authorization_has_radiation  authorization_has_radiation[]
+  authorization_has_radiation authorization_has_radiation[]
+  authorizationHasFile        AuthorizationHasFile[]
 }
 
 enum authorization_status {
@@ -368,6 +369,18 @@ model authorization_has_radiation {
   @@unique([id_authorization, source], name: "unique_authorization_has_radiation", map: "unique_authorization_has_radiation")
 
   @@map("authorization_has_radiation")
+}
+
+model AuthorizationHasFile {
+  @@map("authorization_has_file")
+
+  id_authorization   Int
+  file_path          String       @db.VarChar(250)
+
+  dispensation       authorization @relation(fields: [id_authorization], references: [id_authorization], onUpdate: Restrict, map: "authorization_has_file_ibfk_1")
+
+  @@unique([id_authorization, file_path], name: "unique_authorization_has_file", map: "unique_authorization_has_file")
+  @@index([file_path], map: "file_path")
 }
 
 model Tag {
