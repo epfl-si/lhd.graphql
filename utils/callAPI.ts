@@ -37,6 +37,7 @@ async function callAPI(url: string, method: "GET" | "POST") {
 	}
 	const request: RequestInfo = new Request(url, requestInit)
 
+	console.log(`CALL API : ${url}`);
 	const result = await fetch(request);
 	return result.json();
 }
