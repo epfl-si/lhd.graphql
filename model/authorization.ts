@@ -2,6 +2,7 @@ import {NotFoundError} from "../utils/errors";
 import {ensurePerson} from "./persons";
 import {AuthorizationChanges} from "../utils/changeTypes";
 import {buildSearchConditions} from "../utils/searchConditionBuilder";
+import {saveBase64File} from "../utils/fileUtilities";
 
 export async function createAuthorization(prisma, auth, unitId, newHolders) {
 	await ensurePerson(prisma, newHolders);
@@ -249,6 +250,24 @@ async function setAuthorizationRelations(tx, id_authorization: number, changes: 
 					where: whereCondition
 				});
 			}
+		}
+	}
+
+	for ( const file of changes.files || []) {
+		if ( file.status === 'New' ) {
+			await tx.AuthorizationHasFile.create({
+				data: {
+					id_authorization: id_authorization,
+					file_path: saveBase64File(file.base64, process.env.AUTHORIZATION_DOCUMENT_FOLDER + '/' + id_authorization + '/', file.path)
+				}
+			});
+		} else if ( file.status === 'Deleted' ) {
+			await tx.AuthorizationHasFile.deleteMany({
+				where: {
+					id_authorization: id_authorization,
+					file_path: file.path
+				}
+			});
 		}
 	}
 }

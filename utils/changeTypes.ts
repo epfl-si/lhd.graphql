@@ -21,9 +21,16 @@ type CasChange = {
 	name: string;
 };
 
+type FileChange = {
+	status: string;
+	path: string;
+	base64: string;
+}
+
 export type AuthorizationChanges = {
 	holders: HolderChange[];
 	rooms: RoomChange[];
 	radiations: RadiationChange[];
 	cas: CasChange[];
+	files: FileChange[];
 }
