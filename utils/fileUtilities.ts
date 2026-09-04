@@ -19,7 +19,7 @@ export function checkFileAttributeByRegexp(fileAttribute, regexp) {
 
 export function saveBase64File(base64Data: string, filePath: string, fileName: string): string {
 	if (base64Data && fileName) {
-		checkFileAttributeByRegexp(fileName, fileNameRegexp); //TODO retester erreur qui ne s'affiche pas
+		checkFileAttributeByRegexp(fileName, fileNameRegexp);
 		// Remove the data URL part if present
 		const base64Content = base64Data.split(';base64,').pop() || base64Data;
 		// Decode base64 string to buffer
