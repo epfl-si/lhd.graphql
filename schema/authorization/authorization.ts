@@ -8,17 +8,32 @@ import {ChemicalStruct} from "./chemicals";
 import {getUnitToString, UnitStruct} from "../roomdetails/units";
 import {RadiationStruct} from "./radiation";
 import {createAuthorization, getAuthorizations, updateAuthorization} from "../../model/authorization";
-import {HolderMutationType, OthersMutationType} from "../../utils/mutationTypes";
+import {FileMutationType, HolderMutationType, OthersMutationType} from "../../utils/mutationTypes";
 import {ensurePerson} from "../../model/persons";
-import {acceptDateString, acceptInteger, acceptSubstringInList} from "../../utils/fieldValidatePlugin";
+import {
+	acceptDateString,
+	acceptInteger,
+	acceptSubstringInList,
+	sanitizeArray,
+	sanitizeBase64DataUrl,
+	sanitizeOptionalField
+} from "../../utils/fieldValidatePlugin";
 import {
 	sanitizeCasMutationTypes,
 	sanitizeHolderMutationTypes,
 	sanitizeMutationTypes,
 	sanitizeSearchString
 } from "../../utils/searchStrings";
-import {alphanumericRegexp, casRegexp, chemicalNameRegexp, reqRegexp, validateId} from "../../api/lib/lhdValidators";
+import {
+	alphanumericRegexp,
+	casRegexp,
+	chemicalNameRegexp,
+	pathRegexp,
+	reqRegexp,
+	validateId
+} from "../../api/lib/lhdValidators";
 import {authorization_status} from "@prisma/client";
+import {FileAuthorizationStruct} from "./files";
 
 export const AuthorizationStruct = objectType({
 	name: authorization.$name,
@@ -76,6 +91,15 @@ export const AuthorizationStruct = objectType({
 			type: RadiationStruct,
 			resolve: async (parent, _, context) => {
 				return await context.prisma.authorization_has_radiation.findMany({
+					where: { id_authorization: parent.id_authorization }
+				});
+			},
+		});
+
+		t.nonNull.list.nonNull.field('authorization_files', {
+			type: FileAuthorizationStruct,
+			resolve: async (parent, _, context) => {
+				return await context.prisma.AuthorizationHasFile.findMany({
 					where: { id_authorization: parent.id_authorization }
 				});
 			},
@@ -228,7 +252,8 @@ const newAuthorizationType = {
 	cas: list(OthersMutationType),
 	type: stringArg(),
 	authority: stringArg(),
-	renewals: intArg()
+	renewals: intArg(),
+	files: list(FileMutationType)
 };
 
 export const AuthorizationStatus = mutationStatusType({
@@ -258,6 +283,11 @@ export const AuthorizationMutations = extendType({
 				cas: sanitizeCasMutationTypes,
 				type: {enum: ['Chemical', 'IonisingRadiation']},
 				authority: alphanumericRegexp,
+				files: (s) => sanitizeArray(s, {
+					status: {validate: {enum: ["New", "Default", "Deleted"]}},
+					base64: {validate: (s) => sanitizeBase64DataUrl(s), optional: true},
+					path: {validate: (s) => sanitizeOptionalField(s, pathRegexp)},
+				}),
 			},
 			async resolve(root, args, context) {
 
@@ -285,7 +315,12 @@ export const AuthorizationMutations = extendType({
 				holders: sanitizeHolderMutationTypes,
 				radiations: sanitizeMutationTypes,
 				cas: sanitizeCasMutationTypes,
-				authority: alphanumericRegexp
+				authority: alphanumericRegexp,
+				files: (s) => sanitizeArray(s, {
+					status: {validate: {enum: ["New", "Default", "Deleted"]}},
+					base64: {validate: (s) => sanitizeBase64DataUrl(s), optional: true},
+					path: {validate: (s) => sanitizeOptionalField(s, pathRegexp)},
+				}),
 			},
 			async resolve(root, args, context) {
 				const newHolders = args.holders.filter(holder => holder.status === 'New');
@@ -323,6 +358,7 @@ export const AuthorizationMutations = extendType({
 					await tx.authorization_has_chemical.deleteMany({ where: { id_authorization: auth.id_authorization }});
 					await tx.authorization_has_holder.deleteMany({ where: { id_authorization: auth.id_authorization }});
 					await tx.authorization_has_radiation.deleteMany({ where: { id_authorization: auth.id_authorization }});
+					await tx.AuthorizationHasFile.deleteMany({ where: { id_authorization: auth.id_authorization }});
 					await tx.authorization.delete({ where: { id_authorization: auth.id_authorization }});
 
 					return mutationStatusType.success();
