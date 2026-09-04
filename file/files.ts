@@ -138,7 +138,7 @@ export function makeRESTFilesAPI() {
 	app.get("/dispensation/:eph_id",
 		checkAPICall(
 			{
-				authorize: (req) => req.user.canListHazards,
+				authorize: (req) => req.user.canListDispensations,
 				required: {
 					...obfuscatedIdParams,
 					fileName (req) { return req.query.fileName }
