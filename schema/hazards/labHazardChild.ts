@@ -189,25 +189,23 @@ export const HazardsWithPaginationQuery = extendType({
 
 				const sql = Object.keys(conditions).map(key => {
 					if (key === 'room') {
-						return Prisma.sql`l.lab_display like ${Prisma.raw(`'%${conditions[key]}%'`)}`;
+						return Prisma.sql`l.lab_display ilike ${Prisma.raw(`'%${conditions[key]}%'`)}`;
 					} else if (key === 'cosec') {
-						return Prisma.sql`(cos.email_person like ${Prisma.raw(`'%${conditions[key]}%'`)} 
-						or cos.name_person like ${Prisma.raw(`'%${conditions[key]}%'`)} 
-						or cos.surname_person like ${Prisma.raw(`'%${conditions[key]}%'`)})`;
+						return Prisma.sql`(cos.email_person ilike ${Prisma.raw(`'%${conditions[key]}%'`)} 
+						or cos.name_person ilike ${Prisma.raw(`'%${conditions[key]}%'`)} 
+						or cos.surname_person ilike ${Prisma.raw(`'%${conditions[key]}%'`)})`;
 					} else if (key === 'prof') {
-						return Prisma.sql`(prof.email_person like ${Prisma.raw(`'%${conditions[key]}%'`)} 
-						or prof.name_person like ${Prisma.raw(`'%${conditions[key]}%'`)} 
-						or prof.surname_person like ${Prisma.raw(`'%${conditions[key]}%'`)})`;
+						return Prisma.sql`(prof.email_person ilike ${Prisma.raw(`'%${conditions[key]}%'`)} 
+						or prof.name_person ilike ${Prisma.raw(`'%${conditions[key]}%'`)} 
+						or prof.surname_person ilike ${Prisma.raw(`'%${conditions[key]}%'`)})`;
 					} else if (key === 'unit') {
-						return Prisma.sql`(u.name_unit like ${Prisma.raw(`'%${conditions[key]}%'`)} 
-						or i.name_institut like ${Prisma.raw(`'%${conditions[key]}%'`)} 
-						or f.name_faculty like ${Prisma.raw(`'%${conditions[key]}%'`)})`;
+						return Prisma.sql`(u.name_unit ilike ${Prisma.raw(`'%${conditions[key]}%'`)} 
+						or i.name_institut ilike ${Prisma.raw(`'%${conditions[key]}%'`)} 
+						or f.name_faculty ilike ${Prisma.raw(`'%${conditions[key]}%'`)})`;
 					} else {
 						return Prisma.sql`
-	(JSON_VALUE(lhhc.submission, ${Prisma.raw(`'$.data.${key}'`)}) like ${Prisma.raw(`'%${conditions[key]}%'`)} OR 
-	 JSON_VALUE(lhh.submission, ${Prisma.raw(`'$.data.${key}'`)}) like ${Prisma.raw(`'%${conditions[key]}%'`)} OR
-	 JSON_QUERY(lhhc.submission, ${Prisma.raw(`'$.data.${key}'`)}) like ${Prisma.raw(`'%${conditions[key]}%'`)} OR 
-	 JSON_QUERY(lhh.submission, ${Prisma.raw(`'$.data.${key}'`)}) like ${Prisma.raw(`'%${conditions[key]}%'`)} )`;
+	((lhh.submission::jsonb #>> ${Prisma.raw(`'{data,${key}}'`)}) ilike ${Prisma.raw(`'%${conditions[key]}%'`)} OR 
+	 (lhhc.submission::jsonb #>> ${Prisma.raw(`'{data,${key}}'`)}) ilike ${Prisma.raw(`'%${conditions[key]}%'`)})`;
 					}
 				});
 				if (sql.length > 0) {
@@ -336,17 +334,17 @@ export const HazardFetchForExportQuery = extendType({
 
 				Object.keys(conditions).forEach(key => {
 						if (key === 'room') {
-							whereCondition.push(Prisma.sql`l.lab_display like ${'%' + conditions[key] + '%'}`)
+							whereCondition.push(Prisma.sql`l.lab_display ilike ${'%' + conditions[key] + '%'}`)
 						} else if (key === 'designation') {
-							whereCondition.push(Prisma.sql`lt.labType like ${'%' + conditions[key] + '%'}`)
+							whereCondition.push(Prisma.sql`lt.labType ilike ${'%' + conditions[key] + '%'}`)
 						} else if (key === 'floor') {
-							whereCondition.push(Prisma.sql`l.floor like ${'%' + conditions[key] + '%'}`)
+							whereCondition.push(Prisma.sql`l.floor ilike ${'%' + conditions[key] + '%'}`)
 						} else if (key === 'sector') {
-							whereCondition.push(Prisma.sql`l.sector like ${'%' + conditions[key] + '%'}`)
+							whereCondition.push(Prisma.sql`l.sector ilike ${'%' + conditions[key] + '%'}`)
 						} else if (key === 'building') {
-							whereCondition.push(Prisma.sql`l.building like ${'%' + conditions[key] + '%'}`)
+							whereCondition.push(Prisma.sql`l.building ilike ${'%' + conditions[key] + '%'}`)
 						} else if (key === 'unit') {
-							//whereCondition.push(Prisma.sql`(u.name_unit like %${'%' + conditions[key] + '%'}% or i.name_institut like %${'%' + conditions[key] + '%'}% or f.name_faculty like %${'%' + conditions[key] + '%'}%)`)
+							//whereCondition.push(Prisma.sql`(u.name_unit ilike %${'%' + conditions[key] + '%'}% or i.name_institut ilike %${'%' + conditions[key] + '%'}% or f.name_faculty ilike %${'%' + conditions[key] + '%'}%)`)
 						} else if (key === 'volume' && !isNaN(parseFloat(conditions[key]))) {
 							whereCondition.push(Prisma.sql`l.vol >= (${conditions[key]} - 10) AND l.vol <= (${conditions[key]} + 10)`)
 						}
