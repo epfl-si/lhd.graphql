@@ -377,7 +377,7 @@ model AuthorizationHasFile {
   id_authorization   Int
   file_path          String       @db.VarChar(250)
 
-  dispensation       authorization @relation(fields: [id_authorization], references: [id_authorization], onUpdate: Restrict, map: "authorization_has_file_ibfk_1")
+  authorization       authorization @relation(fields: [id_authorization], references: [id_authorization], onUpdate: Restrict, map: "authorization_has_file_ibfk_1")
 
   @@unique([id_authorization, file_path], name: "unique_authorization_has_file", map: "unique_authorization_has_file")
   @@index([file_path], map: "file_path")
