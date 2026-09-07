@@ -240,7 +240,7 @@ export const DispensationsWithPaginationQuery = extendType({
           })
         }
         if (subject) {
-          whereCondition.push({ subject: {is: {subject: {contains: subject}}}})
+          whereCondition.push({ subject: {is: {subject: {contains: subject, mode: 'insensitive'}}}})
         }
         if (ticket) {
           whereCondition.push({ dispensation_has_ticket: { some: {ticket_number: {contains: ticket}} }})

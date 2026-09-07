@@ -101,7 +101,7 @@ export async function getAuthorizations(prisma, type: string, conditions?: Parti
 					}} }})
 	}
 	if (source) {
-		whereCondition.push({ authorization_has_radiation: { some: {source: {contains: source}} }})
+		whereCondition.push({ authorization_has_radiation: { some: {source: {contains: source, mode: 'insensitive'}} }})
 	}
 
 	const authorizationList = await prisma.authorization.findMany({
