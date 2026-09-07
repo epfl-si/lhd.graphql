@@ -39,7 +39,7 @@ export async function getChemicals(prisma, opts?: Partial<{
 		whereCondition.push({ fastway: ['yes', '1', 'true'].indexOf(fastway.toLowerCase()) > -1})
 	}
 	if (authCode) {
-		whereCondition.push({ auth_code: { contains: authCode }})
+		whereCondition.push({ auth_code: { contains: authCode, mode: 'insensitive' }})
 	}
 	if (! whereCondition) {
 		whereCondition.push({ cas_auth_chem: { contains: '' }})
