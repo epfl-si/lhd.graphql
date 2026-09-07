@@ -226,7 +226,7 @@ hfh.id_hazard_form_history,
 lhhai.comment as global_comment,
 lhhai.modified_by,
 lhhai.modified_on,
-(select GROUP_CONCAT(CONCAT(tag_name, '=', comment) SEPARATOR '&&') AS tags 
+(select STRING_AGG(tag_name || '=' || comment, '&&') AS tags 
  from tag
      inner join hazards_additional_info_has_tag on hazards_additional_info_has_tag.id_tag = tag.id_tag
  where hazards_additional_info_has_tag.id_lab_has_hazards_additional_info = lhhai.id_lab_has_hazards_additional_info) as tags
