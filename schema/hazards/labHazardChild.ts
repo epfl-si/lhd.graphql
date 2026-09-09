@@ -61,7 +61,7 @@ export function getLabHasHazardChildToString(parent) {
 	};
 }
 
-export async function updateHazardFormChild(tx: any, child: submission, parentHazard: number) {
+export async function updateHazardFormChild(tx: any, child: submission, parentHazard: number, category: string, parent: object) {
 	IDObfuscator.checkId(child.id);
 
 	const formChild = await tx.hazard_form_child.findFirst({where: {hazard_form_child_name: child.formName}});
@@ -103,7 +103,7 @@ export async function updateHazardFormChild(tx: any, child: submission, parentHa
 				}
 			});
 			const lab_has_hazardsList = await tx.lab_has_hazards_child.findMany({where: {id_lab_has_hazards: parentHazard}});
-			if (lab_has_hazardsList.length == 0) {
+			if (lab_has_hazardsList.length == 0 && !parent['data']['canDeleteChildren']) {
 				await tx.lab_has_hazards.delete({
 					where: {
 						id_lab_has_hazards: parentHazard

@@ -164,7 +164,7 @@ export const RoomHazardMutations = extendType({
 							})
 
 							for await (const child of h.children) {
-								await updateHazardFormChild(tx, child, hazard.id_lab_has_hazards)
+								await updateHazardFormChild(tx, child, hazard.id_lab_has_hazards, args.category, h.submission)
 							}
 						}
 						else if (!h.id.eph_id.startsWith('newHazard')) {
@@ -182,7 +182,7 @@ export const RoomHazardMutations = extendType({
 									});
 
 								for await (const child of h.children) {
-									await updateHazardFormChild(tx, child, hazard.id_lab_has_hazards)
+									await updateHazardFormChild(tx, child, hazard.id_lab_has_hazards, args.category, h.submission)
 								}
 							}
 							else if (h.submission.data['status'] === 'Deleted') {
