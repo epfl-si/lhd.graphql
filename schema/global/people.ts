@@ -3,6 +3,7 @@ import { Person } from 'nexus-prisma';
 import {getUsersFromApi} from "../../utils/callAPI";
 import {acceptBoolean} from "../../utils/fieldValidatePlugin";
 import {alphanumericRegexp} from "../../api/lib/lhdValidators";
+import {buildSearchConditions} from "../../utils/searchConditionBuilder";
 
 export const PersonStruct = objectType({
 	name: Person.$name,
@@ -43,7 +44,6 @@ export const PersonQuery = extendType({
 				return originalResolve(root, args, context, info);
 			} });
   }
-  // TODO: filter out nilPersonId
 })
 
 export const DirectoryPerson = objectType({
