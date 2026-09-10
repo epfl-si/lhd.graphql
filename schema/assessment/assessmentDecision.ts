@@ -228,7 +228,7 @@ export const AssessmentDecisionsWithPaginationQuery = extendType({
           })
         }
         if (subject) {
-          whereCondition.push({ subject: {is: {subject: {contains: subject, mode: 'insensitive'}}}})
+          whereCondition.push({ subject: {is: {subject: {contains: subject}}}})
         }
         if (ticket) {
           whereCondition.push({ assessment_and_decision_has_ticket: { some: {ticket_number: {contains: ticket}} }})
