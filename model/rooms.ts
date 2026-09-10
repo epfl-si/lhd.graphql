@@ -23,7 +23,7 @@ export async function getRooms(prisma, dictionary?: Partial<{
 				whereCondition.push({ name: { contains: room }})
 			}
 			if (hazard) {
-				whereCondition.push({ lab_has_hazards : {some: {hazard_form_history: { is: {hazard_form: { is: {hazard_category: { is: {hazard_category_name: { contains: hazard, mode: 'insensitive' }}}}}}}}}})
+				whereCondition.push({ lab_has_hazards : {some: {hazard_form_history: { is: {hazard_form: { is: {hazard_category: { is: {hazard_category_name: { contains: hazard }}}}}}}}}})
 			}
 			if (designation) {
 				whereCondition.push({ kind : { is: {name: { contains: designation }}}})
@@ -205,7 +205,7 @@ export async function getRoomByNameForAxs(prisma, roomName: string) {
 	return await prisma.Room.findFirst({
 		where: {
 			AND: [
-				{ name: { contains: roomName, mode: 'insensitive' }},
+				{ name: { contains: roomName }},
 				{ unit_has_room: { some: { }}} // At least one unit is available for this room
 			]
 		},
