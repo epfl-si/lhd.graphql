@@ -83,8 +83,8 @@ export const PersonFullTextQuery = extendType({
 				const lhdPeople = await context.prisma.Person.findMany({
 					where: {
 						OR: [
-							{ name: { contains: args.search }},
-							{ surname : { contains: args.search }},
+							{ name: buildSearchConditions(args.search)},
+							{ surname : buildSearchConditions(args.search)},
 						]
 					}
 				});
@@ -98,7 +98,7 @@ export const PersonFullTextQuery = extendType({
 
 				const filteredLdapUsers = [];
 				if (!args.lhdOnly) {
-					const ldapUsers = await getUsersFromApi(args.search);
+					const ldapUsers = await getUsersFromApi(args.search.replaceAll('*', ''));
 					ldapUsers["persons"].forEach(u => {
 						if (!lhdPeopleTyped.find(p => p.sciper == u.id)) {
 							filteredLdapUsers.push({
