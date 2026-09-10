@@ -100,7 +100,7 @@ function addInsensitiveMode(where) {
 	for (const [key, value] of Object.entries(where)) {
 		if (['AND', 'OR', 'NOT'].includes(key)) {
 			result[key] = addInsensitiveMode(value);
-		} else if (value && typeof value === 'object' && !(value instanceof Date)) {
+		} else if (value && typeof value === 'object' && value instanceof String) {
 			if (stringFilterKeys.some((k) => k in value)) {
 				result[key] = { ...value, mode: 'insensitive' };
 			} else {
