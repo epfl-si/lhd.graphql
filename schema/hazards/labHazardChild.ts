@@ -204,8 +204,8 @@ export const HazardsWithPaginationQuery = extendType({
 						or f.name_faculty ilike ${Prisma.raw(`'%${conditions[key]}%'`)})`;
 					} else {
 						return Prisma.sql`
-	((lhh.submission::jsonb #>> ${Prisma.raw(`'{data,${key}}'`)}) ilike ${Prisma.raw(`'%${conditions[key]}%'`)} OR 
-	 (lhhc.submission::jsonb #>> ${Prisma.raw(`'{data,${key}}'`)}) ilike ${Prisma.raw(`'%${conditions[key]}%'`)})`;
+	((lhh.submission::jsonb #>> ${Prisma.raw(`'{data,${key.replaceAll('.',',')}}'`)}) ilike ${Prisma.raw(`'%${conditions[key]}%'`)} OR 
+	 (lhhc.submission::jsonb #>> ${Prisma.raw(`'{data,${key.replaceAll('.',',')}}'`)}) ilike ${Prisma.raw(`'%${conditions[key]}%'`)})`;
 					}
 				});
 				if (sql.length > 0) {
