@@ -5,7 +5,7 @@ export const chemicalNameRegexp = new RegExp("[A-Za-z0-9\\/()*+\"%&='?\\[\\]\\{\
 export const casRegexp = new RegExp(/^[0-9][0-9-/]*[0-9]$/);
 export const reqRegexp = new RegExp("[A-Z][a-zA-Z0-9.]*-[a-zA-Z0-9.]*");
 export const reqRenewRegexp = new RegExp("[A-Z][a-zA-Z0-9.]*-[a-zA-Z0-9.]*-[0-9]*");
-export const unitNameRegexp = new RegExp("^[A-Za-z0-9éàèôû ()+_-]*$")
+export const unitNameRegexp = new RegExp("^[A-Za-z0-9éàèôû *()+_-]*$")
 export const roomNameRegexp = new RegExp("[A-Z][A-Z0-9-. ]*[A-Z0-9]");
 export const authRegexp = new RegExp("yes|no|1|0");
 export const fileNameRegexp = new RegExp(/^[\p{L}\p{N}, _\-\(\)\.]+\.[A-Za-z0-9]+$/u);
