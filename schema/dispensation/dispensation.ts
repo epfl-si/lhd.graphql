@@ -211,7 +211,7 @@ export const DispensationsWithPaginationQuery = extendType({
           whereCondition.push({ status: status })
         }
         if (room) {
-          whereCondition.push({ dispensation_has_room: { some: {room: {is: {name: { contains: room }}}} }})
+          whereCondition.push({ dispensation_has_room: { some: {room: {is: {name: {contains: room}}}} }})
         }
         if (unit) {
           const unitSearch = buildSearchConditions(unit);
@@ -243,7 +243,7 @@ export const DispensationsWithPaginationQuery = extendType({
           whereCondition.push({ subject: {is: {subject: {contains: subject}}}})
         }
         if (ticket) {
-          whereCondition.push({ dispensation_has_ticket: { some: {ticket_number: { contains: ticket }} }})
+          whereCondition.push({ dispensation_has_ticket: { some: {ticket_number: {contains: ticket}} }})
         }
 
         const dispensationList = await context.prisma.Dispensation.findMany({

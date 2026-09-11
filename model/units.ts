@@ -38,7 +38,7 @@ export async function deleteUnitCascade(tx, context, u:Unit) {
 }
 
 export async function getUnitByName(prisma, unitName: string) {
-	const search = buildSearchConditions(unitName)
+	const search = buildSearchConditions(unitName);
 	return await prisma.Unit.findMany({
 		where: {
 			OR: [
