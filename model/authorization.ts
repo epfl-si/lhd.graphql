@@ -74,7 +74,7 @@ export async function getAuthorizations(prisma, type: string, conditions?: Parti
 		whereCondition.push({ status: status })
 	}
 	if (room) {
-		whereCondition.push({ authorization_has_room: { some: {room: {is: {name: { contains: room }}}} }})
+		whereCondition.push({ authorization_has_room: { some: {room: {is: {name: {contains: room}}}} }})
 	}
 	if (holder) {
 		whereCondition.push({
