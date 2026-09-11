@@ -1,9 +1,8 @@
-import { objectType, extendType, stringArg, booleanArg, list, unionType } from 'nexus';
-import { Person } from 'nexus-prisma';
+import {booleanArg, extendType, list, objectType, stringArg, unionType} from 'nexus';
+import {Person} from 'nexus-prisma';
 import {getUsersFromApi} from "../../utils/callAPI";
 import {acceptBoolean} from "../../utils/fieldValidatePlugin";
 import {alphanumericRegexp} from "../../api/lib/lhdValidators";
-import {buildSearchConditions} from "../../utils/searchConditionBuilder";
 
 export const PersonStruct = objectType({
 	name: Person.$name,
@@ -83,8 +82,8 @@ export const PersonFullTextQuery = extendType({
 				const lhdPeople = await context.prisma.Person.findMany({
 					where: {
 						OR: [
-							{ name: buildSearchConditions(args.search)},
-							{ surname : buildSearchConditions(args.search)},
+							{ name: { contains: args.search }},
+							{ surname : { contains: args.search }},
 						]
 					}
 				});
@@ -98,7 +97,7 @@ export const PersonFullTextQuery = extendType({
 
 				const filteredLdapUsers = [];
 				if (!args.lhdOnly) {
-					const ldapUsers = await getUsersFromApi(args.search.replaceAll('*', ''));
+					const ldapUsers = await getUsersFromApi(args.search);
 					ldapUsers["persons"].forEach(u => {
 						if (!lhdPeopleTyped.find(p => p.sciper == u.id)) {
 							filteredLdapUsers.push({
