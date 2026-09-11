@@ -20,13 +20,13 @@ export async function getRooms(prisma, dictionary?: Partial<{
 	const whereCondition = [];
 	whereCondition.push({ isDeleted: false });
 			if (room) {
-				whereCondition.push({ name: buildSearchConditions(room)})
+				whereCondition.push({ name: { contains: room }})
 			}
 			if (hazard) {
 				whereCondition.push({ lab_has_hazards : {some: {hazard_form_history: { is: {hazard_form: { is: {hazard_category: { is: {hazard_category_name: { contains: hazard }}}}}}}}}})
 			}
 			if (designation) {
-				whereCondition.push({ kind : { is: {name: buildSearchConditions(designation)}}})
+				whereCondition.push({ kind : { is: {name: { contains: designation }}}})
 			}
 			if (floor) {
 				whereCondition.push({ floor: { contains: floor }})
@@ -35,7 +35,7 @@ export async function getRooms(prisma, dictionary?: Partial<{
 				whereCondition.push({ sector: { contains: sector }})
 			}
 			if (building) {
-				whereCondition.push({ building: buildSearchConditions(building)})
+				whereCondition.push({ building: { contains: building }})
 			}
 			if (unit) {
 				const unitSearch = buildSearchConditions(unit);
@@ -51,7 +51,6 @@ export async function getRooms(prisma, dictionary?: Partial<{
 				whereCondition.push({ vol: { gt: volume - 10, lt: volume + 10 } })
 			}
 			if (cosec) {
-				const cosecSearch = buildSearchConditions(cosec);
 				whereCondition.push({
 					unit_has_room: {
 						some: {
@@ -60,9 +59,9 @@ export async function getRooms(prisma, dictionary?: Partial<{
 									some: {
 										cosec: {
 											OR: [
-												{ name: cosecSearch },
-												{ surname: cosecSearch },
-												{ email: cosecSearch },
+												{ name: { contains: cosec } },
+												{ surname: { contains: cosec } },
+												{ email: { contains: cosec } },
 											],
 										},
 									},
@@ -73,7 +72,6 @@ export async function getRooms(prisma, dictionary?: Partial<{
 				})
 			}
 			if (prof) {
-				const profSearch = buildSearchConditions(prof)
 				whereCondition.push({
 					unit_has_room: {
 						some: {
@@ -82,9 +80,9 @@ export async function getRooms(prisma, dictionary?: Partial<{
 									some: {
 										person: {
 											OR: [
-												{ name: profSearch },
-												{ surname: profSearch },
-												{ email: profSearch },
+												{ name: { contains: prof } },
+												{ surname: { contains: prof } },
+												{ email: { contains: prof } },
 											],
 										},
 									},
