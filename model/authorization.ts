@@ -2,6 +2,7 @@ import {NotFoundError} from "../utils/errors";
 import {ensurePerson} from "./persons";
 import {AuthorizationChanges} from "../utils/changeTypes";
 import {saveBase64File} from "../utils/fileUtilities";
+import {buildSearchConditions} from "../utils/searchConditionBuilder";
 
 export async function createAuthorization(prisma, auth, unitId, newHolders) {
 	await ensurePerson(prisma, newHolders);
@@ -65,7 +66,8 @@ export async function getAuthorizations(prisma, type: string, conditions?: Parti
 	const whereCondition = [];
 	whereCondition.push({ type: type});
 	if (unit) {
-		whereCondition.push({ unit: { is: {name: { contains: unit }} }})
+		const unitSearch = buildSearchConditions(unit);
+		whereCondition.push({ unit: { is: {name: unitSearch} }})
 	}
 	if (authorization) {
 		whereCondition.push({ authorization: { contains: authorization }})
