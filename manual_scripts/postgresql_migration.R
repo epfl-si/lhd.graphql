@@ -2,7 +2,7 @@ library(DBI)
 library(RMariaDB)
 library(RPostgres)
 
-environment <- "local" # test | prod
+environment <- "test" # local | test | prod
 
 if (environment == 'local') {
   mdb <- dbConnect(
@@ -102,14 +102,18 @@ tables_in_order <- c(
   "hazards_additional_info_has_tag"
 )
 
-dbExecute(pg, "SET session_replication_role = 'replica';")
+for (tbl in tables_in_order) {
+  dbExecute(pg, sprintf('ALTER TABLE "%s" DISABLE TRIGGER USER;', tbl))
+}
 
 for (tbl in tables_in_order) {
   df <- dbReadTable(mdb, tbl)
   dbWriteTable(pg, tbl, df, append = TRUE, row.names = FALSE)
 }
 
-dbExecute(pg, "SET session_replication_role = 'origin';")
+for (tbl in tables_in_order) {
+  dbExecute(pg, sprintf('ALTER TABLE "%s" ENABLE TRIGGER USER;', tbl))
+}
 
 for (tbl in tables_in_order) {
   pk_col <- dbGetQuery(pg, sprintf(
