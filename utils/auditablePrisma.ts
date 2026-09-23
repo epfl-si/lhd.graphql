@@ -113,7 +113,6 @@ function addInsensitiveMode(where) {
 				('in' in value && Array.isArray(value.in) && value.in.every((v) => typeof v === 'string')) ||
 				('notIn' in value && Array.isArray(value.notIn) && value.notIn.every((v) => typeof v === 'string'))
 			) {
-				// Prisma doesn't support mode on in/notIn, so leave as-is
 				result[key] = value;
 			} else {
 				result[key] = addInsensitiveMode(value); // nested relation filter
