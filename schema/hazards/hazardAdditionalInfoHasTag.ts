@@ -118,7 +118,7 @@ export const HazardsAdditionalInfoHasTagMutations = extendType({
 						{ data: {
 								id_tag: tag.id_tag,
 								id_lab_has_hazards_additional_info: additionalInfo.id_lab_has_hazards_additional_info,
-								comment: args.comment
+								comment: decodeURIComponent(args.comment)
 							}
 						});
 					return mutationStatusType.success();
@@ -143,7 +143,7 @@ export const HazardsAdditionalInfoHasTagMutations = extendType({
 					await tx.HazardsAdditionalInfoHasTag.update(
 						{ where: { id_hazards_additional_info_has_tag: tag.id_hazards_additional_info_has_tag },
 							data: {
-								comment: args.comment
+								comment: decodeURIComponent(args.comment)
 							}
 						});
 					return mutationStatusType.success();
