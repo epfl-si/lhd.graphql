@@ -72,6 +72,9 @@ export function getPrismaForUser(config: BackendConfig, user, inject?: TestInjec
 						console.log(`Log not in the DB ${e.message}`);
 					}
 				} else {
+					if (args.where) {
+						args.where = addInsensitiveMode(args.where);
+					}
 					newValue = await query(args);
 				}
 				return newValue;
@@ -85,4 +88,38 @@ export function getPrismaForUser(config: BackendConfig, user, inject?: TestInjec
 		(prisma as any).$on('query', inject?.onQuery);
 	}
 	return prisma;
+}
+
+function addInsensitiveMode(where) {
+	if (!where || typeof where !== 'object' || where instanceof Date) {
+		return where;
+	}
+	if (Array.isArray(where)) {
+		return where.map(addInsensitiveMode);
+	}
+
+	const stringFilterKeys = ['equals', 'contains', 'startsWith', 'endsWith'];
+	const result = {};
+
+	for (const [key, value] of Object.entries(where)) {
+		if (['AND', 'OR', 'NOT'].includes(key)) {
+			result[key] = addInsensitiveMode(value);
+		} else if (value && typeof value === 'object' && !(value instanceof Date)) {
+			const matchedKey = stringFilterKeys.find((k) => k in value);
+
+			if (matchedKey && typeof value[matchedKey] === 'string') {
+				result[key] = { ...value, mode: 'insensitive' };
+			} else if (
+				('in' in value && Array.isArray(value.in) && value.in.every((v) => typeof v === 'string')) ||
+				('notIn' in value && Array.isArray(value.notIn) && value.notIn.every((v) => typeof v === 'string'))
+			) {
+				result[key] = value;
+			} else {
+				result[key] = addInsensitiveMode(value); // nested relation filter
+			}
+		} else {
+			result[key] = value;
+		}
+	}
+	return result;
 }

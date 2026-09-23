@@ -7,13 +7,13 @@ generator nexusPrisma {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("LHD_DB_URL")
 }
 
 model audits {
   id_audit   Int      @id @default(autoincrement())
-  id_unit    Int      @unique(map: "id_unit")
+  id_unit    Int      @unique
   date_audit DateTime @db.Date
 
   @@unique([id_unit, date_audit], name: "unique_audit", map: "unique_audit")
@@ -107,7 +107,7 @@ model unit_has_room {
   room    Room @relation(fields: [id_lab], references: [id], onUpdate: Restrict, map: "unit_has_room_ibfk_2")
 
   @@unique([id_unit, id_lab], name: "unique_unit_has_room", map: "unique_unit_has_room")
-  @@index([id_lab], map: "id_lab")
+  @@index([id_lab])
   @@map("unit_has_room")
 }
 
@@ -118,7 +118,7 @@ model unit_has_cosec {
   cosec     Person @relation(fields: [id_person], references: [id_person], onUpdate: Restrict, map: "unit_has_cosec_ibfk_2")
 
   @@unique([id_unit, id_person], name: "unique_unit_has_person", map: "unique_unit_has_person")
-  @@index([id_person], map: "id_person")
+  @@index([id_person])
   @@map("unit_has_cosec")
 }
 
@@ -149,8 +149,8 @@ model subunpro {
   person      Person? @relation(fields: [id_person], references: [id_person], onDelete: Restrict, onUpdate: Restrict, map: "subunpro_ibfk_2")
 
   @@unique([id_unit, id_person], name: "unique_subunpro", map: "unique_subunpro")
-  @@index([id_person], map: "id_person")
-  @@index([id_unit], map: "id_unit")
+  @@index([id_person])
+  @@index([id_unit])
 }
 
 model Unit {
@@ -187,7 +187,7 @@ model hazard_category {
 model hazard_form {
   id_hazard_form       Int                  @id @default(autoincrement())
   id_hazard_category   Int
-  form                 String               @db.LongText
+  form                 String               @db.Text
   version              String               @default("1.0.0")
   hazard_category      hazard_category      @relation(fields: [id_hazard_category], references: [id_hazard_category])
   hazard_form_history  hazard_form_history[]
@@ -200,26 +200,26 @@ model hazard_form {
 model hazard_form_history {
   id_hazard_form_history       Int              @id @default(autoincrement())
   id_hazard_form               Int
-  form                         String           @db.LongText
+  form                         String           @db.Text
   version                      String           @default("1.0.0")
   modified_by                  String
   modified_on                  DateTime         @default(now())
   hazard_form                  hazard_form      @relation(fields: [id_hazard_form], references: [id_hazard_form])
   lab_has_hazards              lab_has_hazards[]
 
-  @@index([id_hazard_form], name: "id_hazard_form")
+  @@index([id_hazard_form])
 }
 
 model lab_has_hazards {
   id_lab_has_hazards        Int               @id @default(autoincrement())
   id_lab                    Int
   id_hazard_form_history    Int
-  submission                String            @db.LongText
+  submission                String            @db.Text
   Room                      Room              @relation(fields: [id_lab], references: [id])
   hazard_form_history       hazard_form_history @relation(fields: [id_hazard_form_history], references: [id_hazard_form_history])
   lab_has_hazards_child     lab_has_hazards_child[]
 
-  @@index([id_lab], name: "id_lab")
+  @@index([id_lab])
   @@index([id_hazard_form_history], name: "id_hazard_form_history")
 }
 
@@ -227,7 +227,7 @@ model hazard_form_child {
   id_hazard_form_child       Int                  @id @default(autoincrement())
   id_hazard_form             Int
   hazard_form_child_name     String               @db.VarChar(200)
-  form                       String               @db.LongText
+  form                       String               @db.Text
   version                    String               @default("1.0.0")
   hazard_form                hazard_form          @relation(fields: [id_hazard_form], references: [id_hazard_form])
   hazard_form_child_history  hazard_form_child_history[]
@@ -239,7 +239,7 @@ model hazard_form_child {
 model hazard_form_child_history {
   id_hazard_form_child_history       Int                   @id @default(autoincrement())
   id_hazard_form_child               Int
-  form                               String                @db.LongText
+  form                               String                @db.Text
   version                            String                @default("1.0.0")
   modified_by                        String
   modified_on                        DateTime              @default(now())
@@ -253,7 +253,7 @@ model lab_has_hazards_child {
   id_lab_has_hazards_child        Int                       @id @default(autoincrement())
   id_lab_has_hazards              Int
   id_hazard_form_child_history    Int
-  submission                      String                    @db.LongText
+  submission                      String                    @db.Text
   lab_has_hazards                 lab_has_hazards           @relation(fields: [id_lab_has_hazards], references: [id_lab_has_hazards])
   hazard_form_child_history       hazard_form_child_history @relation(fields: [id_hazard_form_child_history], references: [id_hazard_form_child_history])
 
@@ -268,8 +268,8 @@ model mutation_logs {
   table_name                         String
   table_id                           Int
   column_name                        String
-  old_value                          String                @db.LongText
-  new_value                          String                @db.LongText
+  old_value                          String                @db.Text
+  new_value                          String                @db.Text
   action                             String
 }
 
@@ -277,7 +277,7 @@ model lab_has_hazards_additional_info {
   id_lab_has_hazards_additional_info        Int                  @id @default(autoincrement())
   id_lab                                    Int
   id_hazard_category                        Int
-  comment                                   String?              @db.LongText
+  comment                                   String?              @db.Text
   filePath                                  String?              @db.VarChar(250)
   modified_by                               String
   modified_on                               DateTime             @default(now())
@@ -286,8 +286,8 @@ model lab_has_hazards_additional_info {
   hazards_additional_info_has_tag           HazardsAdditionalInfoHasTag[]
   hazards_additional_info_has_file          HazardsAdditionalInfoHasFile[]
 
-  @@index([id_lab], name: "id_lab")
-  @@index([id_hazard_category], name: "id_hazard_category")
+  @@index([id_lab])
+  @@index([id_hazard_category])
 }
 
 model HazardsAdditionalInfoHasFile {
@@ -299,12 +299,12 @@ model HazardsAdditionalInfoHasFile {
   lab_has_hazards_additional_info       lab_has_hazards_additional_info @relation(fields: [id_lab_has_hazards_additional_info], references: [id_lab_has_hazards_additional_info], onUpdate: Restrict, map: "lab_has_hazards_additional_info_has_file_ibfk_1")
 
   @@unique([id_lab_has_hazards_additional_info, file_path], name: "unique_hazards_additional_info_has_file", map: "unique_hazards_additional_info_has_file")
-  @@index([file_path], map: "file_path")
+  @@index([file_path])
 }
 
 model authorization {
   id_authorization            Int           @id @default(autoincrement())
-  authorization               String        @unique(map: "authorization") @db.VarChar(50)
+  authorization               String        @unique @db.VarChar(50)
   renewals                    Int
   id_unit                     Int?
   expiration_date             DateTime?     @db.Date
@@ -334,7 +334,7 @@ model authorization_has_room {
   room             Room @relation(fields: [id_lab], references: [id], onUpdate: Restrict, map: "authorization_has_room_ibfk_2")
 
   @@unique([id_authorization, id_lab], name: "unique_authorization_has_room", map: "unique_authorization_has_room")
-  @@index([id_lab], map: "id_lab")
+  @@index([id_lab])
   @@map("authorization_has_room")
 }
 
@@ -345,7 +345,7 @@ model authorization_has_holder {
   holder             Person @relation(fields: [id_person], references: [id_person], onUpdate: Restrict, map: "authorization_has_holder_ibfk_2")
 
   @@unique([id_authorization, id_person], name: "unique_authorization_has_holder", map: "unique_authorization_has_holder")
-  @@index([id_person], map: "id_person")
+  @@index([id_person])
   @@map("authorization_has_holder")
 }
 
@@ -380,7 +380,7 @@ model AuthorizationHasFile {
   authorization       authorization @relation(fields: [id_authorization], references: [id_authorization], onUpdate: Restrict, map: "authorization_has_file_ibfk_1")
 
   @@unique([id_authorization, file_path], name: "unique_authorization_has_file", map: "unique_authorization_has_file")
-  @@index([file_path], map: "file_path")
+  @@index([file_path])
 }
 
 model Tag {
@@ -399,7 +399,7 @@ model HazardsAdditionalInfoHasTag {
   id_hazards_additional_info_has_tag        Int                                     @id @default(autoincrement())
   id_tag                                    Int
   id_lab_has_hazards_additional_info        Int
-  comment                                   String?                                 @db.LongText
+  comment                                   String?                                 @db.Text
   tag                                       Tag                                     @relation(fields: [id_tag], references: [id_tag])
   lab_has_hazards_additional_info           lab_has_hazards_additional_info         @relation(fields: [id_lab_has_hazards_additional_info], references: [id_lab_has_hazards_additional_info])
 
@@ -424,8 +424,8 @@ model Dispensation {
   renewals                  Int
   id_dispensation_subject   Int
   subject_other             String                       @db.VarChar(60)
-  description               String                       @map("requires") @db.LongText
-  comment                   String?                      @db.LongText
+  description               String                       @map("requires") @db.Text
+  comment                   String?                      @db.Text
   status                    DispensationStatus
   date_start                DateTime                     @db.Date
   date_end                  DateTime                     @db.Date
@@ -433,9 +433,9 @@ model Dispensation {
   date_expiry_notified      DateTime?                    @db.Date
 
   created_by                String                       @db.VarChar(50)
-  created_on                DateTime                     @db.DateTime(0)
+  created_on                DateTime                     @db.Timestamp(0)
   modified_by               String                       @db.VarChar(50)
-  modified_on               DateTime                     @db.DateTime(0)
+  modified_on               DateTime                     @db.Timestamp(0)
 
   dispensation_has_room     DispensationHasRoom[]
   dispensation_has_holder   DispensationHasHolder[]
@@ -460,7 +460,7 @@ model DispensationHasTicket {
   dispensation       Dispensation @relation(fields: [id_dispensation], references: [id_dispensation], onUpdate: Restrict, map: "dispensation_has_ticket_ibfk_1")
 
   @@unique([id_dispensation, ticket_number], name: "unique_dispensation_has_ticket", map: "unique_dispensation_has_ticket")
-  @@index([ticket_number], map: "ticket_number")
+  @@index([ticket_number])
 }
 
 model DispensationHasFile {
@@ -472,7 +472,7 @@ model DispensationHasFile {
   dispensation       Dispensation @relation(fields: [id_dispensation], references: [id_dispensation], onUpdate: Restrict, map: "dispensation_has_file_ibfk_1")
 
   @@unique([id_dispensation, file_path], name: "unique_dispensation_has_file", map: "unique_dispensation_has_file")
-  @@index([file_path], map: "file_path")
+  @@index([file_path])
 }
 
 model DispensationHasHolder {
@@ -484,7 +484,7 @@ model DispensationHasHolder {
   holder             Person @relation(fields: [id_person], references: [id_person], onUpdate: Restrict, map: "dispensation_has_holder_ibfk_2")
 
   @@unique([id_dispensation, id_person], name: "unique_dispensation_has_holder", map: "unique_dispensation_has_holder")
-  @@index([id_person], map: "id_person")
+  @@index([id_person])
 }
 
 model DispensationHasRoom {
@@ -496,7 +496,7 @@ model DispensationHasRoom {
   room             Room @relation(fields: [id_lab], references: [id], onUpdate: Restrict, map: "dispensation_has_room_ibfk_2")
 
   @@unique([id_dispensation, id_lab], name: "unique_dispensation_has_room", map: "unique_dispensation_has_room")
-  @@index([id_lab], map: "id_lab")
+  @@index([id_lab])
 }
 
 model DispensationHasUnit {
@@ -508,7 +508,7 @@ model DispensationHasUnit {
   unit             Unit @relation(fields: [id_unit], references: [id], onUpdate: Restrict, map: "dispensation_has_unit_ibfk_2")
 
   @@unique([id_dispensation, id_unit], name: "unique_dispensation_has_unit", map: "unique_dispensation_has_unit")
-  @@index([id_unit], map: "id_unit")
+  @@index([id_unit])
 }
 
 model AssessmentDecisionSubject {
@@ -528,15 +528,15 @@ model AssessmentDecision {
   id_assessment_and_decision           Int                          @id @default(autoincrement())
   id_assessment_and_decision_subject   Int
   subject_other                        String                       @db.VarChar(60)
-  description                          String                       @db.LongText
-  conclusion                           String?                      @db.LongText
+  description                          String                       @db.Text
+  conclusion                           String?                      @db.Text
   status                               AssessmentDecisionStatus
   date                                 DateTime                     @db.Date
 
   created_by                           String                       @db.VarChar(50)
-  created_on                           DateTime                     @db.DateTime(0)
+  created_on                           DateTime                     @db.Timestamp(0)
   modified_by                          String                       @db.VarChar(50)
-  modified_on                          DateTime                     @db.DateTime(0)
+  modified_on                          DateTime                     @db.Timestamp(0)
 
   assessment_and_decision_has_room     AssessmentDecisionHasRoom[]
   assessment_and_decision_has_contact  AssessmentDecisionHasContact[]
