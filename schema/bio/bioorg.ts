@@ -35,6 +35,7 @@ export function getBioOrgToString(parent) {
 	};
 }
 
+// TODO Remove this code: it has been replaced by the new backend
 export const BioOrgQuery = extendType({
 	type: 'Query',
 	definition(t) {
@@ -42,6 +43,7 @@ export const BioOrgQuery = extendType({
 	},
 });
 
+// TODO Remove this code: it has been replaced by the new backend
 export const BiosWithPaginationStruct = objectType({
 	name: 'BiosWithPagination',
 	definition(t) {
@@ -50,6 +52,7 @@ export const BiosWithPaginationStruct = objectType({
 	},
 });
 
+// TODO Remove this code: it has been replaced by the new backend
 export const OrganismsFromFullTextQuery = extendType({
 	type: 'Query',
 	definition(t) {
@@ -103,6 +106,7 @@ export const OrganismStatus = mutationStatusType({
 export const OrganismMutations = extendType({
 	type: 'Mutation',
 	definition(t) {
+		// TODO Remove this code: it has been replaced by the new backend
 		t.nonNull.field('addOrganism', {
 			description: `Add a new organism`,
 			args: newOrganismType,

@@ -412,6 +412,7 @@ export const UnitsWithPaginationStruct = objectType({
 export const UnitFullTextQuery = extendType({
 	type: 'Query',
 	definition(t) {
+		// TODO Remove this code: it has been replaced by the new backend
 		t.field("unitsFromFullTextAndPagination", {
 			type: "UnitsWithPagination",
 			args: {
