@@ -143,6 +143,7 @@ export const OrganismMutations = extendType({
 				});
 			}
 		});
+		// TODO Remove this code: it has been replaced by the new backend
 		t.nonNull.field('updateOrganism', {
 			description: `Update organism details.`,
 			args: newOrganismType,
@@ -178,6 +179,7 @@ export const OrganismMutations = extendType({
 				});
 			}
 		});
+		// TODO Remove this code: it has been replaced by the new backend
 		t.nonNull.field('deleteOrganism', {
 			description: `Delete organism details.`,
 			args: newOrganismType,
