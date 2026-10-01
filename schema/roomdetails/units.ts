@@ -189,6 +189,7 @@ const unitDeleteType = {
 export const UnitMutations = extendType({
 	type: 'Mutation',
 	definition(t) {
+		// TODO Remove this code: it has been replaced by the new backend
 		t.nonNull.field('createUnit', {
 			description: `Import a new unit from api.epfl.ch.`,
 			args: unitCreationType,
@@ -267,6 +268,7 @@ export const UnitMutations = extendType({
 				});
 			}
 		});
+		// TODO Remove this code: it has been replaced by the new backend
 		t.nonNull.field('updateUnit', {
 			description: `Update unit details (profs, cosecs, sub-units).`,
 			args: unitChangesType,
@@ -379,6 +381,7 @@ export const UnitMutations = extendType({
 				});
 			}
 		});
+		// TODO Remove this code: it has been replaced by the new backend
 		t.nonNull.field('deleteUnit', {
 			description: `Delete unit details by unit name (profs, cosecs, sub-units).`,
 			args: unitDeleteType,
@@ -521,6 +524,7 @@ export const UnitFromAPI = objectType({
 export const UnitFromAPIQuery = extendType({
 	type: 'Query',
 	definition(t) {
+		// TODO Remove this code: it has been replaced by the new backend
 		t.field("unitsFromAPI", {
 			type: list("UnitFromAPI"),
 			args: {
