@@ -67,6 +67,7 @@ export const DirectoryOrLhdPerson = unionType({
 export const PersonFullTextQuery = extendType({
 	type: 'Query',
 	definition(t) {
+		// TODO Remove this code: it has been replaced by the new backend
 		t.field("personFullText", {
 			type: list("DirectoryOrLhdPerson"),
 			args: {
