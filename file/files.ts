@@ -28,6 +28,7 @@ export function makeRESTFilesAPI() {
 
 	type GetFile = {salt: string, eph_id: string, fileName?: string};
 
+	// TODO Remove this code: it has been replaced by the new backend
 	app.get("/organism/:eph_id",
 		checkAPICall(
 			{
