@@ -182,6 +182,7 @@ export const RoomsWithPaginationStruct = objectType({
 	},
 });
 
+// TODO Remove this code: it has been replaced by the new backend
 export const RoomsWithPaginationQuery = extendType({
 	type: 'Query',
 	definition(t) {
