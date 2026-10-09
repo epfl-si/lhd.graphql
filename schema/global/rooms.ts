@@ -416,6 +416,7 @@ export const RoomFromAPI = objectType({
 	}
 })
 
+// TODO Remove this code: it has been replaced by the new backend
 export const RoomFromAPIQuery = extendType({
 	type: 'Query',
 	definition(t) {
