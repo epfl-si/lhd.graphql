@@ -137,6 +137,7 @@ export function makeRESTFilesAPI() {
 			sendFileResponse(filePath, res);
 		});
 
+	// TODO Remove this code: it has been replaced by the new backend
 	app.get("/dispensation/:eph_id",
 		checkAPICall(
 			{
@@ -159,6 +160,7 @@ export function makeRESTFilesAPI() {
 			sendFileResponse(req.params.fileName, res);
 		});
 
+	// TODO Remove this code: it has been replaced by the new backend
 	app.get("/authorization/:eph_id",
 		checkAPICall(
 			{
@@ -181,6 +183,7 @@ export function makeRESTFilesAPI() {
 			sendFileResponse(req.params.fileName, res);
 		});
 
+	// TODO Remove this code: it has been replaced by the new backend
 	app.get("/assessment/:eph_id",
 		checkAPICall(
 			{

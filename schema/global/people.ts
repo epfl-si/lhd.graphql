@@ -152,6 +152,7 @@ export const ConnectedUserInfoStruct = objectType({
 export const ConnectedUserInfoQuery = extendType({
 	type: 'Query',
 	definition(t) {
+		// TODO Remove this code: it has been replaced by the new backend
 		t.field("connectedUserInfo", {
 			type: "ConnectedUserInfo",
 			async resolve(parent, args, context) {
