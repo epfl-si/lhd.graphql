@@ -272,6 +272,7 @@ const roomDeleteType = {
 export const RoomMutations = extendType({
 	type: 'Mutation',
 	definition(t) {
+		// TODO Remove this code: it has been replaced by the new backend
 		t.nonNull.field('createRoom', {
 			description: `Create a new room.`,
 			args: roomCreationType,
@@ -321,6 +322,7 @@ export const RoomMutations = extendType({
 				});
 			}
 		});
+		// TODO Remove this code: it has been replaced by the new backend
 		t.nonNull.field('updateRoom', {
 			description: `Update room details.`,
 			args: roomType,
