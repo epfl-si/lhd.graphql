@@ -456,6 +456,7 @@ export const UnitFullTextQuery = extendType({
 				return { units, totalCount };
 			}
 		});
+		// TODO Remove this code: it has been replaced by the new backend
 		t.field("unitsFromFullText", {
 			type: list("Unit"),
 			args: {
