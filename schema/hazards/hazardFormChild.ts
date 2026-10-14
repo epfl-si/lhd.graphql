@@ -71,6 +71,7 @@ export const HazardFormChildStatus = mutationStatusType({
 export const HazardFormChildMutations = extendType({
 	type: 'Mutation',
 	definition(t) {
+// TODO Remove this code: it has been replaced by the new backend
 		t.nonNull.field('createNewHazardFormChild', {
 			description: `Create new hazard form child with his own form and version.`,
 			args: hazardFormChildChangesType,
@@ -116,6 +117,7 @@ export const HazardFormChildMutations = extendType({
 				});
 			}
 		});
+// TODO Remove this code: it has been replaced by the new backend
 		t.nonNull.field('updateHazardFormChild', {
 			description: `Update form with a new version.`,
 			args: hazardFormChildChangesType,
