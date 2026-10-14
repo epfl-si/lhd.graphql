@@ -160,6 +160,7 @@ export const HazardsWithPaginationStruct = objectType({
 export const HazardsWithPaginationQuery = extendType({
 	type: 'Query',
 	definition(t) {
+		// TODO Remove this code: it has been replaced by the new backend
 		t.field("hazardsWithPagination", {
 			type: "HazardsWithPagination",
 			args: {
