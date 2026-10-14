@@ -72,6 +72,7 @@ export const HazardTagStatus = mutationStatusType({
 export const HazardsAdditionalInfoHasTagMutations = extendType({
 	type: 'Mutation',
 	definition(t) {
+// TODO Remove this code: it has been replaced by the new backend
 		t.nonNull.field('addTag', {
 			description: `Add tag to hazard.`,
 			args: hazardTagType,
@@ -125,6 +126,7 @@ export const HazardsAdditionalInfoHasTagMutations = extendType({
 				});
 			}
 		});
+// TODO Remove this code: it has been replaced by the new backend
 		t.nonNull.field('updateTag', {
 			description: `Update hazard tag.`,
 			args: hazardTagType,
@@ -150,6 +152,7 @@ export const HazardsAdditionalInfoHasTagMutations = extendType({
 				});
 			}
 		});
+// TODO Remove this code: it has been replaced by the new backend
 		t.nonNull.field('deleteTag', {
 			description: `Delete hazard tag.`,
 			args: hazardTagType,
