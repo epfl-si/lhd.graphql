@@ -48,6 +48,7 @@ export function makeRESTFilesAPI() {
 			sendFileResponse(org.filePath, res);
 		});
 
+	// TODO Remove this code: it has been replaced by the new backend
 	app.get("/hazardAdditionalInfo/:eph_id",
 		checkAPICall(
 			{
@@ -70,6 +71,7 @@ export function makeRESTFilesAPI() {
 			sendFileResponse(req.params.fileName, res);
 		});
 
+	// TODO Remove this code: it has been replaced by the new backend
 	app.get("/labHasHazardsChild/:eph_id",
 		checkAPICall(
 			{
@@ -91,6 +93,7 @@ export function makeRESTFilesAPI() {
 			sendFileResponse(submission.data.fileLink, res);
 		});
 
+	// TODO Remove this code: it has been replaced by the new backend
 	type GetReportFile = {salt: string, eph_id: string, fileName: string};
 	app.get("/reportFile/:eph_id",
 		checkAPICall(
@@ -116,6 +119,7 @@ export function makeRESTFilesAPI() {
 			sendFileResponse(file ? file.path : '', res);
 		});
 
+	// TODO Remove this code: it has been replaced by the new backend
 	type GetFileById = {id: number};
 	app.get("/organismByFormIO/:id",
 		checkAPICall(
