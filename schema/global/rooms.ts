@@ -377,6 +377,7 @@ export const RoomMutations = extendType({
 				});
 			}
 		});
+		// TODO Remove this code: it has been replaced by the new backend
 		t.nonNull.field('deleteRoom', {
 			description: `Delete room details by room id (units and hazards too).`,
 			args: roomDeleteType,
