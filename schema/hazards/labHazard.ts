@@ -105,6 +105,7 @@ const roomHazardChangesType = {
 export const RoomHazardMutations = extendType({
 	type: 'Mutation',
 	definition(t) {
+// TODO Remove this code: it has been replaced by the new backend
 		t.nonNull.field('addHazardToRoom', {
 			description: `Add a new hazard to the room.`,
 			args: roomHazardChangesType,
@@ -233,6 +234,7 @@ export const RoomHazardMutations = extendType({
 				return mutationStatusType.success();
 			}
 		});
+// TODO Remove this code: it has been replaced by the new backend
 		t.nonNull.field('deleteHazard', {
 			description: `Delete an Hazard`,
 			args: {

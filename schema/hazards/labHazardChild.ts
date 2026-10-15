@@ -296,6 +296,7 @@ export const HazardFlatForExport = objectType({
 export const HazardFetchForExportQuery = extendType({
 	type: 'Query',
 	definition(t) {
+		// TODO Never called
 		t.field("hazardFetchForExport", {
 			type: list("HazardFlatForExport"),
 			args: {
@@ -421,6 +422,7 @@ export const HazardChildStatus = mutationStatusType({
 export const HazardChildMutations = extendType({
 	type: 'Mutation',
 	definition(t) {
+		// TODO Remove this code: it has been replaced by the new backend
 		t.nonNull.field('deleteHazardChild', {
 			description: `Delete an Hazard child`,
 			args: hazardChildMutationsType,
