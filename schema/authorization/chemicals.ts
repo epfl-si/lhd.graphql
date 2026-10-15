@@ -110,6 +110,7 @@ export const ChemicalStatus = mutationStatusType({
 export const ChemicalMutations = extendType({
 	type: 'Mutation',
 	definition(t) {
+// TODO Remove this code: it has been replaced by the new backend
 		t.nonNull.field('addChemical', {
 			description: `Add a new chemical`,
 			args: newChemicalType,
@@ -127,6 +128,7 @@ export const ChemicalMutations = extendType({
 				return mutationStatusType.success();
 			}
 		});
+// TODO Remove this code: it has been replaced by the new backend
 		t.nonNull.field('updateChemical', {
 			description: `Update chemical details.`,
 			args: newChemicalType,
@@ -160,6 +162,7 @@ export const ChemicalMutations = extendType({
 				return mutationStatusType.success();
 			}
 		});
+// TODO Remove this code: it has been replaced by the new backend
 		t.nonNull.field('deleteChemical', {
 			description: `Delete chemical details.`,
 			args: newChemicalType,
