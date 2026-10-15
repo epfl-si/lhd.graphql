@@ -155,6 +155,7 @@ export const AuthorizationsWithPaginationStruct = objectType({
 export const AuthorizationsWithPaginationQuery = extendType({
 	type: 'Query',
 	definition(t) {
+// TODO Remove this code: it has been replaced by the new backend
 		t.field("authorizationsWithPagination", {
 			type: "AuthorizationsWithPagination",
 			args: {
@@ -266,6 +267,7 @@ export const AuthorizationStatus = mutationStatusType({
 export const AuthorizationMutations = extendType({
 	type: 'Mutation',
 	definition(t) {
+// TODO Remove this code: it has been replaced by the new backend
 		t.nonNull.field('addAuthorization', {
 			description: `Add a new authorization`,
 			args: newAuthorizationType,
@@ -301,6 +303,7 @@ export const AuthorizationMutations = extendType({
 				return mutationStatusType.success();
 			}
 		});
+// TODO Remove this code: it has been replaced by the new backend
 		t.nonNull.field('updateAuthorization', {
 			description: `Update authorization details.`,
 			args: newAuthorizationType,
@@ -338,6 +341,7 @@ export const AuthorizationMutations = extendType({
 				});
 			}
 		});
+// TODO Remove this code: it has been replaced by the new backend
 		t.nonNull.field('deleteAuthorization', {
 			description: `Delete authorization details.`,
 			args: {
