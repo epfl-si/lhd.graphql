@@ -476,6 +476,7 @@ export const UnitFullTextQuery = extendType({
 export const UnitsByRoomQuery = extendType({
 	type: 'Query',
 	definition(t) {
+		// TODO Remove this code: it has been replaced by the new backend
 		t.field("unitsByRoom", {
 			type: list(UnitStruct),
 			args: {

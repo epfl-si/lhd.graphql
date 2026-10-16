@@ -174,6 +174,7 @@ export const DispensationsWithPaginationStruct = objectType({
 export const DispensationsWithPaginationQuery = extendType({
   type: 'Query',
   definition(t) {
+// TODO Remove this code: it has been replaced by the new backend
     t.field("dispensationsWithPagination", {
       type: "DispensationsWithPagination",
       args: {
@@ -297,6 +298,7 @@ export const DispensationMutationStatus = mutationStatusType({
 export const DispensationMutations = extendType({
   type: 'Mutation',
   definition(t) {
+// TODO Remove this code: it has been replaced by the new backend
     t.nonNull.field('addDispensation', {
       description: `Add a new dispensation`,
       args: newDispensationType,
@@ -365,6 +367,7 @@ export const DispensationMutations = extendType({
         return mutationStatusType.success();
       }
     });
+// TODO Remove this code: it has been replaced by the new backend
     t.nonNull.field('updateDispensation', {
       description: `Update dispensation details.`,
       args: newDispensationType,
@@ -442,6 +445,7 @@ export const DispensationMutations = extendType({
         return mutationStatusType.success();
       }
     });
+// TODO Remove this code: it has been replaced by the new backend
     t.nonNull.field('deleteDispensation', {
       description: `Delete dispensation details.`,
       args: newDispensationType,
